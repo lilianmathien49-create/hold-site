@@ -13,10 +13,9 @@ const mobile = () => window.innerWidth <= 760;
 const PARIS = [[0, 'Concorde → Bastille', '4:57', 148], [5, 'Reuilly', '4:58', 152], [12, 'Vincennes', '4:56', 154], [20, 'Quais de Seine', '4:55', 156],
   [27, 'Trocadéro → Auteuil', '4:56', 159], [35, 'Boulogne', '4:52', 163], [40, 'Avenue Foch', '4:45', null]];
 
-// Trail : pente lissée sur 500 m, et ce que tu fais à cette pente (seuil marche/course d'exemple : 12 %).
+// Trail : pente lissée sur 500 m, qui colore le tracé sur la carte (seuil marche/course d'exemple : 12 %).
 const WALK = 12, STEEP_DOWN = -12;
 const slope = (route, k) => (pointAt(route, Math.min(route.totalKm, k + 0.25)).ele - pointAt(route, Math.max(0, k - 0.25)).ele) / 5;
-const mode = (g) => g >= WALK ? 'marche · bâtons' : g <= STEEP_DOWN ? 'descente · préserve tes quadriceps' : 'course';
 // Portions marchées et descentes raides, en tronçons continus (pas de 100 m).
 function zones(route) {
   const out = { walk: [], down: [] }; let cur = null, kind = null;
@@ -36,8 +35,8 @@ const ACTS = [
     view: { bearing: 180, pitch: 50, exaggeration: 1.5, start: 'Chamonix', zoomIn: 0.7, turn: 30, tilt: 10, introMs: 2200 },
     trail: true,
     live: (k, route, p) => {
-      const w = [...route.waypoints].reverse().find((x) => x.km <= k), g = slope(route, k);
-      return [`${w ? w.name : 'Chamonix'} · ${Math.round(p.ele).toLocaleString('fr-FR')} m`, `pente ${g >= 0 ? '+' : '−'}${Math.abs(Math.round(g))} % · ${mode(g)}`, g >= WALK];
+      const w = [...route.waypoints].reverse().find((x) => x.km <= k);
+      return [`${w ? w.name : 'Chamonix'} · ${Math.round(p.ele).toLocaleString('fr-FR')} m`, ''];
     } },
 ];
 

@@ -172,14 +172,6 @@ select.field option { background: #111; }
 .js .reveal.in { opacity: 1; transform: none; }
 
 
-/* Trail : marche en rouge, descentes en pointillés */
-.live .red { color: var(--red); }
-.legend { position: absolute; right: clamp(20px, 6vw, 96px); bottom: 46px; display: flex; gap: 18px; font-size: 11px; letter-spacing: .06em; color: var(--muted); }
-.legend span { display: inline-flex; align-items: center; gap: 8px; }
-.legend i { display: inline-block; width: 22px; height: 0; }
-.lg-walk { border-top: 3px solid var(--red); box-shadow: 0 0 8px var(--red); }
-.lg-down { border-top: 2px dotted #fff; }
-
 /* Comment ça marche */
 .how { max-width: 1200px; margin: 0 auto; padding: 160px 28px 60px; }
 .how-steps { list-style: none; margin: 72px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; position: relative; }
@@ -205,7 +197,6 @@ select.field option { background: #111; }
   .how-steps.in::after { width: 1px; height: 100%; }
   .how-steps li { padding-top: 0; }
   .how-steps li::before { left: -28px; }
-  .legend { right: auto; left: 20px; bottom: 74px; }
 }
 
 
@@ -279,7 +270,6 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .logo { font-size: 26px; }
   .logo-dot { width: 5px; height: 5px; margin-bottom: 8px; }
   .lab-chart { height: 260px; }
-  .legend { gap: 10px; font-size: 10px; }
   .live { font-size: 11px; gap: 10px; }
 }
 
