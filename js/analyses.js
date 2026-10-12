@@ -5,9 +5,17 @@
 const MP = 295;                                                                      // allure marathon : 4:55 /km
 const heatBpm = (T) => (T <= 10 ? 0 : 0.2 * Math.pow(T - 10, 1.45));                 // coût de la chaleur, bpm à allure égale
 const BPM_TO_S = 0.85;                                                               // ≈ s/km perdues par battement
-const runKmh = (g) => Math.max(1.5, 10.2 - 0.43 * g);                                // vitesse en courant, FC 150, pente g %
-const walkKmh = (g) => Math.max(2.5, 5.8 - 0.064 * g);                               // vitesse en marchant, même FC
-const WALK_AT = 12;                                                                  // croisement des deux : ton seuil
+// Seuil de marche : régression logistique sur 39 959 blocs de 15 s (150 sorties).
+// La pente où la probabilité de marcher atteint 50 % baisse avec le temps écoulé.
+const THR = (t) => 8.8 - 3.1 * t / 240;                                              // seuil (%) après t minutes
+const THR_LO = (t) => THR(t) - (0.75 + 4.05 * t / 240);                              // borne basse IC 95 %
+const THR_HI = (t) => THR(t) + (1.92 - 0.82 * t / 240);                              // borne haute IC 95 %
+const K = 0.27;                                                                      // pente de la logistique
+const pWalk = (g, thr) => 100 / (1 + Math.exp(-K * (g - thr)));                      // probabilité de marcher, en %
+const FINIEL = 12.6, GIOVANELLI = 27;                                                // repères de la littérature
+// Part de marche observée par tranche de pente (taille = nombre de blocs).
+const OBS = [[-3, 11, 9], [-0.7, 10.5, 6], [0.7, 13, 6], [3, 19.5, 6], [5, 33, 7], [6.8, 43, 5],
+  [8.8, 58, 5], [10.8, 73, 4.5], [12.8, 79, 4], [15, 89, 3.5], [17, 93.5, 3], [19, 96, 3], [21, 98, 2.8], [23, 99, 2.6], [25, 99.5, 2.5]];
 const onsetKm = (p) => Math.max(18, Math.min(45, 34 + (p - MP) * 0.65));             // km où la foulée lâche, selon l'allure
 
 /* ---------- Outils ---------- */
@@ -49,6 +57,13 @@ function annotate(f, xv, yPx, txt, color) {
 }
 const curve = (fn, a, b, f, n = 80) => line(Array.from({ length: n + 1 }, (_, i) => { const v = a + (b - a) * i / n; return [v, fn(v)]; }), f);
 
+// Bande d'intervalle de confiance : on longe la borne haute, puis on revient par la basse.
+function band(f, a, b, hi, lo, n = 60) {
+  const up = [], dn = [];
+  for (let i = 0; i <= n; i++) { const v = a + (b - a) * i / n; up.push([v, hi(v)]); dn.push([v, lo(v)]); }
+  return line(up, f) + 'L' + line(dn.reverse(), f).slice(1) + 'Z';
+}
+
 /* ---------- 1. Chaleur ---------- */
 function heat() {
   const host = $('heatChart'), slider = $('heatT'), r = rng(4);
@@ -68,28 +83,65 @@ function heat() {
   return draw;
 }
 
-/* ---------- 2. Marche ou course ---------- */
+/* ---------- 2. Seuil de marche : la logistique ---------- */
 function walk() {
-  const host = $('walkChart'), slider = $('walkG'), r = rng(8);
-  const dots = [
-    ...Array.from({ length: 70 }, () => { const g = r() * 16; return [g, runKmh(g) + gauss(r) * 0.45, 0]; }),
-    ...Array.from({ length: 50 }, () => { const g = 6 + r() * 24; return [g, walkKmh(g) + gauss(r) * 0.3, 1]; }),
-  ];
+  const host = $('walkChart'), slider = $('walkT');
   function draw() {
-    const g = +slider.value, run = runKmh(g), wk = walkKmh(g), walking = g >= WALK_AT;
-    const f = frame(host, { x0: 0, x1: 30, y0: 0, y1: 12, xt: [0, 10, 20, 30], xf: (v) => `${v} %`, yt: [0, 4, 8, 12], yl: 'km/h à FC 150', xl: 'pente' });
-    f.svg.append(mk('rect', { x: f.x(WALK_AT), y: f.L.t, width: f.x(30) - f.x(WALK_AT), height: f.H - f.L.t - f.L.b, fill: RED, opacity: 0.08 }));
-    annotate(f, WALK_AT, f.L.t + 14, `tu marches · seuil ${WALK_AT} %`, RED);
-    for (const [x, v, w] of dots) f.svg.append(mk('circle', { cx: f.x(x), cy: f.y(v), r: 2.6, fill: w ? RED : '#fff', opacity: 0.55 }));
-    f.svg.append(mk('path', { d: curve(runKmh, 0, 30, f), fill: 'none', stroke: '#fff', 'stroke-width': 2.5 }));
-    f.svg.append(mk('path', { d: curve(walkKmh, 0, 30, f), fill: 'none', stroke: RED, 'stroke-width': 2.5 }));
-    const lr = mk('text', { ...TXT, x: f.x(2), y: f.y(runKmh(2)) - 10, fill: '#fff' }); lr.textContent = 'en courant'; f.svg.append(lr);
-    const lw = mk('text', { ...TXT, x: f.x(24), y: f.y(walkKmh(24)) - 10, fill: RED }); lw.textContent = 'en marchant'; f.svg.append(lw);
-    f.svg.append(mk('line', { x1: f.x(g), x2: f.x(g), y1: f.L.t, y2: f.H - f.L.b, stroke: '#fff', 'stroke-dasharray': '2 4', opacity: 0.7 }));
-    f.svg.append(mk('circle', { cx: f.x(g), cy: f.y(Math.max(run, wk)), r: 6, fill: walking ? RED : '#fff' }));
-    $('walkGv').textContent = `${g} %`;
-    const big = $('walkBig'); big.textContent = walking ? 'Tu marches' : 'Tu cours'; big.classList.toggle('red', walking);
-    $('walkRead').textContent = `À ${g} % et 150 bpm : ${fr(wk)} km/h en marchant, ${fr(run)} km/h en courant.${walking ? ' Bâtons sortis.' : ''}`;
+    const t = +slider.value, thr = THR(t), lo = THR_LO(t), hi = THR_HI(t);
+    const f = frame(host, { x0: -5, x1: 30, y0: 0, y1: 100, xt: [0, 10, 20, 30], xf: (v) => `${v} %`,
+      yt: [0, 25, 50, 75, 100], yf: (v) => `${v}`, yl: 'probabilité de marcher (%)', xl: 'pente sur 100 m' });
+
+    // IC 95 % : la logistique décalée aux deux bornes du seuil.
+    f.svg.append(mk('path', { d: band(f, -5, 30, (g) => pWalk(g, lo), (g) => pWalk(g, hi)), fill: '#fff', opacity: 0.08, stroke: 'none' }));
+
+    // Repères de la littérature, en retrait. Étagés en hauteur : côte à côte ils se chevauchent.
+    for (const [v, txt, dy] of [[FINIEL, 'Finiel 2026', 10], [GIOVANELLI, 'Giovanelli', 28]]) {
+      f.svg.append(mk('line', { x1: f.x(v), x2: f.x(v), y1: f.L.t, y2: f.H - f.L.b, stroke: '#fff', 'stroke-dasharray': '1 5', opacity: 0.3 }));
+      annotate(f, v, f.H - f.L.b - dy, txt, '#5A5A5A');
+    }
+
+    // La barre des 50 %, puis les blocs observés, puis la courbe.
+    f.svg.append(mk('line', { x1: f.L.l, x2: f.W - f.L.r, y1: f.y(50), y2: f.y(50), stroke: '#fff', 'stroke-dasharray': '2 4', opacity: 0.35 }));
+    for (const [g, p, w] of OBS) f.svg.append(mk('circle', { cx: f.x(g), cy: f.y(p), r: w * 0.62, fill: '#fff', opacity: 0.4 }));
+    f.svg.append(mk('path', { d: curve((g) => pWalk(g, thr), -5, 30, f), fill: 'none', stroke: RED, 'stroke-width': 2.5 }));
+    f.svg.append(mk('line', { x1: f.x(thr), x2: f.x(thr), y1: f.y(50), y2: f.H - f.L.b, stroke: RED, 'stroke-width': 1.5 }));
+    f.svg.append(mk('circle', { cx: f.x(thr), cy: f.y(50), r: 6, fill: RED }));
+    annotate(f, thr, f.L.t + 14, `seuil 50 % · ${fr(thr)} %`, RED);
+
+    $('walkTv').textContent = t === 0 ? 'au départ' : `${t} min`;
+    $('walkBig').textContent = `${fr(thr)} %`;
+    $('walkRead').textContent = `IC 95 % ${fr(lo)} – ${fr(hi)} %. Au-delà de cette pente, tu as plus d'une chance sur deux de marcher${t >= 150 ? ' — et peu de sorties dépassent 3 h, donc l\'intervalle s\'élargit.' : '.'}`;
+  }
+  slider.addEventListener('input', draw);
+  return draw;
+}
+
+/* ---------- 3. La fatigue abaisse le seuil ---------- */
+function fatigue() {
+  const host = $('fatChart'), slider = $('fatT');
+  function draw() {
+    const t = +slider.value, thr = THR(t), drop = THR(0) - thr;
+    const f = frame(host, { x0: 0, x1: 240, y0: 0, y1: 12, xt: [0, 60, 120, 180, 240], xf: (v) => `${v}`,
+      yt: [0, 4, 8, 12], yf: (v) => `${v} %`, yl: 'pente de passage à la marche', xl: 'minutes de course' });
+
+    f.svg.append(mk('path', { d: band(f, 0, 240, THR_HI, THR_LO), fill: RED, opacity: 0.12, stroke: 'none' }));
+    f.svg.append(mk('path', { d: curve(THR, 0, 240, f), fill: 'none', stroke: RED, 'stroke-width': 2.5 }));
+
+    // Les quatre jalons de la sortie type.
+    for (const m of [30, 60, 120, 180]) {
+      f.svg.append(mk('circle', { cx: f.x(m), cy: f.y(THR(m)), r: 3, fill: '#fff', opacity: 0.5 }));
+      const lbl = mk('text', { ...TXT, x: f.x(m), y: f.y(THR(m)) - 12, 'text-anchor': 'middle' });
+      lbl.textContent = `${fr(THR(m))} %`; f.svg.append(lbl);
+    }
+
+    f.svg.append(mk('line', { x1: f.x(t), x2: f.x(t), y1: f.L.t, y2: f.H - f.L.b, stroke: '#fff', 'stroke-dasharray': '2 4', opacity: 0.7 }));
+    f.svg.append(mk('circle', { cx: f.x(t), cy: f.y(thr), r: 6, fill: RED }));
+
+    $('fatTv').textContent = t === 0 ? 'au départ' : `${t} min`;
+    $('fatBig').textContent = drop < 0.05 ? `${fr(thr)} %` : `− ${fr(drop)} pt`;
+    $('fatRead').textContent = drop < 0.05
+      ? `Frais, tu tiens la course jusqu'à ${fr(thr)} % de pente.`
+      : `Après ${t} min, ton seuil est passé de ${fr(THR(0))} % à ${fr(thr)} %. La même côte se marche, alors qu'elle se courait au départ.`;
   }
   slider.addEventListener('input', draw);
   return draw;
@@ -158,7 +210,7 @@ function dur() {
 
 /* ---------- Onglets : on ne dessine que l'analyse visible ---------- */
 export function initAnalyses() {
-  const draws = { heat: heat(), walk: walk(), mp: mp(), dur: dur() };
+  const draws = { heat: heat(), walk: walk(), fat: fatigue(), mp: mp(), dur: dur() };
   const tabs = Array.from(document.querySelectorAll('.lab-tabs [role="tab"]'));
   let current = 'heat';
   const show = (tab) => {

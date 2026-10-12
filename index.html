@@ -129,7 +129,8 @@
   </div>
   <div class="lab-tabs" role="tablist" aria-label="Analyses">
     <button type="button" role="tab" id="tab-heat" data-k="heat" aria-controls="p-heat" aria-selected="true">Chaleur</button>
-    <button type="button" role="tab" id="tab-walk" data-k="walk" aria-controls="p-walk" aria-selected="false" tabindex="-1">Marche ou course</button>
+    <button type="button" role="tab" id="tab-walk" data-k="walk" aria-controls="p-walk" aria-selected="false" tabindex="-1">Seuil de marche</button>
+    <button type="button" role="tab" id="tab-fat" data-k="fat" aria-controls="p-fat" aria-selected="false" tabindex="-1">Effet de la fatigue</button>
     <button type="button" role="tab" id="tab-mp" data-k="mp" aria-controls="p-mp" aria-selected="false" tabindex="-1">Allure marathon</button>
     <button type="button" role="tab" id="tab-dur" data-k="dur" aria-controls="p-dur" aria-selected="false" tabindex="-1">Durabilité &amp; foulée</button>
   </div>
@@ -147,13 +148,26 @@
 
   <div class="lab-panel" role="tabpanel" id="p-walk" aria-labelledby="tab-walk" hidden>
     <div class="lab-text">
-      <h3>Pourquoi marcher à 12&nbsp;%&nbsp;?</h3>
-      <p class="sub">Sur tes sorties trail, à fréquence cardiaque égale, on compare ta vitesse en courant et en marchant selon la pente. Là où la marche devient plus rapide, c'est ton seuil : au-delà, tu marches, bâtons sortis, et tu gardes de l'énergie pour la suite.</p>
+      <h3>À partir de quelle pente tu marches&nbsp;?</h3>
+      <p class="sub">Chaque bloc de 15 secondes de tes sorties est classé : tu courais, ou tu marchais. On en tire la pente à laquelle tu as une chance sur deux de passer à la marche. Déplace le curseur : plus la course est longue, plus ce seuil descend.</p>
       <p class="lab-big" id="walkBig">—</p>
       <p class="lab-read mono" id="walkRead" aria-live="polite"></p>
-      <label class="lab-ctl"><span class="eyebrow">Pente · <b id="walkGv">18 %</b></span><input type="range" id="walkG" min="0" max="30" step="1" value="18"></label>
+      <label class="lab-ctl"><span class="eyebrow">Temps écoulé · <b id="walkTv">32 min</b></span><input type="range" id="walkT" min="0" max="240" step="2" value="32"></label>
+      <p class="lab-src mono">39 959 blocs de 15 s · 150 sorties · validé sur la cadence réelle : 86 % d'accord. Repères : Finiel 2026, Giovanelli, Brill &amp; Kram.</p>
     </div>
     <div class="lab-chart" id="walkChart"></div>
+  </div>
+
+  <div class="lab-panel" role="tabpanel" id="p-fat" aria-labelledby="tab-fat" hidden>
+    <div class="lab-text">
+      <h3>La fatigue abaisse ton seuil.</h3>
+      <p class="sub">Le même pourcentage de pente ne se court pas pareil à la première heure et à la quatrième. On mesure de combien ton seuil glisse au fil de la course — c'est ce qui dit où placer la marche sur un parcours long.</p>
+      <p class="lab-big" id="fatBig">—</p>
+      <p class="lab-read mono" id="fatRead" aria-live="polite"></p>
+      <label class="lab-ctl"><span class="eyebrow">Temps écoulé · <b id="fatTv">120 min</b></span><input type="range" id="fatT" min="0" max="240" step="2" value="120"></label>
+      <p class="lab-src mono">Intervalle de confiance à 95 %, bootstrap par sortie. Au-delà de 3 h, peu de sorties : l'intervalle s'élargit.</p>
+    </div>
+    <div class="lab-chart" id="fatChart"></div>
   </div>
 
   <div class="lab-panel" role="tabpanel" id="p-mp" aria-labelledby="tab-mp" hidden>
@@ -182,7 +196,7 @@
     <div class="lab-chart" id="durChart"></div>
   </div>
 
-  <p class="hint lab-note">Données d'exemple. Ton bilan fait ces calculs sur tes propres séances.</p>
+  <p class="hint lab-note"><b>Seuil de marche</b> et <b>effet de la fatigue</b> : résultats réels, mesurés sur un coureur suivi pendant 150 sorties. Les autres onglets sont illustrés avec des données d'exemple. Ton bilan refait tous ces calculs sur tes propres séances.</p>
 </section>
 
 <!-- ESSAI -->
