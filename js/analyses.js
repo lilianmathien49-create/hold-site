@@ -210,12 +210,16 @@ function dur() {
 
 /* ---------- Onglets : on ne dessine que l'analyse visible ---------- */
 export function initAnalyses() {
-  const draws = { heat: heat(), walk: walk(), fat: fatigue(), mp: mp(), dur: dur() };
+  // Chaque analyse est montée séparément : si le HTML et ce fichier se retrouvent
+  // désynchronisés (un cache qui mélange deux versions), seule l'analyse concernée
+  // tombe, les quatre autres restent affichables.
+  const build = (k, fn) => { try { return fn(); } catch (e) { console.error(`Hold : analyse « ${k} » indisponible`, e); return null; } };
+  const draws = { heat: build('heat', heat), walk: build('walk', walk), fat: build('fat', fatigue), mp: build('mp', mp), dur: build('dur', dur) };
   const tabs = Array.from(document.querySelectorAll('.lab-tabs [role="tab"]'));
   let current = 'heat';
   const show = (tab) => {
     tabs.forEach((t) => { const on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; $(t.getAttribute('aria-controls')).hidden = !on; });
-    current = tab.dataset.k; draws[current]();
+    current = tab.dataset.k; draws[current]?.();
   };
   tabs.forEach((t, i) => {
     t.addEventListener('click', () => show(t));
@@ -225,6 +229,6 @@ export function initAnalyses() {
       e.preventDefault(); tabs[j].focus(); show(tabs[j]);
     });
   });
-  new ResizeObserver(() => draws[current]()).observe($('lab'));
-  draws.heat();
+  new ResizeObserver(() => draws[current]?.()).observe($('lab'));
+  draws.heat?.();
 }
