@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hold — Un coach. Tes données.</title>
+<meta name="description" content="Un coach, tes données : on se sert de ta montre, de nos analyses et de nos modèles pour t'emmener à ton objectif, avec une stratégie de course faite pour toi. Et on ne te lâche pas la veille de la course.">
+<meta name="theme-color" content="#000000">
+<script>document.documentElement.classList.add('js');setTimeout(function(){var d=document.documentElement;if(!d.classList.contains('ready'))d.classList.remove('js');},2500);</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#essai">Aller à l'essai</a>
+
+<header class="nav" id="nav">
+  <a href="#top" class="logo" aria-label="Hold, retour en haut">Hold<span class="logo-dot" aria-hidden="true"></span></a>
+  <nav class="nav-links" id="navLinks">
+    <a href="#comment" class="link-btn">Comment ça marche</a>
+    <a href="#lab" class="link-btn">Nos analyses</a>
+    <a href="#offres" class="link-btn">Offres</a>
+    <a href="#essai" class="link-btn">Essayer</a>
+    <button type="button" class="link-btn" id="openFilm">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>Le film · 49 s
+    </button>
+  </nav>
+  <div class="nav-r">
+    <a href="[LIEN STRIPE]" class="btn btn-sm">Mon bilan · 49,99 €</a>
+    <button type="button" class="nav-sound" id="navSound" aria-label="Activer le son" aria-pressed="false" title="Son">
+      <svg class="ico-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+      <svg class="ico-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    </button>
+    <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- ACTE 1 : le Marathon de Paris, couru au scroll -->
+<section class="act" id="top" data-act="paris" aria-label="Le Marathon de Paris, de nuit, couru au fil de la page">
+  <div class="stage">
+    <div class="map night-map" id="mapParis" role="img" aria-label="Paris de nuit en noir et blanc. Le tracé du Marathon de Paris s'éclaire au fil de la page."></div>
+    <div class="shade" aria-hidden="true"></div>
+    <div class="captions">
+      <div class="cap" data-from="0" data-to="0.12">
+        <p class="eyebrow">Hold · running &amp; trail</p>
+        <h1 class="display">Un coach.<br>Tes données.</h1>
+        <p class="sub">Fais défiler : on court le Marathon de Paris ensemble.</p>
+      </div>
+      <div class="cap" data-from="0.12" data-to="0.3">
+        <h2 class="title">Ta montre<br><span class="soft">enregistre tout.</span></h2>
+        <p class="sub">Chaque foulée, chaque battement, chaque côte. On récupère tes données brutes.</p>
+      </div>
+      <div class="cap" data-from="0.3" data-to="0.5">
+        <h2 class="title">On t'analyse.<br><span class="soft">On te modélise.</span></h2>
+        <p class="sub">Tes seuils, ta durabilité, ta réponse à la chaleur et à la pente : un modèle qui te ressemble, et qui apprend de chaque séance.</p>
+      </div>
+      <div class="cap" data-from="0.5" data-to="0.7">
+        <h2 class="title">Ta stratégie,<br><span class="soft">kilomètre par kilomètre.</span></h2>
+        <p class="sub">Une allure et une fréquence cardiaque pour chaque portion du parcours, calées sur ton profil.</p>
+      </div>
+      <div class="cap" data-from="0.7" data-to="0.88">
+        <h2 class="title">On ne te lâche pas<br><span class="soft">la veille de la course.</span></h2>
+        <p class="sub">Météo du jour, sensations, dernier ajustement du plan : on s'appelle avant le départ.</p>
+      </div>
+      <div class="cap" data-from="0.88" data-to="1.01">
+        <h2 class="title">Le jour J, tu cours.<br><span class="soft">Et tu vis ta meilleure course.</span></h2>
+      </div>
+    </div>
+    <div class="live mono" aria-hidden="true"><span data-live="km">km 0</span><span data-live="seg">Départ · Champs-Élysées</span><span data-live="pace"></span></div>
+    <div class="track" aria-hidden="true"><i data-live="bar"></i></div>
+    <div class="cue" aria-hidden="true"><span></span></div>
+  </div>
+</section>
+
+<!-- ACTE 2 : l'UTMB -->
+<section class="act act-short" data-act="utmb" aria-label="L'UTMB, de nuit, couru au fil de la page">
+  <div class="stage">
+    <div class="map night-map" id="mapUltra" role="img" aria-label="Massif du Mont-Blanc de nuit, en relief. Le tracé de l'UTMB s'éclaire au fil de la page."></div>
+    <div class="shade" aria-hidden="true"></div>
+    <div class="captions">
+      <div class="cap" data-from="0" data-to="0.24">
+        <p class="eyebrow">Du 10 km à l'ultra</p>
+        <h2 class="title">174 km.<br><span class="soft">10 000 m de D+.</span></h2>
+        <p class="sub">L'UTMB, même méthode : ta course anticipée col par col.</p>
+      </div>
+      <div class="cap" data-from="0.24" data-to="0.5">
+        <h2 class="title">Courir ou marcher&nbsp;?<br><span class="soft">On connaît ton seuil.</span></h2>
+        <p class="sub">La pente à partir de laquelle tu vas plus vite en marchant, mesurée sur tes sorties. En pointillés : là où tu marches.</p>
+      </div>
+      <div class="cap" data-from="0.5" data-to="0.74">
+        <h2 class="title">Les bâtons,<br><span class="soft">au bon moment.</span></h2>
+        <p class="sub">Sortis dans les montées raides, rangés quand le terrain se couche. Chaque col est planifié.</p>
+      </div>
+      <div class="cap" data-from="0.74" data-to="1.01">
+        <h2 class="title">La nuit, les descentes,<br><span class="soft">les ravitos : prévus.</span></h2>
+        <p class="sub">Garder tes quadriceps pour la fin, manger avant d'avoir faim : 174 km anticipés.</p>
+      </div>
+    </div>
+    <div class="live mono" aria-hidden="true"><span data-live="km">km 0</span><span data-live="seg">Chamonix</span><span data-live="pace"></span></div>
+    <div class="legend mono" aria-hidden="true"><span><i class="lg-walk"></i>marche · bâtons</span><span><i class="lg-down"></i>descente raide</span></div>
+    <div class="track" aria-hidden="true"><i data-live="bar"></i></div>
+  </div>
+</section>
+
+<!-- COMMENT ÇA MARCHE -->
+<section class="how" id="comment" aria-labelledby="how-t">
+  <div class="how-head reveal">
+    <p class="eyebrow">Comment ça marche</p>
+    <h2 class="title" id="how-t">Quatre étapes.<br><span class="soft">Et un coach jusqu'au départ.</span></h2>
+  </div>
+  <ol class="how-steps reveal">
+    <li><span class="n mono">01</span><h3>Tu envoies tes données</h3><p>Garmin, Coros, Suunto ou Strava : tu exportes tes fichiers ou tu connectes ton compte. Cinq minutes.</p><span class="when mono">Jour 0</span></li>
+    <li><span class="n mono">02</span><h3>On t'analyse</h3><p>Toutes tes séances lues : seuils, durabilité, chaleur, pente. En trail, ton seuil marche/course. Ton modèle est prêt.</p><span class="when mono">Sous 72 h</span></li>
+    <li><span class="n mono">03</span><h3>On s'appelle</h3><p>Ton bilan, ton chrono prédit avec sa fourchette, ta stratégie kilomètre par kilomètre, et quand sortir les bâtons.</p><span class="when mono">20 min</span></li>
+    <li><span class="n mono">04</span><h3>On t'accompagne</h3><p>Plan ajusté chaque semaine, et un dernier point la veille : météo, sensations, allure de départ.</p><span class="when mono">Jusqu'au jour J</span></li>
+  </ol>
+</section>
+
+<!-- SOUS LE CAPOT -->
+<section class="lab" id="lab" aria-labelledby="lab-t">
+  <div class="reveal">
+    <p class="eyebrow">Sous le capot</p>
+    <h2 class="title" id="lab-t">Comment on calcule.<br><span class="soft">Avec tes données, pas une table.</span></h2>
+  </div>
+  <div class="lab-tabs" role="tablist" aria-label="Analyses">
+    <button type="button" role="tab" id="tab-heat" data-k="heat" aria-controls="p-heat" aria-selected="true">Chaleur</button>
+    <button type="button" role="tab" id="tab-walk" data-k="walk" aria-controls="p-walk" aria-selected="false" tabindex="-1">Marche ou course</button>
+    <button type="button" role="tab" id="tab-mp" data-k="mp" aria-controls="p-mp" aria-selected="false" tabindex="-1">Allure marathon</button>
+    <button type="button" role="tab" id="tab-dur" data-k="dur" aria-controls="p-dur" aria-selected="false" tabindex="-1">Durabilité &amp; foulée</button>
+  </div>
+
+  <div class="lab-panel" role="tabpanel" id="p-heat" aria-labelledby="tab-heat">
+    <div class="lab-text">
+      <h3>Combien te coûte la chaleur&nbsp;?</h3>
+      <p class="sub">On garde tes séances à allure marathon, sur le plat. Même allure, même fatigue : la seule différence, c'est la température. On mesure ce qu'elle te coûte, degré par degré.</p>
+      <p class="lab-big" id="heatBig">—</p>
+      <p class="lab-read mono" id="heatRead" aria-live="polite"></p>
+      <label class="lab-ctl"><span class="eyebrow">Température le jour J · <b id="heatTv">24 °C</b></span><input type="range" id="heatT" min="0" max="35" step="1" value="24"></label>
+    </div>
+    <div class="lab-chart" id="heatChart"></div>
+  </div>
+
+  <div class="lab-panel" role="tabpanel" id="p-walk" aria-labelledby="tab-walk" hidden>
+    <div class="lab-text">
+      <h3>Pourquoi marcher à 12&nbsp;%&nbsp;?</h3>
+      <p class="sub">Sur tes sorties trail, à fréquence cardiaque égale, on compare ta vitesse en courant et en marchant selon la pente. Là où la marche devient plus rapide, c'est ton seuil : au-delà, tu marches, bâtons sortis, et tu gardes de l'énergie pour la suite.</p>
+      <p class="lab-big" id="walkBig">—</p>
+      <p class="lab-read mono" id="walkRead" aria-live="polite"></p>
+      <label class="lab-ctl"><span class="eyebrow">Pente · <b id="walkGv">18 %</b></span><input type="range" id="walkG" min="0" max="30" step="1" value="18"></label>
+    </div>
+    <div class="lab-chart" id="walkChart"></div>
+  </div>
+
+  <div class="lab-panel" role="tabpanel" id="p-mp" aria-labelledby="tab-mp" hidden>
+    <div class="lab-text">
+      <h3>Toutes tes séances à 4:55&nbsp;/km.</h3>
+      <p class="sub">Brutes, elles mentent : il faisait chaud, ça montait, tu sortais d'une grosse semaine. On retire l'effet de chacun, et ta vraie forme apparaît.</p>
+      <p class="lab-big" id="mpBig">—</p>
+      <p class="lab-read mono" id="mpRead" aria-live="polite"></p>
+      <div class="lab-pills" role="group" aria-label="Effets à retirer">
+        <button type="button" class="pill" data-mp="temp" aria-pressed="false">− température</button>
+        <button type="button" class="pill" data-mp="slope" aria-pressed="false">− pente</button>
+        <button type="button" class="pill" data-mp="load" aria-pressed="false">− charge aiguë</button>
+      </div>
+    </div>
+    <div class="lab-chart" id="mpChart"></div>
+  </div>
+
+  <div class="lab-panel" role="tabpanel" id="p-dur" aria-labelledby="tab-dur" hidden>
+    <div class="lab-text">
+      <h3>Jusqu'où tu tiens cette allure&nbsp;?</h3>
+      <p class="sub">La durabilité, c'est le moment où ça casse. On la mesure sur tes sorties longues, avec la biomécanique de ta montre : cadence, longueur de foulée, temps de contact au sol.</p>
+      <p class="lab-big" id="durBig">—</p>
+      <p class="lab-read mono" id="durRead" aria-live="polite"></p>
+      <label class="lab-ctl"><span class="eyebrow">Allure visée · <b id="durPv">4:55 /km</b></span><input type="range" id="durP" min="275" max="315" step="1" value="295"></label>
+    </div>
+    <div class="lab-chart" id="durChart"></div>
+  </div>
+
+  <p class="hint lab-note">Données d'exemple. Ton bilan fait ces calculs sur tes propres séances.</p>
+</section>
+
+<!-- ESSAI -->
+<section class="try" id="essai">
+  <div class="try-in reveal">
+    <p class="eyebrow">Essayer</p>
+    <h2 class="title">Ton dernier chrono,<br><span class="soft">notre première estimation.</span></h2>
+    <form class="try-form" id="tryForm" onsubmit="return false">
+      <label class="sr" for="t-dist">Distance</label>
+      <select id="t-dist" class="field">
+        <option value="5">5 km</option><option value="10" selected>10 km</option><option value="21.0975">Semi</option><option value="42.195">Marathon</option>
+      </select>
+      <label class="sr" for="t-time">Chrono</label>
+      <input id="t-time" class="field mono" type="text" inputmode="numeric" placeholder="45:30" autocomplete="off" aria-describedby="t-help">
+    </form>
+    <p class="hint" id="t-help">Format mm:ss ou h:mm:ss</p>
+    <div class="try-out" id="tryOut" aria-live="polite" hidden>
+      <p class="eyebrow">Ton marathon estimé — table générique</p>
+      <p class="mega" id="tryMar">—</p>
+      <p class="sub">C'est une table générique, la même pour tout le monde. <b>Ton bilan part de tes vraies séances</b> : il te dit où cette table se trompe pour toi, et de combien.</p>
+    </div>
+    <div class="cta-row">
+      <a href="[LIEN STRIPE]" class="btn">Mon vrai bilan · 49,99 €</a>
+      <a href="[LIEN CALENDLY]" class="btn btn-ghost">En parler · appel gratuit 20 min</a>
+    </div>
+    <p class="proof mono">Prédit 3:01:45 · couru 2:59:42 · Marathon de Paris 2025</p>
+  </div>
+</section>
+
+<!-- OFFRES -->
+<section class="offers" id="offres" aria-labelledby="offres-t">
+  <div class="offers-head reveal">
+    <p class="eyebrow">Nos offres</p>
+    <h2 class="title" id="offres-t">Choisis ton niveau<br><span class="soft">d'accompagnement.</span></h2>
+  </div>
+  <div class="offers-grid">
+    <div class="offer reveal">
+      <p class="eyebrow">Le bilan</p>
+      <p class="price">49,99 €</p>
+      <p class="offer-once mono">paiement unique</p>
+      <ul class="offer-list">
+        <li>Analyse complète de tes données</li>
+        <li>Seuils, durabilité, coût de la chaleur</li>
+        <li>Chrono prédit avec fourchette</li>
+        <li>Stratégie de course km par km</li>
+        <li>Appel de 20 min pour tout t'expliquer</li>
+      </ul>
+      <p class="offer-delay mono">Livré sous 72 h</p>
+      <a href="[LIEN STRIPE]" class="btn">Demander mon bilan</a>
+    </div>
+    <div class="offer offer-pop reveal">
+      <p class="eyebrow">Le plan</p>
+      <p class="price">69,99 € <small>/ mois</small></p>
+      <p class="offer-once mono">sans engagement</p>
+      <ul class="offer-list">
+        <li>Tout le bilan, inclus</li>
+        <li>Plan d'entraînement sur tes données</li>
+        <li>Réajusté chaque semaine</li>
+        <li>Un coach que tu appelles</li>
+        <li>Suivi de ta progression</li>
+      </ul>
+      <p class="offer-delay mono">Résiliable à tout moment</p>
+      <a href="[LIEN STRIPE]" class="btn">Choisir le plan</a>
+    </div>
+    <div class="offer reveal">
+      <p class="eyebrow">Tout, réuni</p>
+      <p class="price">110 € <small>/ mois</small></p>
+      <p class="offer-once mono">sans engagement</p>
+      <ul class="offer-list">
+        <li>Bilan + plan + coaching complet</li>
+        <li>Stratégie de course actualisée</li>
+        <li>Dernier point la veille du départ</li>
+        <li>Météo, sensations, ajustement final</li>
+        <li>Accompagnement jusqu'au jour J</li>
+      </ul>
+      <p class="offer-delay mono">Jusqu'à la ligne d'arrivée</p>
+      <a href="[LIEN STRIPE]" class="btn">L'accompagnement complet</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-top">
+    <div><span class="logo">Hold<span class="logo-dot" aria-hidden="true"></span></span><p class="sub">Un coach, tes données.<br>Lilian Mathien — entraîneur &amp; data scientist.</p></div>
+    <nav class="foot-links" aria-label="Pied de page">
+      <a href="mailto:lilian.mathien49@gmail.com">lilian.mathien49@gmail.com</a>
+      <a href="[LIEN INSTAGRAM]">Instagram</a>
+      <a href="[LIEN STRAVA]">Strava</a>
+      <a href="[LIEN CALENDLY]">Prendre rendez-vous</a>
+    </nav>
+  </div>
+  <details class="legal" id="legal">
+      <summary>Mentions légales · CGV · Confidentialité</summary>
+      <div class="legal-grid">
+        <div><h4>Mentions légales</h4><p>Hold est édité par Lilian Mathien, entrepreneur individuel, [ADRESSE], SIRET [SIRET], [TVA NON APPLICABLE, ART. 293 B DU CGI]. Contact : lilian.mathien49@gmail.com. Hébergement : [HÉBERGEUR, ADRESSE]. Directeur de la publication : Lilian Mathien.</p></div>
+        <div><h4>Conditions générales de vente</h4><p>Le bilan (49,99 € TTC) est un service numérique personnalisé, livré par email sous 72 h ouvrées après réception des fichiers de montre. Le coaching est mensuel, sans engagement, résiliable à tout moment pour le mois suivant. Conformément à l'article L221-28 du Code de la consommation, le client accepte expressément que l'exécution du bilan commence avant la fin du délai de rétractation de 14 jours et renonce à ce droit une fois le bilan livré. Paiement sécurisé par [STRIPE]. Médiation de la consommation : [MÉDIATEUR].</p></div>
+        <div><h4>Confidentialité</h4><p>Les fichiers de montre, les données de santé associées (fréquence cardiaque, sommeil, HRV) et les coordonnées sont utilisés uniquement pour produire le bilan et le coaching. Ils ne sont ni vendus ni partagés. Ils sont conservés [12 MOIS] puis supprimés, ou plus tôt sur simple demande à lilian.mathien49@gmail.com. Les cas publiés sur ce site le sont avec l'accord écrit du coureur. Pas de cookie de suivi.</p></div>
+      </div>
+    </details>
+  <p class="credits mono">© 2026 Hold · Lilian Mathien · SIRET [SIRET] · Cartes © OpenStreetMap, OpenFreeMap, Esri, Mapzen · MapLibre</p>
+</footer>
+
+<dialog class="film" id="film" aria-label="Le film Hold, 49 secondes">
+  <div class="film-wrap">
+    <video id="filmVideo" src="media/hold-film.mp4" poster="media/hold-film-poster.jpg" playsinline preload="none"></video>
+    <div class="film-overlay" id="filmOverlay">
+      <button type="button" class="film-play" id="filmPlay" aria-label="Lancer le film">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>
+      </button>
+      <p class="film-dur mono">0:49</p>
+    </div>
+    <div class="film-bar" id="filmBar">
+      <div class="film-progress" id="filmProgress"></div>
+    </div>
+    <div class="film-time mono" id="filmTime">0:00 / 0:49</div>
+  </div>
+  <button type="button" class="film-close" id="closeFilm" aria-label="Fermer le film">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script>
+(function(){
+  var burger=document.getElementById('navBurger');
+  var links=document.getElementById('navLinks');
+  if(!burger||!links)return;
+  burger.addEventListener('click',function(){
+    var open=links.classList.toggle('open');
+    burger.setAttribute('aria-expanded',String(open));
+    burger.classList.toggle('open',open);
+  });
+  links.addEventListener('click',function(e){
+    if(e.target.closest('a')){links.classList.remove('open');burger.classList.remove('open');burger.setAttribute('aria-expanded','false');}
+  });
+})();
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
