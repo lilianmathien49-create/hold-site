@@ -38,6 +38,15 @@ function frame(host, o) {
   return { svg, x, y, W, H, L };
 }
 const line = (pts, f) => pts.map((p, i) => (i ? 'L' : 'M') + f.x(p[0]).toFixed(1) + ' ' + f.y(p[1]).toFixed(1)).join('');
+
+// Étiquette posée à côté d'un repère vertical. Le SVG est en overflow visible : sur écran
+// étroit une étiquette ancrée à droite sortirait du cadre, donc on la bascule à gauche.
+function annotate(f, xv, yPx, txt, color) {
+  const w = txt.length * 6.6, px = f.x(xv), flip = px + 8 + w > f.W - f.L.r;
+  const t = mk('text', { ...TXT, x: px + (flip ? -8 : 8), y: yPx, fill: color, 'text-anchor': flip ? 'end' : 'start' });
+  t.textContent = txt;
+  f.svg.append(t);
+}
 const curve = (fn, a, b, f, n = 80) => line(Array.from({ length: n + 1 }, (_, i) => { const v = a + (b - a) * i / n; return [v, fn(v)]; }), f);
 
 /* ---------- 1. Chaleur ---------- */
@@ -70,7 +79,7 @@ function walk() {
     const g = +slider.value, run = runKmh(g), wk = walkKmh(g), walking = g >= WALK_AT;
     const f = frame(host, { x0: 0, x1: 30, y0: 0, y1: 12, xt: [0, 10, 20, 30], xf: (v) => `${v} %`, yt: [0, 4, 8, 12], yl: 'km/h à FC 150', xl: 'pente' });
     f.svg.append(mk('rect', { x: f.x(WALK_AT), y: f.L.t, width: f.x(30) - f.x(WALK_AT), height: f.H - f.L.t - f.L.b, fill: RED, opacity: 0.08 }));
-    const t = mk('text', { ...TXT, x: f.x(WALK_AT) + 8, y: f.L.t + 14, fill: RED }); t.textContent = `tu marches · seuil ${WALK_AT} %`; f.svg.append(t);
+    annotate(f, WALK_AT, f.L.t + 14, `tu marches · seuil ${WALK_AT} %`, RED);
     for (const [x, v, w] of dots) f.svg.append(mk('circle', { cx: f.x(x), cy: f.y(v), r: 2.6, fill: w ? RED : '#fff', opacity: 0.55 }));
     f.svg.append(mk('path', { d: curve(runKmh, 0, 30, f), fill: 'none', stroke: '#fff', 'stroke-width': 2.5 }));
     f.svg.append(mk('path', { d: curve(walkKmh, 0, 30, f), fill: 'none', stroke: RED, 'stroke-width': 2.5 }));
@@ -135,7 +144,7 @@ function dur() {
     const c = mk('text', { ...TXT, x: f.x(3), y: f.y(cad(3)) + 18 }); c.textContent = 'cadence'; f.svg.append(c);
     if (k0 < 42.2) {
       f.svg.append(mk('line', { x1: f.x(k0), x2: f.x(k0), y1: f.L.t, y2: f.H - f.L.b, stroke: RED, 'stroke-width': 1.5 }));
-      const t = mk('text', { ...TXT, x: f.x(k0) + 8, y: f.L.t + 14, fill: RED }); t.textContent = `ta foulée lâche · km ${Math.round(k0)}`; f.svg.append(t);
+      annotate(f, k0, f.L.t + 14, `ta foulée lâche · km ${Math.round(k0)}`, RED);
     }
     $('durPv').textContent = `${pace(p)} /km`;
     const big = $('durBig'); big.textContent = k0 >= 42.2 ? 'Jusqu’au bout' : `km ${Math.round(k0)}`; big.classList.toggle('red', k0 < 35);
