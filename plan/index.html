@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hold — Ton plan de course</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F2F3F4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="plan.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a href="../" class="logo" aria-label="Hold, retour au site">Hold<span class="logo-dot" aria-hidden="true"></span></a>
+  <div class="nav-r">
+    <p class="eyebrow" id="navWho">Plan de course</p>
+  </div>
+</header>
+
+<main class="pl">
+
+  <!-- La porte : tant que le mot de passe n'est pas bon, rien n'est déchiffré -->
+  <section class="gate" id="gate">
+    <form class="gate-box" id="gateForm">
+      <p class="eyebrow">Accès privé</p>
+      <h1 class="title">Ton plan<br><span class="soft">de course.</span></h1>
+      <p class="sub" id="gateFor">Entre le mot de passe que ton coach t'a transmis.</p>
+      <label class="f">
+        <span>Mot de passe</span>
+        <input id="pw" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" required>
+      </label>
+      <button type="submit" class="btn" id="gateBtn">Ouvrir mon plan</button>
+      <p class="hint" id="gateMsg" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <!-- Le plan, injecté après déchiffrement -->
+  <div id="planRoot" hidden></div>
+
+</main>
+
+<script type="module" src="plan.js"></script>
+</body>
+</html>

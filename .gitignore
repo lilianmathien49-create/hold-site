@@ -1,3 +1,8 @@
 .DS_Store
-*.py
+serve.py
 docs/
+
+# Le dépôt est public. Les plans en clair restent sur la machine :
+# seul le fichier chiffré de plan/data/ a le droit d'être publié.
+tools/*.json
+!tools/plan-exemple.json
