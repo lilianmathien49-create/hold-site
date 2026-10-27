@@ -255,6 +255,79 @@ function reference(plan) {
   </section>`;
 }
 
+/* ---------- Où les autres perdent du temps ---------- */
+function lessons(plan) {
+  const L = plan.lessons;
+  if (!L) return '';
+  const pc = (v) => `${v > 0 ? '+' : ''}${km1(v)} %`;
+  const spots = (L.spots || []).slice(0, 8).map((s) => `<tr>
+    <td class="mono nowrap">${km1(s.km)}</td>
+    <td>${esc(s.name)}</td>
+    <td class="mono num ${s.lost > 8 ? 'late' : ''}">${pc(s.lost)}</td>
+    <td class="mono num strong ${s.lostNet > 8 ? 'late' : ''}">${pc(s.lostNet)}</td>
+    <td class="mono num">${s.n}</td>
+  </tr>`).join('');
+
+  const fat = L.fatigue || [];
+  const maxAbs = Math.max(...fat.map((b) => Math.abs(b.lost)), 1);
+  const bars = fat.map((b) => {
+    const w = Math.abs(b.lost) / maxAbs * 50;
+    const neg = b.lost < 0;
+    return `<div class="fg-row">
+      <span class="fg-l mono">${Math.round(b.from * 100)}–${Math.round((b.from + 0.1) * 100)} %</span>
+      <span class="fg-track"><span class="fg-bar ${neg ? 'neg' : 'pos'}"
+        style="width:${w.toFixed(1)}%;${neg ? `right:50%` : `left:50%`}"></span></span>
+      <span class="fg-v mono ${neg ? '' : 'late'}">${pc(b.lost)}</span>
+    </div>`;
+  }).join('');
+
+  const stops = (L.stops || []).slice(0, 8).map((s) => `<tr>
+    <td>${esc(s.name)}</td>
+    <td class="mono num strong">${Math.round(s.median / 60)} min</td>
+    <td class="mono num">${Math.round(s.p90 / 60)} min</td>
+    <td class="mono num">${s.n}</td>
+  </tr>`).join('');
+  const totalStop = (L.stops || []).reduce((a, s) => a + s.median, 0);
+
+  return `<section class="pl-block">
+    <h2 class="pl-h">Ce que les autres ont appris à leurs dépens</h2>
+    <p class="sub pl-wide">${L.runners} coureurs arrivés autour de ton objectif, ${(L.legs || 0).toLocaleString('fr-FR')}
+      tronçons entre ravitaillements sur les éditions ${L.years[0]}–${L.years[L.years.length - 1]}.
+      Un tronçon long et raide prend du temps : ça n'apprend rien. On a donc retiré ce que la distance
+      et le dénivelé expliquent, puis regardé ce qui restait.</p>
+
+    <h3 class="pl-h3">Les tronçons qui coûtent plus cher qu'ils n'en ont l'air</h3>
+    <div class="tw"><table class="tbl">
+      <thead><tr><th>km</th><th>Jusqu'à</th><th class="num">Brut</th>
+        <th class="num">Fatigue retirée</th><th class="num">Passages</th></tr></thead>
+      <tbody>${spots}</tbody></table></div>
+    <p class="hint"><b>Brut</b> : tout ce qui dépasse le terrain, fatigue comprise.
+      <b>Fatigue retirée</b> : ce qui reste une fois qu'on tient compte du fait qu'un tronçon tardif
+      est couru épuisé. Les deux colonnes ne classent pas dans le même ordre — un passage peut paraître
+      terrible seulement parce qu'il arrive tard, et un autre être réellement traître.</p>
+
+    <h3 class="pl-h3">Comment la fatigue s'installe</h3>
+    <p class="sub pl-wide">Écart au rythme que le terrain seul prévoit, selon la part de course déjà faite.
+      À gauche, ils vont plus vite que le terrain ne le voudrait ; à droite, moins vite.</p>
+    <div class="fg">${bars}</div>
+
+    ${L.nightEffect != null ? `<p class="hint pl-warn">À terrain et fatigue égaux, la nuit coûte
+      <b>${pc(L.nightEffect)}</b> de temps en plus.</p>` : ''}
+
+    ${stops ? `<h3 class="pl-h3">Le temps passé à l'arrêt</h3>
+    <p class="sub pl-wide">Arrêts les plus longs, mesurés entre l'heure d'arrivée et l'heure de départ
+      du point. Sur les points listés, ils cumulent ${Math.floor(totalStop / 60)} minutes à l'arrêt.</p>
+    <div class="tw"><table class="tbl">
+      <thead><tr><th>Point</th><th class="num">Médiane</th><th class="num">Les plus lents (90 %)</th>
+        <th class="num">Passages</th></tr></thead><tbody>${stops}</tbody></table></div>` : ''}
+
+    ${L.heatPctPerDegree != null ? `<p class="hint">Sur le peloton entier
+      (${(L.fieldFinishers || 0).toLocaleString('fr-FR')} finishers, douze éditions), on ne détecte
+      <b>aucun effet mesurable de la météo</b> sur le chrono médian : ${km1(L.heatPctPerDegree)} % par degré.
+      Le temps limite comprime trop la distribution pour qu'un effet y soit lisible.</p>` : ''}
+  </section>`;
+}
+
 /* ---------- Monte-Carlo ---------- */
 function montecarlo(plan) {
   const m = plan.montecarlo;
@@ -312,6 +385,7 @@ function render(plan) {
     ${profile(plan)}
     ${athlete(plan)}
     ${reference(plan)}
+    ${lessons(plan)}
     ${montecarlo(plan)}
     ${strategy(plan)}
     ${windows(plan)}

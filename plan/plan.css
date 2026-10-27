@@ -117,3 +117,16 @@
   .tw { overflow: visible; }
   .pl-block { break-inside: avoid; }
 }
+
+/* Leçons tirées des autres coureurs */
+.pl-h3 { font-family: var(--serif); font-weight: 400; font-size: clamp(21px, 2.2vw, 27px); margin: 38px 0 14px; }
+.fg { display: flex; flex-direction: column; gap: 3px; max-width: 760px; margin-top: 16px;
+      border: 1px solid var(--line); background: var(--surface); padding: 16px; }
+.fg-row { display: grid; grid-template-columns: 74px 1fr 64px; align-items: center; gap: 12px; }
+.fg-l { font-size: 11px; color: var(--dim); white-space: nowrap; }
+.fg-track { position: relative; height: 15px; background: linear-gradient(90deg,
+  transparent calc(50% - 1px), var(--line) calc(50% - 1px), var(--line) calc(50% + 1px), transparent calc(50% + 1px)); }
+.fg-bar { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+.fg-bar.pos { background: var(--mark); }
+.fg-bar.neg { background: var(--dim); }
+.fg-v { font-size: 12px; text-align: right; }

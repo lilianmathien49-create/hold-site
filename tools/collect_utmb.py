@@ -106,7 +106,9 @@ def runner(year: int, bib: str) -> dict | None:
             stop = (leave - arrive) % 86400
         legs.append({"idpt": e.get("idpt"), "name": pt["name"], "km": pt["km"],
                      "climb": pt["climb"], "alt": pt["alt"], "elapsed": t,
-                     "rank": e.get("clt"), "stop": stop})
+                     "rank": e.get("clt"), "stop": stop,
+                     # Heure réelle au mur : c'est elle qui dit s'il faisait nuit.
+                     "clock": e.get("ha") or e.get("hd"), "day": e.get("ja") or e.get("jd")})
     legs.sort(key=lambda x: x["km"])
     return {"bib": bib, "splits": legs} if len(legs) > 3 else None
 
