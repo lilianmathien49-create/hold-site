@@ -180,6 +180,113 @@ function strategy(plan) {
   </section>`;
 }
 
+/* ---------- Ce qu'on a mesuré sur le coureur ---------- */
+function athlete(plan) {
+  const a = plan.athlete;
+  if (!a) return '';
+  const row = (label, value, ci, unit, note) => `<tr>
+    <td>${esc(label)}</td>
+    <td class="mono num strong">${esc(value)}${unit ? ` ${esc(unit)}` : ''}</td>
+    <td class="mono num">${ci ? `${esc(ci[0])} – ${esc(ci[1])}` : '—'}</td>
+    <td class="note">${esc(note || '')}</td>
+  </tr>`;
+  const w = a.walk || {}, h = a.hr || {}, s = a.speed || {};
+  return `<section class="pl-block">
+    <h2 class="pl-h">Ce qu'on a mesuré sur toi</h2>
+    <p class="sub pl-wide">Tiré de <b>${a.sessions} séances</b> et ${(a.blocks || 0).toLocaleString('fr-FR')} blocs
+      de 15 secondes, sur une année complète. Les intervalles viennent d'un rééchantillonnage par séance :
+      deux blocs voisins d'une même sortie ne comptent pas pour deux mesures indépendantes.</p>
+    <div class="tw"><table class="tbl">
+      <thead><tr><th>Ce qu'on mesure</th><th class="num">Valeur</th><th class="num">Intervalle 95 %</th><th>Ce que ça change</th></tr></thead>
+      <tbody>
+        ${row('Pente de bascule à la marche', km1(w.thr0), w.thr0CI, '%', 'Au-delà, tu marches plus vite que tu ne cours')}
+        ${row('Chute du seuil', km1(w.decay), w.decayCI, 'pt/h', "Après 4 h, tu marches des pentes que tu courais au départ")}
+        ${row('Dérive cardiaque', km1(h.hr_drift), h.driftCI, 'bpm/h', 'À effort constant, le cœur monte seul')}
+        ${row('Coût de la chaleur', km1(h.hr_heat), h.heatCI, 'bpm/°C', 'Au-dessus de 15 °C, chaque degré se paie')}
+        ${row('Durabilité', km1(s.durability), s.durabilityCI, '%/h', 'Vitesse perdue par heure, à pente égale')}
+      </tbody></table></div>
+    ${a.r2 != null ? `<p class="hint">Le modèle cardiaque explique ${Math.round(a.r2 * 100)} % de la variation de ta FC.</p>` : ''}
+  </section>`;
+}
+
+/* ---------- Ce que disent les finishers du même chrono ---------- */
+function reference(plan) {
+  const r = plan.reference;
+  if (!r || !(r.points || []).length) return '';
+  const W = 1000, H = 260, P = { l: 52, r: 16, t: 16, b: 34 };
+  const X = (v) => P.l + v * (W - P.l - P.r);
+  const Y = (v) => H - P.b - v * (H - P.t - P.b);
+  const path = (key) => r.points.map((p, i) => `${i ? 'L' : 'M'}${X(p.dist).toFixed(1)} ${Y(p[key]).toFixed(1)}`).join('');
+  const bandPath = r.points.map((p, i) => `${i ? 'L' : 'M'}${X(p.dist).toFixed(1)} ${Y(p.p75).toFixed(1)}`).join('')
+    + r.points.slice().reverse().map((p) => `L${X(p.dist).toFixed(1)} ${Y(p.p25).toFixed(1)}`).join('') + 'Z';
+  const ticks = [0, .25, .5, .75, 1].map((v) =>
+    `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="pf-grid"/>
+     <text x="${P.l - 8}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" class="pf-lab">${v * 100} %</text>
+     <text x="${X(v).toFixed(1)}" y="${H - 10}" text-anchor="middle" class="pf-lab">${v * 100} %</text>`).join('');
+
+  const worst = r.points.reduce((a, p) => (p.drift > a.drift ? p : a), r.points[0]);
+  const rows = r.points.filter((p) => [0.25, 0.5, 0.75, 0.9].some((d) => Math.abs(p.dist - d) < 1e-6))
+    .map((p) => `<tr><td class="mono num">${Math.round(p.dist * 100)} %</td>
+      <td class="mono num strong">${(p.median * 100).toFixed(1)} %</td>
+      <td class="mono num">${(p.p25 * 100).toFixed(1)} – ${(p.p75 * 100).toFixed(1)} %</td>
+      <td class="mono num ${p.drift > 0 ? 'late' : ''}">${p.drift > 0 ? '+' : ''}${p.drift.toFixed(1)} pt</td></tr>`).join('');
+
+  return `<section class="pl-block">
+    <h2 class="pl-h">Ce qu'ont fait ceux qui ont réussi</h2>
+    <p class="sub pl-wide">${r.runners} coureurs arrivés autour de ${esc(r.target)} sur les éditions
+      ${r.years[0]}–${r.years[r.years.length - 1]}. Le parcours change d'une année à l'autre, donc on ne compare
+      pas des ravitaillements mais des proportions : <b>à 50 % de la distance, quelle part de leur temps avaient-ils
+      déjà dépensée ?</b> La diagonale serait une course parfaitement régulière.</p>
+    <div class="pf"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+        aria-label="Part du temps dépensée selon la part de distance parcourue">
+      ${ticks}
+      <path d="${bandPath}" class="rf-band"/>
+      <line x1="${X(0)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(1)}" class="rf-even"/>
+      <path d="${path('median')}" class="rf-line"/>
+    </svg><p class="pf-cap mono">Horizontal : part de la distance · vertical : part du temps ·
+      trait plein : médiane · zone : moitié centrale · diagonale : course régulière</p></div>
+    <div class="tw"><table class="tbl">
+      <thead><tr><th class="num">À cette distance</th><th class="num">Temps dépensé</th>
+        <th class="num">Moitié centrale</th><th class="num">Écart à la régularité</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="hint">Le retard maximal apparaît à ${Math.round(worst.dist * 100)} % du parcours :
+      ${worst.drift.toFixed(1)} points de temps en plus qu'une course régulière.
+      ${r.stopMedianSec ? `Ils passent en médiane ${Math.floor(r.stopMedianSec / 3600)}h${String(Math.round(r.stopMedianSec % 3600 / 60)).padStart(2, '0')} arrêtés aux ravitaillements.` : ''}</p>
+  </section>`;
+}
+
+/* ---------- Monte-Carlo ---------- */
+function montecarlo(plan) {
+  const m = plan.montecarlo;
+  if (!m) return '';
+  const pct = Math.round((m.probability || 0) * 100);
+  const rows = (m.checkpoints || []).map((c) => `<tr>
+    <td class="mono nowrap">${km1(c.km)}</td><td>${esc(c.name)}</td>
+    <td class="mono num">${esc(c.p10)}</td>
+    <td class="mono num strong">${esc(c.median)}</td>
+    <td class="mono num">${esc(c.p90)}</td>
+  </tr>`).join('');
+  return `<section class="pl-block">
+    <h2 class="pl-h">Dix mille courses simulées</h2>
+    <p class="sub pl-wide">On ne connaît aucun de tes paramètres exactement : on connaît leur fourchette.
+      Alors on rejoue ${(m.runs || 0).toLocaleString('fr-FR')} fois ta course en tirant au sort,
+      à chaque fois, ta forme du jour, ta fatigue, la météo et tes arrêts.</p>
+    <div class="mc">
+      <div class="mc-big"><p class="mc-v">${pct} %</p><p class="mc-l mono">de chances de tenir ${esc(m.target)}</p></div>
+      <div class="mc-range">
+        <p class="mc-rl mono">Fourchette des chronos simulés</p>
+        <div class="mc-bar"><span class="mc-fill"></span></div>
+        <p class="mc-ticks mono"><span>${esc(m.p10)}</span><span>${esc(m.median)}</span><span>${esc(m.p90)}</span></p>
+        <p class="mc-sub mono">10 % · médiane · 90 %</p>
+      </div>
+    </div>
+    ${rows ? `<div class="tw tw-tall"><table class="tbl">
+      <thead><tr><th>km</th><th>Point</th><th class="num">Au plus vite</th>
+        <th class="num">Médiane</th><th class="num">Au plus lent</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>` : ''}
+  </section>`;
+}
+
 /* ---------- Assemblage ---------- */
 function render(plan) {
   const m = plan.model || {}, c = plan.conditions || {};
@@ -203,6 +310,9 @@ function render(plan) {
       ${kpi('Températures', c.temp)}
     </div>
     ${profile(plan)}
+    ${athlete(plan)}
+    ${reference(plan)}
+    ${montecarlo(plan)}
     ${strategy(plan)}
     ${windows(plan)}
     ${hours(plan)}

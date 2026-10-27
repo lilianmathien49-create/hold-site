@@ -79,6 +79,30 @@
 .pl-model li::before { background: var(--dim); }
 .pl-warn { margin-top: 18px; max-width: 760px; padding: 14px 16px; border-left: 2px solid var(--mark); background: var(--ghost-hover); }
 
+/* Courbe de référence des finishers */
+.rf-band { fill: var(--ghost-hover); stroke: none; }
+.rf-line { fill: none; stroke: var(--mark); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.rf-even { stroke: var(--dim); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.tbl .late { color: var(--red); }
+.tbl .note { color: var(--dim); font-size: 13px; }
+
+/* Monte-Carlo */
+.mc { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 36px; align-items: center;
+      padding: 28px; border: 1px solid var(--line); background: var(--surface); margin-bottom: 22px; }
+.mc-v { font-family: var(--serif); font-size: clamp(56px, 8vw, 92px); line-height: .9; color: var(--mark); }
+.mc-l { font-size: 12px; letter-spacing: .1em; color: var(--muted); margin-top: 6px; }
+.mc-rl { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); margin-bottom: 12px; }
+.mc-bar { height: 8px; border-radius: 4px; background: linear-gradient(90deg,
+  var(--ghost-hover) 0%, var(--mark) 50%, var(--ghost-hover) 100%); opacity: .85; }
+.mc-ticks { display: flex; justify-content: space-between; margin-top: 8px; font-size: 15px; }
+.mc-ticks span:nth-child(2) { font-weight: 500; color: var(--mark); }
+.mc-sub { display: flex; justify-content: space-between; font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--dim); margin-top: 2px; }
+.mc-sub::before, .mc-sub::after { content: ""; }
+@media (max-width: 760px) {
+  .mc { grid-template-columns: 1fr; gap: 24px; padding: 20px; }
+}
+
 @media (max-width: 760px) {
   .pl { padding: 32px 16px 64px; }
   .gate-box { padding: 28px 20px; }

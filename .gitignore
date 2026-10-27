@@ -6,3 +6,6 @@ docs/
 # seul le fichier chiffré de plan/data/ a le droit d'être publié.
 tools/*.json
 !tools/plan-exemple.json
+tools/.cache-utmb/
+tools/*.csv
+__pycache__/
