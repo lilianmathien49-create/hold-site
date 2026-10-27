@@ -139,15 +139,26 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400; }
 .maplibregl-ctrl-attrib a { color: #8C8C8C !important; }
 .no-map::after { content: "Carte indisponible sur cet appareil"; position: absolute; inset: 0; display: grid; place-items: center; color: #7A7A7A; font-size: 13px; }
 
-/* Le cap : ton objectif */
-.aim { max-width: 1200px; margin: 0 auto; padding: 140px 28px 40px; }
-.aim-head { max-width: 760px; }
-.aim-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 72px; }
-.aim-card { padding: 32px 28px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; }
-.aim-card + .aim-card { border-left: 1px solid var(--line); }
-.aim-n { font-family: var(--mono); font-size: 12px; letter-spacing: .14em; color: var(--mark); }
-.aim-card h3 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(26px, 2.4vw, 34px); line-height: 1.05; }
-.aim-card p { color: var(--sub-text); font-size: 15px; }
+/* La demande */
+.contact { background: var(--surface); border-top: 1px solid var(--line); }
+.contact-in { max-width: 1200px; margin: 0 auto; padding: 100px 28px; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 64px; align-items: start; }
+.contact-head { position: sticky; top: 110px; }
+.form { display: flex; flex-direction: column; gap: 18px; }
+.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.f { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.f > span { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.f > span em { font-style: normal; text-transform: none; letter-spacing: .04em; color: var(--dim); }
+.f input, .f select, .f textarea {
+  min-height: 50px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--ghost-line);
+  background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; width: 100%;
+  transition: border-color .2s;
+}
+.f textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
+.f input:focus, .f select:focus, .f textarea:focus { outline: none; border-color: var(--text); }
+.f input::placeholder, .f textarea::placeholder { color: var(--dim); }
+.f select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666B72' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; }
+.f-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+.contact .hint { line-height: 1.6; }
 
 /* Essai */
 .try { min-height: 100svh; display: grid; place-items: center; padding: 120px 20px; background: radial-gradient(62% 52% at 50% 38%, var(--surface), transparent 72%); }
@@ -310,9 +321,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .lab { padding: 90px 20px 40px; }
   .lab-panel { grid-template-columns: 1fr; gap: 24px; }
   .lab-chart { height: 300px; order: -1; }
-  .aim { padding: 100px 20px 30px; }
-  .aim-grid { grid-template-columns: 1fr; margin-top: 48px; }
-  .aim-card + .aim-card { border-left: 0; }
+  .contact-in { grid-template-columns: 1fr; gap: 36px; padding: 80px 20px; }
+  .contact-head { position: static; }
 }
 
 @media (max-width: 760px) {
@@ -344,6 +354,10 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .reel-play { max-width: 280px; }
   .offer-solo { grid-template-columns: 1fr; gap: 24px; padding: 28px 20px; }
   .try-grid { grid-template-columns: repeat(2, 1fr); }
+  .try-cell:nth-child(2n) { border-left: 1px solid var(--line); }
+  .try-cell:nth-child(2n+1) { border-left: 0; }
+  .try-cell:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .f-row { grid-template-columns: 1fr; gap: 18px; }
 }
 
 /* Petits téléphones : les minimums des clamp() dépassaient la largeur disponible. */
@@ -351,7 +365,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .display { font-size: 52px; }
   .title { font-size: 36px; }
   .mega { font-size: 68px; }
-  .lab-text h3, .how-steps h3, .aim-card h3 { font-size: 26px; }
+  .lab-text h3, .how-steps h3, .solo-l h3 { font-size: 26px; }
   .lab-big { font-size: 44px; }
   .price { font-size: 38px; }
   .logo { font-size: 26px; }

@@ -173,6 +173,59 @@ function initFilm() {
   dlg.addEventListener('close', () => { v.pause(); overlay.classList.remove('hidden'); });
 }
 
+/* ---------- La demande : un mail déjà rempli ---------- */
+const MAIL = 'lilian.mathien49@gmail.com';
+function initAsk() {
+  const form = $('askForm'), hint = $('askHint');
+  const v = (id) => $(id).value.trim();
+  const say = (msg) => { hint.textContent = msg; };
+
+  const subject = () => `Demande Hold — ${v('f-race') || 'projet de course'} — ${v('f-name')}`;
+  const body = () => {
+    const l = ['Bonjour Lilian,', '', 'Je souhaite être accompagné pour ma course.', '',
+      `Nom          : ${v('f-name')}`,
+      `Email        : ${v('f-mail')}`,
+      `Course       : ${v('f-race')}`,
+      `Date         : ${v('f-date') || 'non fixée'}`,
+      `Objectif     : ${v('f-goal') || 'à définir'}`,
+      `Séances/sem. : ${v('f-freq')}`,
+      `Montre       : ${v('f-watch')}`,
+      `Strava       : ${v('f-strava')}`,
+      `Records      : ${v('f-pb') || '—'}`,
+      `Offre visée  : ${v('f-offer')}`];
+    if (v('f-note')) l.push('', 'Autre :', v('f-note'));
+    l.push('', 'Quand seriez-vous disponible pour un appel ?', '', v('f-name'));
+    return l.join('\n');
+  };
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const miss = ['f-name', 'f-mail', 'f-race'].filter((id) => !v(id));
+    if (miss.length) { $(miss[0]).focus(); say('Il me faut au moins ton nom, ton email et ta course.'); return; }
+    location.href = `mailto:${MAIL}?subject=${encodeURIComponent(subject())}&body=${encodeURIComponent(body())}`;
+    say("Ton logiciel de mail devrait s'ouvrir. Sinon, copie le message avec le bouton à côté.");
+  });
+
+  // Le mailto échoue en silence chez qui n'a pas de client mail configuré : on offre toujours la copie.
+  $('askCopy').addEventListener('click', async () => {
+    try {
+      if (!navigator.clipboard) throw new Error('presse-papiers indisponible');
+      await navigator.clipboard.writeText(`À : ${MAIL}\nObjet : ${subject()}\n\n${body()}`);
+      say(`Message copié. Colle-le dans un mail à ${MAIL}.`);
+    } catch {
+      say(`Copie impossible ici. Envoie tes infos à ${MAIL}.`);
+    }
+  });
+
+  // Chaque bouton d'offre arrive au formulaire avec son choix déjà coché.
+  for (const btn of document.querySelectorAll('[data-offer]')) {
+    btn.addEventListener('click', () => {
+      const sel = $('f-offer'), opt = [...sel.options].find((o) => o.text === btn.dataset.offer);
+      if (opt) sel.value = opt.value;
+    });
+  }
+}
+
 function initReveal() {
   const els = document.querySelectorAll('.reveal');
   if (reduce) { els.forEach((e) => e.classList.add('in')); return; }
@@ -188,6 +241,7 @@ window.addEventListener('resize', measure);
 requestAnimationFrame(loop);
 run(initAnalyses);
 run(initTry);
+run(initAsk);
 run(initFilm);
 run(initReveal);
 run(function initSound() {
