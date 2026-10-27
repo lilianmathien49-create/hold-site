@@ -160,8 +160,87 @@ def locate_waypoints(wpts, pts):
     out = []
     for lat, lon, name in wpts:
         j = min(range(len(pts)), key=lambda i: haversine((lat, lon), pts[i][:2]))
-        out.append({"km": cum[j]/1000, "name": name, "alt": pts[j][2]})
+        out.append({"km": cum[j]/1000, "name": name, "alt": pts[j][2],
+                    "lat": pts[j][0], "lon": pts[j][1]})
     out.sort(key=lambda w: w["km"])
+    return out
+
+
+def terrain_class(slope: float) -> str:
+    """Cinq familles de terrain. C'est ce qui décide où couper : un découpage
+    tous les 500 m hache une montée de six kilomètres en douze lignes identiques."""
+    if slope >= 12: return "raide"
+    if slope >= 4: return "montee"
+    if slope > -4: return "plat"
+    if slope > -12: return "descente"
+    return "plongeon"
+
+
+def to_sections(out_segs, aid, min_km=2.0):
+    """Regroupe les tronçons de 500 m en portions de terrain homogène, coupées
+    aux ravitaillements. On obtient les bosses et les descentes réelles au lieu
+    d'une liste plate."""
+    marks = sorted({round(a["km"], 2) for a in aid if a["km"] > 0.2})
+    def boundary(km):
+        return any(abs(km - m) < 0.26 for m in marks)
+
+    runs = [{"segs": [s]} for s in out_segs]
+
+    def grade(r):
+        d = r["segs"][-1]["km1"] - r["segs"][0]["km0"]
+        return (r["segs"][-1]["alt"] - r["segs"][0]["alt"]) / (d * 10) if d else 0.0
+    def length(r):
+        return r["segs"][-1]["km1"] - r["segs"][0]["km0"]
+
+    # Fusion progressive : à chaque tour on réunit le couple de voisins dont les
+    # pentes sont les plus proches, tant que l'écart reste faible. Une montée de
+    # six kilomètres qui ondule entre 8 et 13 % reste ainsi une seule montée.
+    while len(runs) > 1:
+        best, best_gap = None, None
+        for i in range(len(runs) - 1):
+            a_, b_ = runs[i], runs[i + 1]
+            if boundary(b_["segs"][0]["km0"]):
+                continue
+            gap = abs(grade(a_) - grade(b_))
+            # Une portion encore courte se fond plus facilement que deux longues.
+            tol = 10.0 if min(length(a_), length(b_)) < min_km else 5.5
+            if gap > tol or length(a_) + length(b_) > 13.0:
+                continue
+            if best_gap is None or gap < best_gap:
+                best, best_gap = i, gap
+        if best is None:
+            break
+        runs[best]["segs"].extend(runs[best + 1]["segs"])
+        runs.pop(best + 1)
+
+    for r in runs:
+        r["cls"] = terrain_class(grade(r))
+
+    out = []
+    for r in runs:
+        ss = r["segs"]
+        dist = ss[-1]["km1"] - ss[0]["km0"]
+        up = sum(x["up"] for x in ss)
+        down = sum(x["down"] for x in ss)
+        dt = sum(x["split"] for x in ss)
+        walk_km = sum((x["km1"] - x["km0"]) for x in ss if x["mode"] == "marche")
+        nxt = next((a["name"] for a in aid if abs(a["km"] - ss[-1]["km1"]) < 0.3), None)
+        out.append({
+            "km0": round(ss[0]["km0"], 2), "km1": round(ss[-1]["km1"], 2),
+            "lat": ss[0].get("lat"), "lon": ss[0].get("lon"),
+            "dist": round(dist, 2), "up": round(up), "down": round(down),
+            "alt0": ss[0]["alt"], "alt1": ss[-1]["alt"],
+            "slope": round((ss[-1]["alt"] - ss[0]["alt"]) / (dist * 10), 1) if dist else 0.0,
+            "cls": r["cls"], "split": dt, "cumul": ss[-1]["cumul"], "clock": ss[-1]["clock"],
+            "kmh": round(dist / (dt / 3600), 2) if dt else 0,
+            "pace": pace_str(dt / dist) if dist else "—",
+            "vam": round(up / (dt / 3600)) if dt and up > 30 else None,
+            "walkShare": round(walk_km / dist * 100) if dist else 0,
+            "poles": any(x["poles"] for x in ss),
+            "light": max({x["light"] for x in ss}, key=lambda L: sum(1 for x in ss if x["light"] == L)),
+            "tmin": min(x["temp"] for x in ss), "tmax": max(x["temp"] for x in ss),
+            "aid": nxt,
+        })
     return out
 
 
@@ -341,6 +420,7 @@ def main() -> int:
             "split": int(round(dt)), "cumul": hms(t),
             "clock": when.strftime("%H:%M"), "day": (when - start).days + 1,
             "light": light, "temp": round(temp, 1), "thr": round(thr, 1),
+            "lat": round(s["lat"], 5), "lon": round(s["lon"], 5),
         })
 
     # Ravitaillements : heure de passage interpolée sur le tronçon qui les contient.
@@ -356,6 +436,7 @@ def main() -> int:
         temp = temp_at(when, w["alt"], a.tmin, a.tmax, a.ref_alt)
         light = light_at(when, a.lat, a.lon)
         out_aid.append({"km": round(w["km"], 1), "name": w["name"], "alt": round(w["alt"]),
+                        "lat": round(w["lat"], 5), "lon": round(w["lon"], 5),
                         "eta": when.strftime("%a %H:%M"), "cumul": hm(t),
                         "temp": round(temp, 1), "light": light, "gear": gear_for(temp, light)})
 
@@ -399,7 +480,8 @@ def main() -> int:
                          "matched": learned["matched"], "total": learned["total"],
                          "points": learned["points"]} if learned else None),
         "profile": [[round(s["km1"], 1), s["alt"]] for s in out_segs],
-        "segments": out_segs, "aid": out_aid, "windows": windows, "hours": hours,
+        "segments": out_segs, "sections": to_sections(out_segs, out_aid),
+        "aid": out_aid, "windows": windows, "hours": hours,
     }
     if a.reference:
         plan["reference"] = json.loads(Path(a.reference).read_text(encoding="utf-8"))
@@ -407,7 +489,10 @@ def main() -> int:
     Path(a.out).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
     night = sum(w["km1"] - w["km0"] for w in windows if w["light"] == "nuit")
     print(f"  Marche : {walk_km:.1f} km  ·  Course : {total_km-walk_km:.1f} km")
+    secs = plan["sections"]
     print(f"  Nuit   : {night:.1f} km sur {len(out_segs)} tronçons  ·  {len(out_aid)} ravitaillements")
+    print(f"  Regroupé en {len(secs)} portions de terrain homogène "
+          f"(la plus longue : {max(x['dist'] for x in secs):.1f} km)")
     print(f"  Écrit  : {a.out}\n")
     return 0
 

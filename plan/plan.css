@@ -131,36 +131,57 @@
 .fg-bar.neg { background: var(--dim); }
 .fg-v { font-size: 12px; text-align: right; }
 
-/* ---- Profil lisible : la pente devient une couleur ---- */
-/* Montée : du plus clair au plus soutenu. Descente : gris, car elle ne coûte
-   pas le même effort et ne doit pas tirer l'œil comme une montée raide. */
-.sl-g5 { fill: #B3251C; }
-.sl-g4 { fill: #D4372C; }
-.sl-g3 { fill: #E8705F; }
-.sl-g2 { fill: #F2A99B; }
-.sl-g1 { fill: #D9DBDD; }
-.sl-d1 { fill: #A9AEB4; }
-.sl-d2 { fill: #7C838B; }
-.md-run { fill: #15171A; }
-.md-walk { fill: #E8705F; }
-.md-poles { fill: #B3251C; }
-.lt-n { fill: #2A2E33; }
-.lt-c { fill: #8A9099; }
-.lt-j { fill: #E3E5E7; }
-.pf-aidlab { font-family: var(--mono); font-size: 9px; fill: var(--dim); }
-.pf-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px;
-  font-family: var(--mono); font-size: 11px; color: var(--muted); }
-.lg { display: inline-flex; align-items: center; gap: 6px; }
-.sw { width: 13px; height: 9px; border-radius: 2px; display: inline-block; }
-.sw.sl-g5 { background: #B3251C; } .sw.sl-g4 { background: #D4372C; }
-.sw.sl-g3 { background: #E8705F; } .sw.sl-g2 { background: #F2A99B; }
-.sw.sl-g1 { background: #D9DBDD; } .sw.sl-d1 { background: #A9AEB4; }
-.sw.sl-d2 { background: #7C838B; } .sw.md-run { background: #15171A; }
-.sw.md-walk { background: #E8705F; } .sw.md-poles { background: #B3251C; }
-.sw.lt-n { background: #2A2E33; } .sw.lt-c { background: #8A9099; }
-.sw.lt-j { background: #E3E5E7; border: 1px solid var(--line); }
 
-/* Pente colorée dans le tableau des 500 m */
-.cellslope { display: inline-flex; align-items: center; gap: 7px; justify-content: flex-end; }
-.cellslope i { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+/* ---- Le terrain en couleur : une seule rouge, une seule encre ----
+   La montée se lit en rouge d'intensité croissante, le plat et la descente
+   en encre transparente. Deux teintes en tout : au-delà, le graphique
+   devient un arc-en-ciel et on ne lit plus rien. */
+.t-raide     { fill: var(--mark); fill-opacity: 1; }
+.t-montee    { fill: var(--mark); fill-opacity: .52; }
+.t-plat      { fill: var(--text); fill-opacity: .13; }
+.t-descente  { fill: var(--text); fill-opacity: .30; }
+.t-plongeon  { fill: var(--text); fill-opacity: .50; }
+.m-course    { fill: var(--text); fill-opacity: .85; }
+.m-marche    { fill: var(--mark); fill-opacity: .55; }
+.m-poles     { fill: var(--mark); fill-opacity: 1; }
+.l-nuit      { fill: var(--text); fill-opacity: .72; }
+.l-chien     { fill: var(--text); fill-opacity: .34; }
+.l-jour      { fill: var(--text); fill-opacity: .07; }
+
+.pf-aidlab { font-family: var(--mono); font-size: 9px; fill: var(--dim); }
+.pf-legend { display: flex; flex-wrap: wrap; gap: 7px 18px; margin-top: 12px;
+  font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.lg { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 14px; height: 10px; border-radius: 2px; display: inline-block; background: var(--text); }
+.sw.t-raide, .sw.m-poles { background: var(--mark); opacity: 1; }
+.sw.t-montee { background: var(--mark); opacity: .52; }
+.sw.m-marche { background: var(--mark); opacity: .55; }
+.sw.t-plat { opacity: .13; } .sw.t-descente { opacity: .30; } .sw.t-plongeon { opacity: .50; }
+.sw.m-course { opacity: .85; }
+.sw.l-nuit { opacity: .72; } .sw.l-chien { opacity: .34; } .sw.l-jour { opacity: .07; border: 1px solid var(--line); }
+
+/* Barre de pente dans les tableaux */
+.cellslope { display: inline-flex; align-items: center; gap: 8px; justify-content: flex-end; }
+.cellslope i { width: 11px; height: 11px; border-radius: 2px; flex: none; background: var(--text); }
+.cellslope i.t-raide, .cellslope i.t-montee { background: var(--mark); }
+.cellslope i.t-montee { opacity: .52; } .cellslope i.t-plat { opacity: .13; }
+.cellslope i.t-descente { opacity: .30; } .cellslope i.t-plongeon { opacity: .50; }
 .vam { color: var(--muted); font-size: 12px; }
+
+/* Portions : repères visuels dans le tableau */
+.tg-raide { border-color: var(--mark); color: var(--red); }
+.tg-montee { border-color: var(--line); color: var(--red); }
+.minibar { display: inline-block; width: 64px; height: 7px; background: var(--ghost-hover); border-radius: 2px; overflow: hidden; vertical-align: middle; }
+.minibar i { display: block; height: 100%; background: var(--mark); opacity: .75; }
+.walkpc { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.walkpc.hi { color: var(--red); font-weight: 500; }
+.aidrow td { background: var(--ghost-hover); font-size: 12px; color: var(--muted);
+  padding-top: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.climbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0;
+  border: 1px solid var(--line); background: var(--surface); margin-bottom: 20px; }
+.cl { padding: 16px 18px; border-right: 1px solid var(--line); }
+.cl:last-child { border-right: 0; }
+.cl-km { font-size: 11px; color: var(--dim); }
+.cl-up { font-family: var(--serif); font-size: 30px; line-height: 1.1; color: var(--red); margin-top: 2px; }
+.cl-d { font-size: 11px; color: var(--muted); margin-top: 3px; }
+@media (max-width: 760px) { .cl { border-right: 0; border-bottom: 1px solid var(--line); } }

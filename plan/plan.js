@@ -26,8 +26,9 @@ const LIGHT_ICON = { nuit: '●', jour: '○', 'entre chien et loup': '◐' };
 /* ---------- Le parcours, lu d'un coup d'œil ----------
    Un profil seul ne dit pas grand-chose. On empile sous lui trois bandes qui
    se lisent à la verticale : la pente, ce que tu y fais, et la lumière. */
-const slopeColor = (g) => g >= 20 ? 'g5' : g >= 12 ? 'g4' : g >= 6 ? 'g3' : g >= 2 ? 'g2'
-  : g > -2 ? 'g1' : g > -12 ? 'd1' : 'd2';
+// Mêmes seuils que le découpage en portions, pour que couleur et texte s'accordent.
+const terrainOf = (g) => g >= 12 ? 'raide' : g >= 4 ? 'montee' : g > -4 ? 'plat'
+  : g > -12 ? 'descente' : 'plongeon';
 
 function profile(plan) {
   const segs = plan.segments || [];
@@ -49,7 +50,7 @@ function profile(plan) {
     const xa = X(s.km0), xb = X(s.km1);
     return `<rect x="${xa.toFixed(1)}" y="${Y(s.alt).toFixed(1)}"
       width="${Math.max(0.6, xb - xa).toFixed(1)}" height="${(P.t + PH - Y(s.alt)).toFixed(1)}"
-      class="sl-${slopeColor(s.slope)}"/>`;
+      class="t-${terrainOf(s.slope)}"/>`;
   }).join('');
 
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)} ${Y(p[1]).toFixed(1)}`).join('');
@@ -70,13 +71,13 @@ function profile(plan) {
   const cell = (s, y, cls) => `<rect x="${X(s.km0).toFixed(1)}" y="${y}"
     width="${Math.max(0.6, X(s.km1) - X(s.km0)).toFixed(1)}" height="${SH}" class="${cls}"/>`;
 
-  const slopeStrip = strip(stripsY, segs.map((s) => cell(s, stripsY, `sl-${slopeColor(s.slope)}`)).join(''), 'pente');
+  const slopeStrip = strip(stripsY, segs.map((s) => cell(s, stripsY, `t-${terrainOf(s.slope)}`)).join(''), 'pente');
   const modeY = stripsY + SH + GAP;
   const modeStrip = strip(modeY, segs.map((s) =>
-    cell(s, modeY, s.mode === 'marche' ? (s.poles ? 'md-poles' : 'md-walk') : 'md-run')).join(''), 'mode');
+    cell(s, modeY, s.mode === 'marche' ? (s.poles ? 'm-poles' : 'm-marche') : 'm-course')).join(''), 'mode');
   const lightY = modeY + SH + GAP;
   const lightStrip = strip(lightY, segs.map((s) =>
-    cell(s, lightY, s.light === 'nuit' ? 'lt-n' : s.light === 'jour' ? 'lt-j' : 'lt-c')).join(''), 'lumière');
+    cell(s, lightY, s.light === 'nuit' ? 'l-nuit' : s.light === 'jour' ? 'l-jour' : 'l-chien')).join(''), 'lumière');
 
   const xlab = [0, .2, .4, .6, .8, 1].map((f) => {
     const v = x0 + (x1 - x0) * f;
@@ -84,11 +85,11 @@ function profile(plan) {
       text-anchor="${f === 0 ? 'start' : f === 1 ? 'end' : 'middle'}">${Math.round(v)} km</text>`;
   }).join('');
 
-  const legend = [['g5', '≥ 20 %'], ['g4', '12–20 %'], ['g3', '6–12 %'], ['g2', '2–6 %'],
-    ['g1', 'plat'], ['d1', 'descente'], ['d2', 'descente raide']]
-    .map(([c, l]) => `<span class="lg"><i class="sw sl-${c}"></i>${l}</span>`).join('');
-  const legend2 = [['md-run', 'course'], ['md-walk', 'marche'], ['md-poles', 'bâtons'],
-    ['lt-n', 'nuit'], ['lt-c', 'chien et loup'], ['lt-j', 'jour']]
+  const legend = [['t-raide', 'raide · ≥ 12 %'], ['t-montee', 'montée · 4–12 %'], ['t-plat', 'plat'],
+    ['t-descente', 'descente'], ['t-plongeon', 'descente raide']]
+    .map(([c, l]) => `<span class="lg"><i class="sw ${c}"></i>${l}</span>`).join('');
+  const legend2 = [['m-course', 'course'], ['m-marche', 'marche'], ['m-poles', 'bâtons'],
+    ['l-nuit', 'nuit'], ['l-chien', 'chien et loup'], ['l-jour', 'jour']]
     .map(([c, l]) => `<span class="lg"><i class="sw ${c}"></i>${l}</span>`).join('');
 
   return `<div class="pf">
@@ -163,6 +164,58 @@ function aidTable(plan) {
   </section>`;
 }
 
+/* ---------- Le parcours découpé là où il change vraiment ---------- */
+const CLS_LABEL = { raide: 'raide', montee: 'montée', plat: 'plat', descente: 'descente', plongeon: 'plongeon' };
+
+function sections(plan) {
+  const S = plan.sections || [];
+  if (!S.length) return '';
+  const maxUp = Math.max(...S.map((s) => s.up), 1);
+  const maxDist = Math.max(...S.map((s) => s.dist), 1);
+
+  const rows = S.map((s) => {
+    const w = (s.dist / maxDist * 100).toFixed(1);
+    const bar = s.up > 20 ? (s.up / maxUp * 100).toFixed(0) : 0;
+    return `<tr>
+      <td class="mono nowrap">${km1(s.km0)}<span class="muted"> – ${km1(s.km1)}</span></td>
+      <td class="mono num">${km1(s.dist)}</td>
+      <td class="num"><span class="cellslope"><span class="mono">${s.slope > 0 ? '+' : ''}${km1(s.slope)} %</span><i class="t-${s.cls}"></i></span></td>
+      <td class="nowrap"><span class="tag tg-${s.cls}">${CLS_LABEL[s.cls] || s.cls}</span></td>
+      <td class="mono num">${s.up ? `+${s.up}` : '—'}</td>
+      <td class="num"><span class="minibar"><i style="width:${bar}%"></i></span></td>
+      <td class="mono num strong">${esc(s.pace)}</td>
+      <td class="mono num vam">${s.vam || '—'}</td>
+      <td class="num"><span class="walkpc ${s.walkShare > 60 ? 'hi' : ''}">${s.walkShare} %</span>${s.poles ? ' <span class="tag">bâtons</span>' : ''}</td>
+      <td class="mono num">${esc(s.cumul.slice(0, 5))}</td>
+      <td class="mono num">${esc(s.clock)}</td>
+      ${''}
+    </tr>${s.aid ? `<tr class="aidrow"><td colspan="11">
+      <span class="mono">km ${km1(s.km1)}</span> · ravitaillement ${esc(s.aid)}</td></tr>` : ''}`;
+  }).join('');
+
+  const climbs = S.filter((s) => s.up > 250).sort((a, b) => b.up - a.up).slice(0, 6);
+  const topClimbs = climbs.map((c) => `<div class="cl">
+    <p class="cl-km mono">km ${km1(c.km0)}</p>
+    <p class="cl-up">+${c.up} m</p>
+    <p class="cl-d mono">${km1(c.dist)} km à ${km1(c.slope)} %${c.vam ? ` · ${c.vam} m/h` : ''}</p>
+  </div>`).join('');
+
+  return `<section class="pl-block">
+    <h2 class="pl-h">Le parcours, bosse par bosse</h2>
+    <p class="sub pl-wide">Le découpage ne suit pas une règle fixe : il coupe là où le terrain change
+      vraiment, et à chaque ravitaillement. Une montée de six kilomètres reste une ligne,
+      au lieu d'être hachée en douze.</p>
+    ${topClimbs ? `<div class="climbs">${topClimbs}</div>` : ''}
+    <div class="tw tw-tall"><table class="tbl">
+      <thead><tr><th>km</th><th class="num">Long.</th><th class="num">Pente</th><th>Terrain</th>
+        <th class="num">D+</th><th class="num">Poids</th><th class="num">Allure</th>
+        <th class="num">VAM</th><th class="num">Marche</th><th class="num">Cumul</th><th class="num">Heure</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="hint">« Poids » compare le dénivelé de chaque portion à la plus grosse du parcours.
+      « VAM » est la vitesse ascensionnelle, en mètres de dénivelé par heure.</p>
+  </section>`;
+}
+
 /* ---------- Stratégie au pas de 500 m, groupée par portion ---------- */
 function strategy(plan) {
   const segs = plan.segments || [];
@@ -193,7 +246,7 @@ function strategy(plan) {
     const rows = g.segs.map((s) => `<tr class="${s.mode === 'marche' ? 'is-walk' : ''}">
       <td class="mono nowrap">${km2(s.km0)}</td>
       <td class="mono num">${s.alt}</td>
-      <td class="mono num"><span class="cellslope"><span>${s.slope > 0 ? '+' : ''}${km1(s.slope)} %</span><i class="sl-${slopeColor(s.slope)}"></i></span></td>
+      <td class="mono num"><span class="cellslope"><span>${s.slope > 0 ? '+' : ''}${km1(s.slope)} %</span><i class="t-${terrainOf(s.slope)}"></i></span></td>
       <td class="nowrap">${s.mode === 'marche' ? 'marche' : 'course'}${s.poles ? ' <span class="tag">bâtons</span>' : ''}</td>
       <td class="mono num strong">${esc(s.pace)}</td>
       <td class="mono num vam">${s.vam ? `${s.vam}` : '—'}</td>
@@ -409,6 +462,81 @@ function montecarlo(plan) {
   </section>`;
 }
 
+/* ---------- Export vers la montre ----------
+   Le plan reste chiffré sur le serveur ; le fichier est fabriqué ici, dans le
+   navigateur, à partir des données déjà déchiffrées. Rien ne repart en ligne. */
+function toGpx(plan) {
+  const esx = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+  const wpts = [];
+  for (const a of plan.aid || []) {
+    if (a.lat == null || a.lon == null) continue;
+    wpts.push(`<wpt lat="${a.lat}" lon="${a.lon}"><ele>${a.alt ?? 0}</ele>
+  <name>${esx(a.name)}</name>
+  <desc>Passage visé ${esx(a.cumul || '')} · ${esx(a.eta || '')} · ${a.temp ?? '?'} °C · ${esx(a.light || '')}${(a.gear || []).length ? ' · ' + esx(a.gear.join(', ')) : ''}</desc>
+  <sym>Flag</sym></wpt>`);
+  }
+  for (const s of plan.sections || []) {
+    if (s.lat == null || s.lon == null) continue;
+    wpts.push(`<wpt lat="${s.lat}" lon="${s.lon}"><ele>${s.alt0 ?? 0}</ele>
+  <name>km ${s.km0} ${CLS_LABEL[s.cls] || s.cls} ${s.slope > 0 ? '+' : ''}${s.slope}%</name>
+  <desc>${s.dist} km · ${s.up ? `+${s.up} m · ` : ''}${s.pace}/km${s.vam ? ` · ${s.vam} m/h` : ''} · ${s.walkShare}% marche${s.poles ? ' · bâtons' : ''} · cumul ${esx(s.cumul || '')}</desc>
+  <sym>Waypoint</sym></wpt>`);
+  }
+  const trk = (plan.segments || []).filter((s) => s.lat != null && s.lon != null)
+    .map((s) => `<trkpt lat="${s.lat}" lon="${s.lon}"><ele>${s.alt}</ele></trkpt>`).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Hold" xmlns="http://www.topografix.com/GPX/1/1">
+<metadata><name>${esx(plan.race || 'Course')} — ${esx(plan.runner || '')} — objectif ${esx(plan.goal || '')}</name></metadata>
+${wpts.join('\n')}
+<trk><name>${esx(plan.race || 'Course')}</name><trkseg>
+${trk}
+</trkseg></trk>
+</gpx>`;
+}
+
+function download(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function toCsv(plan) {
+  const head = ['km_debut', 'km_fin', 'distance_km', 'pente_pct', 'terrain', 'denivele_pos_m',
+    'allure_min_km', 'vam_m_h', 'part_marche_pct', 'batons', 'cumul', 'heure', 'temp_c', 'lumiere'];
+  const rows = (plan.sections || []).map((s) => [s.km0, s.km1, s.dist, s.slope, s.cls, s.up,
+    s.pace, s.vam ?? '', s.walkShare, s.poles ? 'oui' : 'non', s.cumul, s.clock,
+    Math.round((s.tmin + s.tmax) / 2), s.light]);
+  return [head, ...rows].map((r) => r.map((c) => {
+    const v = String(c ?? '');
+    return /[",;\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  }).join(';')).join('\n');
+}
+
+function exporter(plan) {
+  const slug = `${(plan.race || 'course')}-${(plan.runner || '')}`.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const n = (plan.aid || []).filter((a) => a.lat != null).length
+    + (plan.sections || []).filter((s) => s.lat != null).length;
+  return `<section class="pl-block">
+    <h2 class="pl-h">Emporter le plan</h2>
+    <p class="sub pl-wide">Le fichier est fabriqué ici, dans ton navigateur, à partir du plan
+      déchiffré : il ne repasse jamais par le serveur. Le GPX contient la trace et
+      ${n} points nommés — chaque ravitaillement et chaque changement de terrain —
+      avec l'heure de passage visée, l'allure et le matériel à sortir.</p>
+    <div class="f-actions">
+      <button type="button" class="btn" id="dlGpx">Télécharger le GPX</button>
+      <button type="button" class="btn btn-ghost" id="dlCsv">Télécharger le tableau (CSV)</button>
+      <button type="button" class="btn btn-ghost" id="doPrint">Imprimer</button>
+    </div>
+    <p class="hint" id="dlHint">Le GPX s'importe sur Garmin Connect, Coros, Suunto et Strava.
+      Les points nommés apparaissent comme alertes au fil du parcours.
+      <b>Le FIT n'est pas proposé</b> : son format binaire est propre à Garmin, et un fichier
+      mal formé est refusé par la montre sans message. Le GPX, lui, passe partout.</p>
+  </section>`;
+}
+
 /* ---------- Assemblage ---------- */
 function render(plan) {
   const m = plan.model || {}, c = plan.conditions || {};
@@ -436,6 +564,7 @@ function render(plan) {
     ${reference(plan)}
     ${lessons(plan)}
     ${montecarlo(plan)}
+    ${sections(plan)}
     ${strategy(plan)}
     ${windows(plan)}
     ${hours(plan)}
@@ -457,9 +586,15 @@ function render(plan) {
         prudent. Sur une course de ${plan.goal || 'cette durée'}, les dernières heures reposent donc sur
         une extrapolation, pas sur une mesure.</p>
     </section>
+    ${exporter(plan)}
     <p class="hint pl-foot">Plan établi par Hold · Lilian Mathien. Révisé le ${esc(plan.revised || '—')}.
       Ce document décrit une cible, pas une garantie : le jour J, tes sensations priment.</p>`;
 
+  const slug = `${(plan.race || 'course')}-${(plan.runner || '')}`.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  $('dlGpx')?.addEventListener('click', () => download(`${slug}.gpx`, toGpx(plan), 'application/gpx+xml'));
+  $('dlCsv')?.addEventListener('click', () => download(`${slug}.csv`, toCsv(plan), 'text/csv;charset=utf-8'));
+  $('doPrint')?.addEventListener('click', () => window.print());
   $('planRoot').hidden = false;
   $('gate').hidden = true;
   $('navWho').textContent = `${plan.runner || ''} · ${plan.race || ''}`;
