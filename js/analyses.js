@@ -157,40 +157,7 @@ function fatigue() {
   return draw;
 }
 
-/* ---------- 3. Allure marathon : séances corrigées ---------- */
-function mp() {
-  const host = $('mpChart'), r = rng(15), on = new Set();
-  const S = Array.from({ length: 48 }, () => {
-    const w = r() * 16, T = 4 + r() * 24, dplus = r() * 14, atl = 0.8 + r() * 0.6;
-    return { w, T, dplus, atl, trend: 158 - 0.45 * w, temp: heatBpm(T), slope: dplus * 0.35, load: (atl - 1) * 12, noise: gauss(r) * 1.4 };
-  });
-  const val = (s) => s.trend + s.noise + (on.has('temp') ? heatBpm(15) : s.temp) + (on.has('slope') ? 0 : s.slope) + (on.has('load') ? 0 : s.load);
-  function draw() {
-    const pts = S.map((s) => [s.w, val(s)]);
-    const n = pts.length, mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n;
-    const b = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0), a0 = my - b * mx;
-    const sd = Math.sqrt(pts.reduce((a, p) => a + (p[1] - (a0 + b * p[0])) ** 2, 0) / (n - 2));
-    const f = frame(host, { x0: 0, x1: 16, y0: 140, y1: 180, xt: [0, 4, 8, 12, 16], xf: (v) => `S${v}`, yt: [145, 155, 165, 175], yl: 'FC à 4:55 /km', xl: 'semaines' });
-    f.svg.append(mk('path', { d: line([[0, a0], [16, a0 + b * 16]], f), stroke: INK, 'stroke-width': 2, opacity: 0.9 }));
-    S.forEach((s, i) => {
-      const c = mk('circle', { cx: f.x(s.w), cy: f.y(pts[i][1]), r: 4, fill: INK, opacity: 0.7 });
-      const t = mk('title'); t.textContent = `Semaine ${Math.round(s.w)} · ${Math.round(s.T)} °C · ${Math.round(s.dplus)} m D+/km · charge aiguë ${fr(s.atl)}`; c.append(t);
-      f.svg.append(c);
-    });
-    $('mpBig').textContent = `± ${fr(sd)} bpm`;
-    $('mpRead').textContent = on.size === 3
-      ? `Une fois tout retiré, il reste ta forme : ${fr(b * 4)} bpm par mois à la même allure.`
-      : `Dispersion des séances à 4:55 /km. Retire les effets un par un : il reste ta vraie forme.`;
-  }
-  document.querySelectorAll('[data-mp]').forEach((btn) => btn.addEventListener('click', () => {
-    const k = btn.dataset.mp, now = !on.has(k);
-    if (now) on.add(k); else on.delete(k);
-    btn.setAttribute('aria-pressed', String(now)); draw();
-  }));
-  return draw;
-}
-
-/* ---------- 4. Durabilité & foulée ---------- */
+/* ---------- 4. Durabilité ---------- */
 function dur() {
   const host = $('durChart'), slider = $('durP');
   function draw() {
@@ -224,9 +191,12 @@ export function initAnalyses() {
   // désynchronisés (un cache qui mélange deux versions), seule l'analyse concernée
   // tombe, les quatre autres restent affichables.
   const build = (k, fn) => { try { return fn(); } catch (e) { console.error(`Hold : analyse « ${k} » indisponible`, e); return null; } };
-  const draws = { heat: build('heat', heat), walk: build('walk', walk), fat: build('fat', fatigue), mp: build('mp', mp), dur: build('dur', dur) };
+  const draws = { heat: build('heat', heat), walk: build('walk', walk), fat: build('fat', fatigue), dur: build('dur', dur) };
   const tabs = Array.from(document.querySelectorAll('.lab-tabs [role="tab"]'));
-  let current = 'heat';
+  // L'onglet de départ est celui que le HTML déclare ouvert : réordonner les
+  // onglets ne doit pas obliger à retoucher ce fichier.
+  const first = tabs.find((t) => t.getAttribute('aria-selected') === 'true') || tabs[0];
+  let current = first?.dataset.k;
   const show = (tab) => {
     tabs.forEach((t) => { const on = t === tab; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; $(t.getAttribute('aria-controls')).hidden = !on; });
     current = tab.dataset.k; draws[current]?.();
@@ -240,5 +210,5 @@ export function initAnalyses() {
     });
   });
   new ResizeObserver(() => draws[current]?.()).observe($('lab'));
-  draws.heat?.();
+  draws[current]?.();
 }

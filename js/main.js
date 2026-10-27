@@ -103,16 +103,31 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-/* ---------- L'essai : ton marathon d'après la table générique ---------- */
+/* ---------- L'essai : tes équivalents sur les autres distances ---------- */
+const DISTANCES = [[5, '5 km'], [10, '10 km'], [21.0975, 'Semi'], [42.195, 'Marathon']];
+// Formule de Riegel : t2 = t1 × (d2/d1)^1,06. Table générique, identique pour tous.
+const riegel = (t, from, to) => t * Math.pow(to / from, 1.06);
+const clock = (s) => (s >= 3600
+  ? `${Math.floor(s / 3600)}h${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}`
+  : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`);
+
 function initTry() {
-  const dist = $('t-dist'), time = $('t-time'), out = $('tryOut'), big = $('tryMar');
+  const dist = $('t-dist'), time = $('t-time'), out = $('tryOut'), grid = $('tryGrid');
   const update = () => {
     const m = time.value.trim().match(/^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})$/), d = +dist.value;
     const t = m ? (m[1] ? +m[1] * 3600 : 0) + +m[2] * 60 + +m[3] : 0;
     if (!t || t < d * 150 || t > d * 720) { out.hidden = true; return; }
-    const mar = t * Math.pow(42.195 / d, 1.06);
-    big.textContent = `${Math.floor(mar / 3600)}h${String(Math.floor(mar % 3600 / 60)).padStart(2, '0')}`;
-    if (out.hidden) { out.hidden = false; }
+    grid.replaceChildren(...DISTANCES.map(([km, name]) => {
+      const self = Math.abs(km - d) < 0.01, secs = self ? t : riegel(t, d, km);
+      const cell = document.createElement('div');
+      cell.className = `try-cell${self ? ' is-self' : ''}`;
+      cell.innerHTML = `<p class="try-d mono"></p><p class="try-t"></p><p class="try-p mono"></p>`;
+      cell.querySelector('.try-d').textContent = self ? `${name} · ton chrono` : name;
+      cell.querySelector('.try-t').textContent = clock(secs);
+      cell.querySelector('.try-p').textContent = `${clock(secs / km)} /km`;
+      return cell;
+    }));
+    if (out.hidden) out.hidden = false;
   };
   time.addEventListener('input', update);
   dist.addEventListener('change', update);
