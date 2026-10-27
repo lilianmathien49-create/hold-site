@@ -24,12 +24,22 @@ const mk = (t, a = {}) => { const n = document.createElementNS(NS, t); for (cons
 const $ = (id) => document.getElementById(id);
 const fr = (n, d = 1) => n.toFixed(d).replace('.', ',');
 const pace = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
-const RED = '#F0443E', GRID = 'rgba(255,255,255,.08)', TXT = { fill: '#7A7A7A', 'font-size': 11, 'font-family': 'IBM Plex Mono, monospace' };
+// Les couleurs viennent des jetons CSS : la section peut être claire ou sombre,
+// les tracés suivent sans qu'aucune valeur ne soit écrite en dur ici.
+let RED = '#E04038', GRID = 'rgba(21,23,26,.10)', INK = '#15171A', SOFT = '#595D64';
+let TXT = { fill: '#666B72', 'font-size': 11, 'font-family': 'IBM Plex Mono, monospace' };
+function syncPalette(host) {
+  const s = getComputedStyle(host), get = (n, fb) => s.getPropertyValue(n).trim() || fb;
+  RED = get('--mark', RED); GRID = get('--grid', GRID);
+  INK = get('--text', INK); SOFT = get('--muted', SOFT);
+  TXT = { ...TXT, fill: get('--dim', TXT.fill) };
+}
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 function gauss(r) { let u = 0, v = 0; while (!u) u = r(); while (!v) v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 
 // Repère commun : grille, graduations, titres d'axes.
 function frame(host, o) {
+  syncPalette(host);
   host.replaceChildren();
   const W = host.clientWidth, H = host.clientHeight, L = { l: 48, r: 14, t: 22, b: 36 };
   const svg = mk('svg', { viewBox: `0 0 ${W} ${H}`, 'aria-hidden': 'true' });
@@ -71,9 +81,9 @@ function heat() {
   function draw() {
     const T = +slider.value, b = heatBpm(T), s = b * BPM_TO_S, mar = s * 42.195;
     const f = frame(host, { x0: 0, x1: 35, y0: -6, y1: 24, xt: [0, 10, 20, 30], xf: (v) => `${v} °C`, yt: [0, 10, 20], yf: (v) => `+${v}`, yl: 'bpm en plus, à 4:55 /km', xl: 'température' });
-    for (const [t, v] of dots) f.svg.append(mk('circle', { cx: f.x(t), cy: f.y(v), r: 2.6, fill: '#fff', opacity: 0.45 }));
-    f.svg.append(mk('path', { d: curve(heatBpm, 0, 35, f), fill: 'none', stroke: '#fff', 'stroke-width': 2.5 }));
-    f.svg.append(mk('line', { x1: f.x(T), x2: f.x(T), y1: f.L.t, y2: f.H - f.L.b, stroke: '#fff', 'stroke-dasharray': '2 4', opacity: 0.7 }));
+    for (const [t, v] of dots) f.svg.append(mk('circle', { cx: f.x(t), cy: f.y(v), r: 2.6, fill: INK, opacity: 0.45 }));
+    f.svg.append(mk('path', { d: curve(heatBpm, 0, 35, f), fill: 'none', stroke: INK, 'stroke-width': 2.5 }));
+    f.svg.append(mk('line', { x1: f.x(T), x2: f.x(T), y1: f.L.t, y2: f.H - f.L.b, stroke: INK, 'stroke-dasharray': '2 4', opacity: 0.7 }));
     f.svg.append(mk('circle', { cx: f.x(T), cy: f.y(b), r: 6, fill: RED }));
     $('heatTv').textContent = `${T} °C`;
     $('heatBig').textContent = b < 0.5 ? 'Aucun coût' : `+${Math.round(b)} bpm`;
@@ -92,17 +102,17 @@ function walk() {
       yt: [0, 25, 50, 75, 100], yf: (v) => `${v}`, yl: 'probabilité de marcher (%)', xl: 'pente sur 100 m' });
 
     // IC 95 % : la logistique décalée aux deux bornes du seuil.
-    f.svg.append(mk('path', { d: band(f, -5, 30, (g) => pWalk(g, lo), (g) => pWalk(g, hi)), fill: '#fff', opacity: 0.08, stroke: 'none' }));
+    f.svg.append(mk('path', { d: band(f, -5, 30, (g) => pWalk(g, lo), (g) => pWalk(g, hi)), fill: INK, opacity: 0.08, stroke: 'none' }));
 
     // Repères de la littérature, en retrait. Étagés en hauteur : côte à côte ils se chevauchent.
     for (const [v, txt, dy] of [[FINIEL, 'Finiel 2026', 10], [GIOVANELLI, 'Giovanelli', 28]]) {
-      f.svg.append(mk('line', { x1: f.x(v), x2: f.x(v), y1: f.L.t, y2: f.H - f.L.b, stroke: '#fff', 'stroke-dasharray': '1 5', opacity: 0.3 }));
-      annotate(f, v, f.H - f.L.b - dy, txt, '#5A5A5A');
+      f.svg.append(mk('line', { x1: f.x(v), x2: f.x(v), y1: f.L.t, y2: f.H - f.L.b, stroke: INK, 'stroke-dasharray': '1 5', opacity: 0.3 }));
+      annotate(f, v, f.H - f.L.b - dy, txt, TXT.fill);
     }
 
     // La barre des 50 %, puis les blocs observés, puis la courbe.
-    f.svg.append(mk('line', { x1: f.L.l, x2: f.W - f.L.r, y1: f.y(50), y2: f.y(50), stroke: '#fff', 'stroke-dasharray': '2 4', opacity: 0.35 }));
-    for (const [g, p, w] of OBS) f.svg.append(mk('circle', { cx: f.x(g), cy: f.y(p), r: w * 0.62, fill: '#fff', opacity: 0.4 }));
+    f.svg.append(mk('line', { x1: f.L.l, x2: f.W - f.L.r, y1: f.y(50), y2: f.y(50), stroke: INK, 'stroke-dasharray': '2 4', opacity: 0.35 }));
+    for (const [g, p, w] of OBS) f.svg.append(mk('circle', { cx: f.x(g), cy: f.y(p), r: w * 0.62, fill: INK, opacity: 0.4 }));
     f.svg.append(mk('path', { d: curve((g) => pWalk(g, thr), -5, 30, f), fill: 'none', stroke: RED, 'stroke-width': 2.5 }));
     f.svg.append(mk('line', { x1: f.x(thr), x2: f.x(thr), y1: f.y(50), y2: f.H - f.L.b, stroke: RED, 'stroke-width': 1.5 }));
     f.svg.append(mk('circle', { cx: f.x(thr), cy: f.y(50), r: 6, fill: RED }));
@@ -129,12 +139,12 @@ function fatigue() {
 
     // Les quatre jalons de la sortie type.
     for (const m of [30, 60, 120, 180]) {
-      f.svg.append(mk('circle', { cx: f.x(m), cy: f.y(THR(m)), r: 3, fill: '#fff', opacity: 0.5 }));
+      f.svg.append(mk('circle', { cx: f.x(m), cy: f.y(THR(m)), r: 3, fill: INK, opacity: 0.5 }));
       const lbl = mk('text', { ...TXT, x: f.x(m), y: f.y(THR(m)) - 12, 'text-anchor': 'middle' });
       lbl.textContent = `${fr(THR(m))} %`; f.svg.append(lbl);
     }
 
-    f.svg.append(mk('line', { x1: f.x(t), x2: f.x(t), y1: f.L.t, y2: f.H - f.L.b, stroke: '#fff', 'stroke-dasharray': '2 4', opacity: 0.7 }));
+    f.svg.append(mk('line', { x1: f.x(t), x2: f.x(t), y1: f.L.t, y2: f.H - f.L.b, stroke: INK, 'stroke-dasharray': '2 4', opacity: 0.7 }));
     f.svg.append(mk('circle', { cx: f.x(t), cy: f.y(thr), r: 6, fill: RED }));
 
     $('fatTv').textContent = t === 0 ? 'au départ' : `${t} min`;
@@ -161,9 +171,9 @@ function mp() {
     const b = pts.reduce((a, p) => a + (p[0] - mx) * (p[1] - my), 0) / pts.reduce((a, p) => a + (p[0] - mx) ** 2, 0), a0 = my - b * mx;
     const sd = Math.sqrt(pts.reduce((a, p) => a + (p[1] - (a0 + b * p[0])) ** 2, 0) / (n - 2));
     const f = frame(host, { x0: 0, x1: 16, y0: 140, y1: 180, xt: [0, 4, 8, 12, 16], xf: (v) => `S${v}`, yt: [145, 155, 165, 175], yl: 'FC à 4:55 /km', xl: 'semaines' });
-    f.svg.append(mk('path', { d: line([[0, a0], [16, a0 + b * 16]], f), stroke: '#fff', 'stroke-width': 2, opacity: 0.9 }));
+    f.svg.append(mk('path', { d: line([[0, a0], [16, a0 + b * 16]], f), stroke: INK, 'stroke-width': 2, opacity: 0.9 }));
     S.forEach((s, i) => {
-      const c = mk('circle', { cx: f.x(s.w), cy: f.y(pts[i][1]), r: 4, fill: '#fff', opacity: 0.7 });
+      const c = mk('circle', { cx: f.x(s.w), cy: f.y(pts[i][1]), r: 4, fill: INK, opacity: 0.7 });
       const t = mk('title'); t.textContent = `Semaine ${Math.round(s.w)} · ${Math.round(s.T)} °C · ${Math.round(s.dplus)} m D+/km · charge aiguë ${fr(s.atl)}`; c.append(t);
       f.svg.append(c);
     });
@@ -190,9 +200,9 @@ function dur() {
     const y0 = Math.min(-8, Math.floor(cad(42.2) - 2)), y1 = Math.max(12, Math.ceil(fc(42.2) + 2));
     const f = frame(host, { x0: 0, x1: 42.2, y0, y1, xt: [0, 10, 20, 30, 40], xf: (v) => `${v}`, yt: Array.from({ length: Math.floor(y1 / 5) - Math.ceil(y0 / 5) + 1 }, (_, i) => (Math.ceil(y0 / 5) + i) * 5), yf: (v) => `${v > 0 ? '+' : ''}${v} %`, yl: 'écart au début de course', xl: 'km' });
     if (k0 < 42.2) f.svg.append(mk('rect', { x: f.x(k0), y: f.L.t, width: f.x(42.2) - f.x(k0), height: f.H - f.L.t - f.L.b, fill: RED, opacity: 0.08 }));
-    f.svg.append(mk('path', { d: curve(fc, 0, 42.2, f), fill: 'none', stroke: '#fff', 'stroke-width': 2.5 }));
-    f.svg.append(mk('path', { d: curve(cad, 0, 42.2, f), fill: 'none', stroke: '#8C8C8C', 'stroke-width': 2, 'stroke-dasharray': '6 4' }));
-    const a = mk('text', { ...TXT, x: f.x(3), y: f.y(fc(3)) - 10, fill: '#fff' }); a.textContent = 'fréquence cardiaque'; f.svg.append(a);
+    f.svg.append(mk('path', { d: curve(fc, 0, 42.2, f), fill: 'none', stroke: INK, 'stroke-width': 2.5 }));
+    f.svg.append(mk('path', { d: curve(cad, 0, 42.2, f), fill: 'none', stroke: SOFT, 'stroke-width': 2, 'stroke-dasharray': '6 4' }));
+    const a = mk('text', { ...TXT, x: f.x(3), y: f.y(fc(3)) - 10, fill: INK }); a.textContent = 'fréquence cardiaque'; f.svg.append(a);
     const c = mk('text', { ...TXT, x: f.x(3), y: f.y(cad(3)) + 18 }); c.textContent = 'cadence'; f.svg.append(c);
     if (k0 < 42.2) {
       f.svg.append(mk('line', { x1: f.x(k0), x2: f.x(k0), y1: f.L.t, y2: f.H - f.L.b, stroke: RED, 'stroke-width': 1.5 }));

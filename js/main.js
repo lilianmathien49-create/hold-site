@@ -61,12 +61,16 @@ function setupAct(a) {
   else start();
 }
 
+const nav = $('nav');
 function measure() {
   for (const a of ACTS) {
     const r = a.el.getBoundingClientRect(), run = a.el.offsetHeight - window.innerHeight;
     a.target = Math.max(0, Math.min(1, -r.top / run));
     a.near = r.bottom > -window.innerHeight && r.top < window.innerHeight * 2;
   }
+  // La nav est posée sur les actes (nuit) puis sur le contenu (clair) : elle suit la surface.
+  const last = ACTS[ACTS.length - 1].el;
+  nav?.classList.toggle('dark', last.getBoundingClientRect().bottom > nav.offsetHeight);
 }
 
 function render(a) {
