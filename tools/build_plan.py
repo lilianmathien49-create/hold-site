@@ -321,6 +321,15 @@ def main() -> int:
 
     pts, wpts = read_gpx(Path(a.gpx))
     segs = to_segments(pts)
+    # On garde un point tous les 25 m environ : assez dense pour suivre un
+    # sentier, assez léger pour ne pas tripler le poids du fichier.
+    track, last = [], None
+    for lat, lon, ele in pts:
+        if last is None or haversine((lat, lon), last) >= 25:
+            track.append([round(lat, 5), round(lon, 5), round(ele)])
+            last = (lat, lon)
+    if track[-1][:2] != [round(pts[-1][0], 5), round(pts[-1][1], 5)]:
+        track.append([round(pts[-1][0], 5), round(pts[-1][1], 5), round(pts[-1][2])])
     aid = locate_waypoints(wpts, pts)
     total_km = segs[-1]["km1"]
     total_up = sum(s["up"] for s in segs)
@@ -480,6 +489,9 @@ def main() -> int:
                          "matched": learned["matched"], "total": learned["total"],
                          "points": learned["points"]} if learned else None),
         "profile": [[round(s["km1"], 1), s["alt"]] for s in out_segs],
+        # Trace complète pour l'export vers la montre : un point tous les 500 m
+        # suffit à dessiner un profil, pas à naviguer dans un col de nuit.
+        "track": track,
         "segments": out_segs, "sections": to_sections(out_segs, out_aid),
         "aid": out_aid, "windows": windows, "hours": hours,
     }

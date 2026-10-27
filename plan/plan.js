@@ -681,8 +681,12 @@ function toGpx(plan) {
   <desc>${s.dist} km · ${s.up ? `+${s.up} m · ` : ''}${s.pace}/km${s.vam ? ` · ${s.vam} m/h` : ''} · ${s.walkShare}% marche${s.poles ? ' · bâtons' : ''} · cumul ${esx(s.cumul || '')}</desc>
   <sym>Waypoint</sym></wpt>`);
   }
-  const trk = (plan.segments || []).filter((s) => s.lat != null && s.lon != null)
-    .map((s) => `<trkpt lat="${s.lat}" lon="${s.lon}"><ele>${s.alt}</ele></trkpt>`).join('\n');
+  // La trace complète si elle est là, sinon le repli sur les tronçons de 500 m.
+  const trk = (plan.track && plan.track.length
+    ? plan.track.map(([la, lo, el]) => `<trkpt lat="${la}" lon="${lo}"><ele>${el}</ele></trkpt>`)
+    : (plan.segments || []).filter((s) => s.lat != null)
+        .map((s) => `<trkpt lat="${s.lat}" lon="${s.lon}"><ele>${s.alt}</ele></trkpt>`)
+  ).join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Hold" xmlns="http://www.topografix.com/GPX/1/1">
 <metadata><name>${esx(plan.race || 'Course')} — ${esx(plan.runner || '')} — objectif ${esx(plan.goal || '')}</name></metadata>
@@ -813,6 +817,25 @@ function render(plan) {
     panes.forEach((p) => { p.hidden = p.dataset.pane !== b.dataset.tab; });
     if (b.dataset.tab === 'course') redrawCockpit();
   }));
+
+  // Poste de pilotage. Isolé : s'il tombe, le reste du rapport reste lisible.
+  try { wireCockpit(plan); } catch (e) { console.error('Hold : poste de pilotage', e); }
+
+  // Chaque ligne de portion amène le curseur au kilomètre correspondant.
+  for (const tr of document.querySelectorAll('.clickrow')) {
+    const go = () => goToKm && goToKm(parseFloat(tr.dataset.km));
+    tr.addEventListener('click', go);
+    tr.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); }
+    });
+  }
+
+  // Exports, fabriqués dans le navigateur à partir du plan déchiffré.
+  const slug = `${plan.race || 'course'}-${plan.runner || ''}`.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  $('dlGpx')?.addEventListener('click', () => download(`${slug}.gpx`, toGpx(plan), 'application/gpx+xml'));
+  $('dlCsv')?.addEventListener('click', () => download(`${slug}.csv`, toCsv(plan), 'text/csv;charset=utf-8'));
+  $('doPrint')?.addEventListener('click', () => window.print());
 
   $('planRoot').hidden = false;
   $('gate').hidden = true;
