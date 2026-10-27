@@ -247,3 +247,8 @@
   .chartwrap { padding: 4px 10px 0; }
   .cock-head, .scrub, .cock-gear { padding-left: 14px; padding-right: 14px; }
 }
+
+/* Le rectangle qui capte la souris sur le graphe. En SVG, un remplissage
+   « none » ne reçoit aucun événement : on force donc la captation plutôt que
+   de dépendre du comportement par défaut, qui échouerait sans rien signaler. */
+#curHit { pointer-events: all; cursor: crosshair; }
