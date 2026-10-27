@@ -186,48 +186,64 @@
 .cl-d { font-size: 11px; color: var(--muted); margin-top: 3px; }
 @media (max-width: 760px) { .cl { border-right: 0; border-bottom: 1px solid var(--line); } }
 
-/* ======================================================================
-   POSTE DE PILOTAGE — la page est en surface sombre (classe .dark sur
-   <html>), donc tous les jetons de la charte sont déjà inversés. Aucune
-   couleur nouvelle : on se sert de l'encre claire et du rouge de marque.
-   ====================================================================== */
-.cock { margin: 28px 0 56px; border: 1px solid var(--line); background: var(--surface); }
+
+/* ---- Tableau de bord clair : un onglet à la fois ---- */
+.hkpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  border: 1px solid var(--line); background: var(--surface); margin: 24px 0 28px; }
+.hk { padding: 18px 20px; border-right: 1px solid var(--line); }
+.hk:last-child { border-right: 0; }
+.hk-l { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.hk-v { font-family: var(--serif); font-size: 32px; line-height: 1.1; margin-top: 4px; }
+.hk-h { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+.tb { min-height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--ghost-line);
+  background: transparent; color: var(--muted); font-family: var(--mono); font-size: 12px;
+  cursor: pointer; transition: background-color .2s, color .2s, border-color .2s; }
+.tb:hover { color: var(--text); background: var(--ghost-hover); }
+.tb[aria-selected="true"] { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
+.tabpane[hidden] { display: none; }
+.panel { margin-bottom: 42px; }
+
+/* Grands chiffres de synthèse */
+.two, .three { display: grid; gap: 0; border: 1px solid var(--line); background: var(--surface); }
+.two { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.three { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.big { padding: 22px 24px; border-right: 1px solid var(--line); }
+.big:last-child { border-right: 0; }
+.big-l { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.big-v { font-family: var(--serif); font-size: 42px; line-height: 1.05; margin-top: 4px; }
+.big-h { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+/* Poste de pilotage */
+.cock { border: 1px solid var(--line); background: var(--surface); margin-bottom: 36px; }
 .cock-head { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline;
-  justify-content: space-between; padding: 18px 20px 12px; border-bottom: 1px solid var(--line); }
-.cock-hint { font-size: 11px; color: var(--dim); }
-.chartwrap { padding: 16px 20px 4px; }
+  justify-content: space-between; padding: 16px 20px 10px; }
+.cock-hint { font-size: 11px; color: var(--red); }
+.chartwrap { padding: 4px 18px 0; }
 .pf-live svg { cursor: crosshair; }
-.cur { stroke: var(--mark); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.cur { stroke: var(--mark); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 .cur-dot { fill: var(--mark); stroke: var(--surface); stroke-width: 2; }
-
-.scrub { display: flex; align-items: center; gap: 14px; padding: 2px 20px 10px; }
-.scrub > span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--dim); white-space: nowrap; }
+.pf-nightsw { background: var(--text) !important; opacity: .10; }
+.scrub { display: flex; align-items: center; gap: 14px; padding: 0 20px 6px; }
+.scrub > span { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
 .scrub input[type="range"] { flex: 1; height: 34px; }
-
-/* Les compteurs : un chiffre par case, gros, en chiffres à chasse fixe */
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  border-top: 1px solid var(--line); }
-.tl { padding: 15px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); border-top: 1px solid var(--line); }
+.tl { padding: 14px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; }
 .tl-l { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
-.tl-v { font-family: var(--mono); font-size: 25px; line-height: 1.2; margin-top: 5px;
+.tl-v { font-family: var(--mono); font-size: 23px; line-height: 1.2; margin-top: 4px;
   font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tl-h { font-size: 10px; color: var(--dim); margin-top: 3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tl[data-tile="mode"] .tl-v, .tl[data-tile="slope"] .tl-v { font-size: 19px; }
-.tl[data-tile="mode"] .tl-v { color: var(--mark); }
-.cock-gear { padding: 13px 20px; font-size: 11px; color: var(--muted); min-height: 42px; }
+.tl-h { font-size: 10px; color: var(--dim); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl[data-tile="mode"] .tl-v, .tl[data-tile="slope"] .tl-v { font-size: 18px; }
+.tl[data-tile="mode"] .tl-v { color: var(--red); }
+.cock-gear { padding: 12px 20px; font-size: 11px; color: var(--muted); min-height: 40px; }
 
-/* Le sombre change deux ou trois choses ailleurs */
-.gate-box { background: rgba(255,255,255,.03); }
-.tw, .grps, .climbs, .fg, .mc, .contact { background: rgba(255,255,255,.02); }
-.tw-tall thead th { background: #0E0E0E; }
-.minibar { background: rgba(255,255,255,.10); }
-.pf-night, .lt-night td { background: rgba(255,255,255,.04); }
+.clickrow { cursor: pointer; }
+.clickrow:hover td, .clickrow:focus-visible td { background: var(--ghost-hover); }
 
 @media (max-width: 760px) {
   .tiles { grid-template-columns: repeat(2, 1fr); }
-  .tl-v { font-size: 21px; }
-  .chartwrap { padding: 12px 12px 2px; }
+  .hk, .big { border-right: 0; border-bottom: 1px solid var(--line); }
+  .chartwrap { padding: 4px 10px 0; }
   .cock-head, .scrub, .cock-gear { padding-left: 14px; padding-right: 14px; }
 }

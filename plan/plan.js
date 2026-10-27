@@ -64,82 +64,159 @@ function cockpit(plan) {
   </section>`;
 }
 
+/* ---------- Chaleur : ce que la température du jour va te coûter ---------- */
+function heatPlan(plan) {
+  const a = plan.athlete || {};
+  const perDeg = (a.hr || {}).hr_heat;
+  const hours = plan.hours || [];
+  if (!hours.length) return '';
+  const warm = hours.filter((h) => h.tmax > 15);
+  const peak = hours.reduce((m, h) => (h.tmax > m.tmax ? h : m), hours[0]);
+  const cold = hours.reduce((m, h) => (h.tmin < m.tmin ? h : m), hours[0]);
+  const over = warm.reduce((a2, h) => a2 + Math.max(0, (h.tmin + h.tmax) / 2 - 15), 0) / (hours.length || 1);
+  const cost = perDeg ? perDeg * Math.max(0, peak.tmax - 15) : null;
+
+  return `<div class="panel">
+    <div class="two">
+      <div class="big">
+        <p class="big-l mono">Le plus chaud</p>
+        <p class="big-v">${degC(peak.tmax)}</p>
+        <p class="big-h mono">vers ${esc(peak.h)}, entre km ${km1(peak.km0)} et ${km1(peak.km1)}</p>
+      </div>
+      <div class="big">
+        <p class="big-l mono">Le plus froid</p>
+        <p class="big-v">${degC(cold.tmin)}</p>
+        <p class="big-h mono">vers ${esc(cold.h)}, à ${cold.alt} m d'altitude</p>
+      </div>
+    </div>
+    ${perDeg ? `<p class="sub pl-wide" style="margin-top:22px">On a mesuré sur ton année d'entraînement que
+      chaque degré au-dessus de 15 °C te coûte <b>${km1(perDeg)} battement par minute</b> à effort égal.
+      Au plus chaud de ta course, ça représente <b>+${Math.round(cost)} bpm</b> pour la même allure :
+      c'est l'écart qu'il faut accepter de perdre plutôt que de s'entêter.</p>` : ''}
+    <p class="hint">${warm.length} heures de course au-dessus de 15 °C sur ${hours.length}.
+      L'altitude refroidit l'air de 6,5 °C par millier de mètres : c'est pourquoi les cols de nuit
+      passent sous zéro alors qu'il fera ${degC(peak.tmax)} en vallée.</p>
+  </div>`;
+}
+
+/* ---------- Nutrition : ce qu'il faut emporter, portion par portion ---------- */
+// Repères d'ultra-endurance : 60 à 90 g de glucides par heure, et un besoin en
+// liquide qui grimpe avec la chaleur. On les applique aux durées réelles du plan.
+const CARB_PER_H = 65;
+const fluidPerH = (t) => Math.round(450 + Math.max(0, t - 15) * 35);
+const sodiumPerH = (t) => Math.round(500 + Math.max(0, t - 15) * 45);
+
+function nutrition(plan) {
+  const aid = plan.aid || [];
+  if (aid.length < 2) return '';
+  const secs = (s) => { const [h, m, x] = (s || '0:00:00').split(':'); return +h * 3600 + +m * 60 + +x; };
+  const legs = [];
+  for (let i = 0; i < aid.length - 1; i++) {
+    const a = aid[i], b = aid[i + 1];
+    const dt = secs(b.cumul.length <= 5 ? `${b.cumul}:00` : b.cumul) - secs(a.cumul.length <= 5 ? `${a.cumul}:00` : a.cumul);
+    if (dt <= 0) continue;
+    const h = dt / 3600, t = (a.temp + b.temp) / 2;
+    legs.push({
+      from: a.name, to: b.name, km0: a.km, km1: b.km, h,
+      carbs: Math.round(CARB_PER_H * h), fluid: Math.round(fluidPerH(t) * h),
+      sodium: Math.round(sodiumPerH(t) * h), temp: t, light: b.light,
+    });
+  }
+  const tot = legs.reduce((o, l) => ({ carbs: o.carbs + l.carbs, fluid: o.fluid + l.fluid, sodium: o.sodium + l.sodium }),
+    { carbs: 0, fluid: 0, sodium: 0 });
+
+  const rows = legs.map((l) => `<tr>
+    <td>${esc(l.from)} <span class="muted">→</span> ${esc(l.to)}</td>
+    <td class="mono num">${km1(l.km1 - l.km0)}</td>
+    <td class="mono num">${l.h < 1 ? `${Math.round(l.h * 60)} min` : `${Math.floor(l.h)}h${String(Math.round(l.h % 1 * 60)).padStart(2, '0')}`}</td>
+    <td class="mono num strong">${l.carbs} g</td>
+    <td class="mono num">${(l.fluid / 1000).toFixed(1).replace('.', ',')} L</td>
+    <td class="mono num">${l.sodium} mg</td>
+    <td class="mono num">${degC(l.temp)}</td>
+  </tr>`).join('');
+
+  return `<div class="panel">
+    <div class="three">
+      <div class="big"><p class="big-l mono">Glucides</p><p class="big-v">${Math.round(tot.carbs / 1000 * 10) / 10} kg</p>
+        <p class="big-h mono">${CARB_PER_H} g par heure, ${Math.round(tot.carbs / 25)} gels équivalents</p></div>
+      <div class="big"><p class="big-l mono">Liquide</p><p class="big-v">${(tot.fluid / 1000).toFixed(1).replace('.', ',')} L</p>
+        <p class="big-h mono">de 450 ml/h au frais à ${fluidPerH(25)} ml/h à 25 °C</p></div>
+      <div class="big"><p class="big-l mono">Sodium</p><p class="big-v">${(tot.sodium / 1000).toFixed(1).replace('.', ',')} g</p>
+        <p class="big-h mono">davantage quand il fait chaud</p></div>
+    </div>
+    <p class="sub pl-wide" style="margin:22px 0 14px">À emporter entre deux ravitaillements. Les quantités
+      suivent la durée réelle de chaque portion et la température qu'il y fera, pas une règle au kilomètre.</p>
+    <div class="tw tw-tall"><table class="tbl">
+      <thead><tr><th>Portion</th><th class="num">km</th><th class="num">Durée</th>
+        <th class="num">Glucides</th><th class="num">Liquide</th><th class="num">Sodium</th><th class="num">Temp.</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="hint pl-warn">Ces quantités sont des repères d'ultra-endurance appliqués à ton plan,
+      <b>pas une prescription personnelle</b>. Ta tolérance digestive se travaille à l'entraînement :
+      teste ces volumes sur tes sorties longues avant de les suivre le jour J.</p>
+  </div>`;
+}
+
 function profile(plan, interactive) {
   const segs = plan.segments || [];
   const pts = plan.profile || [];
   if (pts.length < 2) return '';
-  const W = 1000, PH = 250, SH = 16, GAP = 5;
-  const P = { l: 52, r: 16, t: 16 };
-  const stripsY = P.t + PH + 14;
-  const H = stripsY + (SH + GAP) * 3 + 30;
+  const W = 1000, PH = 210, P = { l: 48, r: 14, t: 14, b: 26 };
+  const H = P.t + PH + P.b;
 
   const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
-  const x0 = 0, x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const X = (v) => P.l + (v - x0) / (x1 - x0 || 1) * (W - P.l - P.r);
+  const x1 = Math.max(...xs);
+  // Échelle en valeurs rondes — mais pas au prix d'un profil écrasé : arrondir
+  // 805–2529 m aux 500 m donnerait un axe 500–3000, où les données n'occupent
+  // que deux tiers de la hauteur. On retient le plus grand pas qui ne gonfle
+  // pas l'étendue de plus d'un quart.
+  const lo = Math.min(...ys), hi = Math.max(...ys), span = hi - lo || 1;
+  const step = [500, 250, 200, 100, 50].find((k) =>
+    (Math.ceil(hi / k) * k - Math.floor(lo / k) * k) <= span * 1.25) || 50;
+  const y0 = Math.floor(lo / step) * step;
+  const y1 = Math.ceil(hi / step) * step;
+  const X = (v) => P.l + v / (x1 || 1) * (W - P.l - P.r);
   const Y = (v) => P.t + PH - (v - y0) / (y1 - y0 || 1) * PH;
 
-  // Le profil est dessiné en colonnes colorées par la pente : la couleur porte
-  // l'information que la seule silhouette ne donne pas.
-  const cols = segs.map((s) => {
-    const xa = X(s.km0), xb = X(s.km1);
-    return `<rect x="${xa.toFixed(1)}" y="${Y(s.alt).toFixed(1)}"
-      width="${Math.max(0.6, xb - xa).toFixed(1)}" height="${(P.t + PH - Y(s.alt)).toFixed(1)}"
-      class="t-${terrainOf(s.slope)}"/>`;
-  }).join('');
+  const bands = (plan.windows || []).filter((w) => w.light === 'nuit').map((w) =>
+    `<rect x="${X(w.km0).toFixed(1)}" y="${P.t}" width="${Math.max(0.5, X(w.km1) - X(w.km0)).toFixed(1)}"
+       height="${PH}" class="pf-night"/>`).join('');
+
+  const cols = segs.map((s) => `<rect x="${X(s.km0).toFixed(1)}" y="${Y(s.alt).toFixed(1)}"
+      width="${Math.max(0.7, X(s.km1) - X(s.km0)).toFixed(1)}" height="${(P.t + PH - Y(s.alt)).toFixed(1)}"
+      class="t-${terrainOf(s.slope)}"/>`).join('');
+
+  const ticks = [];
+  for (let v = y0; v <= y1; v += step) {
+    ticks.push(`<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="pf-grid"/>
+      <text x="${P.l - 8}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" class="pf-lab">${v}</text>`);
+  }
 
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)} ${Y(p[1]).toFixed(1)}`).join('');
-  const grid = [y0, (y0 + y1) / 2, y1].map((v) =>
-    `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="pf-grid"/>
-     <text x="${P.l - 8}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" class="pf-lab">${Math.round(v)}</text>`).join('');
+  const marks = (plan.aid || []).filter((a) => a.km > 1 && a.km < x1 - 1).map((a) =>
+    `<line x1="${X(a.km).toFixed(1)}" x2="${X(a.km).toFixed(1)}" y1="${P.t}" y2="${P.t + PH}" class="pf-aid"/>`).join('');
 
-  // Ravitaillements : un repère, et le nom un rang sur deux pour éviter la bouillie.
-  const majors = (plan.aid || []).filter((a) => a.km > 1 && a.km < x1 - 1);
-  const marks = majors.map((a, i) => `
-    <line x1="${X(a.km).toFixed(1)}" x2="${X(a.km).toFixed(1)}" y1="${P.t}" y2="${P.t + PH}" class="pf-aid"/>
-    <text x="${X(a.km).toFixed(1)}" y="${P.t + 11 + (i % 2) * 13}" class="pf-aidlab"
-      text-anchor="${X(a.km) > W * 0.82 ? 'end' : 'middle'}">${esc(a.name.split(/[-–]/)[0].trim().slice(0, 14))}</text>`).join('');
-
-  const strip = (y, cells, label) => `
-    <text x="${P.l - 8}" y="${y + SH - 4}" text-anchor="end" class="pf-lab">${label}</text>
-    ${cells}`;
-  const cell = (s, y, cls) => `<rect x="${X(s.km0).toFixed(1)}" y="${y}"
-    width="${Math.max(0.6, X(s.km1) - X(s.km0)).toFixed(1)}" height="${SH}" class="${cls}"/>`;
-
-  const slopeStrip = strip(stripsY, segs.map((s) => cell(s, stripsY, `t-${terrainOf(s.slope)}`)).join(''), 'pente');
-  const modeY = stripsY + SH + GAP;
-  const modeStrip = strip(modeY, segs.map((s) =>
-    cell(s, modeY, s.mode === 'marche' ? (s.poles ? 'm-poles' : 'm-marche') : 'm-course')).join(''), 'mode');
-  const lightY = modeY + SH + GAP;
-  const lightStrip = strip(lightY, segs.map((s) =>
-    cell(s, lightY, s.light === 'nuit' ? 'l-nuit' : s.light === 'jour' ? 'l-jour' : 'l-chien')).join(''), 'lumière');
-
-  const xlab = [0, .2, .4, .6, .8, 1].map((f) => {
-    const v = x0 + (x1 - x0) * f;
+  const xlab = [0, .25, .5, .75, 1].map((f) => {
+    const v = x1 * f;
     return `<text x="${X(v).toFixed(1)}" y="${H - 8}" class="pf-lab"
       text-anchor="${f === 0 ? 'start' : f === 1 ? 'end' : 'middle'}">${Math.round(v)} km</text>`;
   }).join('');
 
-  const legend = [['t-raide', 'raide · ≥ 12 %'], ['t-montee', 'montée · 4–12 %'], ['t-plat', 'plat'],
-    ['t-descente', 'descente'], ['t-plongeon', 'descente raide']]
-    .map(([c, l]) => `<span class="lg"><i class="sw ${c}"></i>${l}</span>`).join('');
-  const legend2 = [['m-course', 'course'], ['m-marche', 'marche'], ['m-poles', 'bâtons'],
-    ['l-nuit', 'nuit'], ['l-chien', 'chien et loup'], ['l-jour', 'jour']]
-    .map(([c, l]) => `<span class="lg"><i class="sw ${c}"></i>${l}</span>`).join('');
-
-  // Le poste de pilotage a besoin de la géométrie pour replacer son curseur.
   const geo = JSON.stringify({ w: W, l: P.l, r: P.r, t: P.t, ph: PH, y0, y1 });
   const cursor = interactive
-    ? `<line id="curLine" x1="${P.l}" x2="${P.l}" y1="${P.t}" y2="${H - 26}" class="cur"/>
-       <circle id="curDot" cx="${P.l}" cy="${P.t}" r="5" class="cur-dot"/>`
+    ? `<line id="curLine" x1="${P.l}" x2="${P.l}" y1="${P.t}" y2="${P.t + PH}" class="cur"/>
+       <circle id="curDot" cx="${P.l}" cy="${P.t}" r="5" class="cur-dot"/>
+       <rect id="curHit" x="${P.l}" y="${P.t}" width="${W - P.l - P.r}" height="${PH}" fill="transparent"/>`
     : '';
   return `<div class="pf${interactive ? ' pf-live' : ''}">
     <svg viewBox="0 0 ${W} ${H}" data-geo='${geo}' role="img"
-         aria-label="Profil du parcours, pente, mode et lumière">
-      ${grid}${cols}<path d="${line}" class="pf-line"/>${marks}
-      ${slopeStrip}${modeStrip}${lightStrip}${xlab}${cursor}
-    </svg>
-    <div class="pf-legend">${legend}</div>
-    <div class="pf-legend">${legend2}</div>
+         aria-label="Profil du parcours">${bands}${ticks.join('')}${cols}<path d="${line}" class="pf-line"/>${marks}${xlab}${cursor}</svg>
+    <div class="pf-legend">
+      <span class="lg"><i class="sw t-raide"></i>raide · 12 % et plus</span>
+      <span class="lg"><i class="sw t-montee"></i>montée</span>
+      <span class="lg"><i class="sw t-plat"></i>plat</span>
+      <span class="lg"><i class="sw t-descente"></i>descente</span>
+      <span class="lg"><i class="sw pf-nightsw"></i>nuit</span>
+    </div>
   </div>`;
 }
 
@@ -217,7 +294,8 @@ function sections(plan) {
   const rows = S.map((s) => {
     const w = (s.dist / maxDist * 100).toFixed(1);
     const bar = s.up > 20 ? (s.up / maxUp * 100).toFixed(0) : 0;
-    return `<tr>
+    return `<tr class="clickrow" data-km="${s.km0}" tabindex="0" role="button"
+        aria-label="Voir le kilomètre ${km1(s.km0)} sur le profil">
       <td class="mono nowrap">${km1(s.km0)}<span class="muted"> – ${km1(s.km1)}</span></td>
       <td class="mono num">${km1(s.dist)}</td>
       <td class="num"><span class="cellslope"><span class="mono">${s.slope > 0 ? '+' : ''}${km1(s.slope)} %</span><i class="t-${s.cls}"></i></span></td>
@@ -504,6 +582,9 @@ function montecarlo(plan) {
 }
 
 /* ---------- Le curseur qui relie tout ---------- */
+let goToKm = null;   // posé par wireCockpit, utilisé par les clics sur le tableau
+let redrawCockpit = () => {};
+
 function wireCockpit(plan) {
   const wrap = $('chartWrap'), scrub = $('scrub');
   if (!wrap || !scrub) return;
@@ -553,6 +634,13 @@ function wireCockpit(plan) {
     scrub.value = Math.round(i / (S.length - 1) * 1000);
   };
 
+  // Un clic sur une portion du tableau amène le curseur au bon endroit.
+  goToKm = (km) => {
+    const i = S.findIndex((x) => x.km1 >= km);
+    if (i >= 0) { show(i); $('cock')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  };
+  redrawCockpit = () => show(Math.round(+scrub.value / 1000 * (S.length - 1)));
+
   const fromX = (clientX) => {
     const r = svg.getBoundingClientRect();
     const f = (clientX - r.left) / r.width * geo.w;
@@ -564,8 +652,10 @@ function wireCockpit(plan) {
     const i = fromX(cx);
     if (i >= 0) show(i);
   };
-  svg.addEventListener('mousemove', onMove);
-  svg.addEventListener('touchmove', (e) => { onMove(e); }, { passive: true });
+  const hit = svg.querySelector('#curHit') || svg;
+  hit.addEventListener('mousemove', onMove);
+  hit.addEventListener('touchmove', onMove, { passive: true });
+  hit.addEventListener('click', onMove);
   scrub.addEventListener('input', () => show(Math.round(+scrub.value / 1000 * (S.length - 1))));
   show(0);
 }
@@ -645,65 +735,85 @@ function exporter(plan) {
   </section>`;
 }
 
-/* ---------- Assemblage ---------- */
+function method(plan) {
+  const m = plan.model || {}, L = plan.learnedFrom;
+  return `<section class="pl-block">
+    <h2 class="pl-h">Comment ce plan est calculé</h2>
+    <ul class="pl-list pl-model">
+      <li>Le parcours est découpé en tronçons de 500 m, pente mesurée sur la trace GPX,
+        puis regroupé là où le terrain change vraiment.</li>
+      ${L ? `<li>Le rythme ne vient pas d'un modèle mais de <b>${L.runners} coureurs</b> arrivés autour de
+        ton objectif sur les éditions ${L.years[0]}–${L.years[L.years.length - 1]}. Pour chacun des
+        ${L.matched} ravitaillements reconnus d'une année sur l'autre, on reprend la part de leur temps
+        total qu'ils avaient dépensée en y arrivant.</li>` : ''}
+      <li>Marche ou course : décidé tronçon par tronçon en comparant la pente à ton seuil,
+        qui part de ${m.walkThr ?? '—'} % et baisse de ${m.walkDecay ?? '—'} point par heure.</li>
+      <li>Jour et nuit : position réelle du soleil à la date et au lieu de la course.</li>
+      <li>Températures : prévision en vallée, corrigée de −6,5 °C par millier de mètres.</li>
+    </ul>
+    <p class="hint pl-warn">Deux limites à connaître. Ton seuil de marche a été mesuré sur des sorties
+      allant jusqu'à quatre heures : au-delà, le plan prolonge la tendance et la plafonne. Et les repères
+      de nutrition sont des valeurs d'ultra-endurance appliquées à ton plan, pas une prescription
+      personnelle — teste-les à l'entraînement.</p>
+  </section>`;
+}
+
+/* ---------- Assemblage : un onglet à la fois ----------
+   Tout afficher d'un bloc noyait l'essentiel. Chaque onglet répond à une
+   seule question, et le parcours est celui qui s'ouvre. */
+const TABS = [
+  ['course', 'La course'],
+  ['chaleur', 'Chaleur & nutrition'],
+  ['moi', 'Ce qu\'on a mesuré'],
+  ['autres', 'Ce qu\'ont fait les autres'],
+  ['simu', 'Simulations'],
+  ['emporter', 'Emporter'],
+];
+
 function render(plan) {
-  const m = plan.model || {}, c = plan.conditions || {};
-  const kpi = (l, v) => v ? `<div class="kpi"><p class="kpi-l mono">${esc(l)}</p><p class="kpi-v">${esc(v)}</p></div>` : '';
+  const m = plan.model || {};
   const night = (plan.windows || []).filter((w) => w.light === 'nuit').reduce((a, w) => a + w.km1 - w.km0, 0);
+  const kpi = (l, v, h) => v ? `<div class="hk"><p class="hk-l mono">${esc(l)}</p>
+    <p class="hk-v">${esc(v)}</p><p class="hk-h mono">${esc(h || '')}</p></div>` : '';
+
+  const body = {
+    course: `${cockpit(plan)}${sections(plan)}${aidTable(plan)}${strategy(plan)}`,
+    chaleur: `${heatPlan(plan)}${nutrition(plan)}${windows(plan)}${hours(plan)}`,
+    moi: `${athlete(plan)}`,
+    autres: `${reference(plan)}${lessons(plan)}`,
+    simu: `${montecarlo(plan)}`,
+    emporter: `${exporter(plan)}${method(plan)}`,
+  };
+  const tabs = TABS.filter(([k]) => (body[k] || '').trim());
 
   $('planRoot').innerHTML = `
     <header class="pl-head">
       <p class="eyebrow">${esc(plan.runner || '')} · plan de course</p>
       <h1 class="title">${esc(plan.race || 'Ta course')}<br><span class="soft">${esc(plan.date || '')}</span></h1>
-      ${plan.notes ? `<p class="sub pl-note">${esc(plan.notes)}</p>` : ''}
     </header>
-    <div class="kpis">
-      ${kpi('Objectif', plan.goal)}
-      ${kpi('Projeté', plan.projected)}
-      ${kpi('Départ', plan.start)}
-      ${kpi('Distance', plan.distanceKm ? `${km1(plan.distanceKm)} km` : '')}
-      ${kpi('Dénivelé +', plan.elevationM ? `${plan.elevationM} m` : '')}
-      ${kpi('Dont marche', m.walkKm != null ? `${km1(m.walkKm)} km` : '')}
-      ${kpi('Dont nuit', night ? `${km1(night)} km` : '')}
-      ${kpi('Températures', c.temp)}
+    <div class="hkpis">
+      ${kpi('Objectif', plan.goal, plan.start ? `départ ${plan.start}` : '')}
+      ${kpi('Distance', plan.distanceKm ? `${km1(plan.distanceKm)} km` : '', plan.elevationM ? `${plan.elevationM} m de D+` : '')}
+      ${kpi('Dont marche', m.walkKm != null ? `${km1(m.walkKm)} km` : '', m.runKm != null ? `${km1(m.runKm)} km courus` : '')}
+      ${kpi('Dont nuit', night ? `${km1(night)} km` : '', 'frontale obligatoire')}
     </div>
-    ${cockpit(plan)}
-    ${athlete(plan)}
-    ${reference(plan)}
-    ${lessons(plan)}
-    ${montecarlo(plan)}
-    ${sections(plan)}
-    ${strategy(plan)}
-    ${windows(plan)}
-    ${hours(plan)}
-    ${aidTable(plan)}
-    ${plan.advice ? `<section class="pl-block"><h2 class="pl-h">À retenir</h2>
-      <ul class="pl-list">${plan.advice.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></section>` : ''}
-    <section class="pl-block">
-      <h2 class="pl-h">Comment ce plan est calculé</h2>
-      <ul class="pl-list pl-model">
-        <li>Le parcours est découpé en tronçons de 500 m, pente mesurée sur la trace GPX.</li>
-        <li>Marche ou course : décidé tronçon par tronçon en comparant la pente à ton seuil,
-          qui part de ${m.walkThr ?? '—'} % et baisse de ${m.walkDecay ?? '—'} point par heure de course.</li>
-        <li>Les vitesses suivent le coût énergétique de la pente (Minetti 2002), recalées pour tenir ton objectif.</li>
-        <li>Jour et nuit : position réelle du soleil à la date et au lieu de la course.</li>
-        <li>Températures : prévision en vallée, corrigée de −6,5 °C par 1000 m d'altitude.</li>
-      </ul>
-      <p class="hint pl-warn">Une limite à connaître : ton seuil de marche a été mesuré sur des sorties
-        allant jusqu'à quatre heures. Au-delà, le plan prolonge la tendance et la plafonne à un plancher
-        prudent. Sur une course de ${plan.goal || 'cette durée'}, les dernières heures reposent donc sur
-        une extrapolation, pas sur une mesure.</p>
-    </section>
-    ${exporter(plan)}
+    <div class="tabs" role="tablist">
+      ${tabs.map(([k, l], i) => `<button type="button" role="tab" class="tb" data-tab="${k}"
+        aria-selected="${i === 0}">${esc(l)}</button>`).join('')}
+    </div>
+    ${tabs.map(([k], i) => `<div class="tabpane" data-pane="${k}"${i ? ' hidden' : ''}>${body[k]}</div>`).join('')}
     <p class="hint pl-foot">Plan établi par Hold · Lilian Mathien. Révisé le ${esc(plan.revised || '—')}.
       Ce document décrit une cible, pas une garantie : le jour J, tes sensations priment.</p>`;
 
-  const slug = `${(plan.race || 'course')}-${(plan.runner || '')}`.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  try { wireCockpit(plan); } catch (e) { console.error('Hold : poste de pilotage', e); }
-  $('dlGpx')?.addEventListener('click', () => download(`${slug}.gpx`, toGpx(plan), 'application/gpx+xml'));
-  $('dlCsv')?.addEventListener('click', () => download(`${slug}.csv`, toCsv(plan), 'text/csv;charset=utf-8'));
-  $('doPrint')?.addEventListener('click', () => window.print());
+  // Onglets
+  const panes = Array.from(document.querySelectorAll('[data-pane]'));
+  const btns = Array.from(document.querySelectorAll('.tb'));
+  btns.forEach((b) => b.addEventListener('click', () => {
+    btns.forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    panes.forEach((p) => { p.hidden = p.dataset.pane !== b.dataset.tab; });
+    if (b.dataset.tab === 'course') redrawCockpit();
+  }));
+
   $('planRoot').hidden = false;
   $('gate').hidden = true;
   $('navWho').textContent = `${plan.runner || ''} · ${plan.race || ''}`;
