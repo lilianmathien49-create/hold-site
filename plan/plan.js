@@ -23,35 +23,82 @@ const degC = (v) => `${Math.round(v)} °C`;
 const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 const LIGHT_ICON = { nuit: '●', jour: '○', 'entre chien et loup': '◐' };
 
-/* ---------- Profil, avec les bandes de nuit ---------- */
+/* ---------- Le parcours, lu d'un coup d'œil ----------
+   Un profil seul ne dit pas grand-chose. On empile sous lui trois bandes qui
+   se lisent à la verticale : la pente, ce que tu y fais, et la lumière. */
+const slopeColor = (g) => g >= 20 ? 'g5' : g >= 12 ? 'g4' : g >= 6 ? 'g3' : g >= 2 ? 'g2'
+  : g > -2 ? 'g1' : g > -12 ? 'd1' : 'd2';
+
 function profile(plan) {
+  const segs = plan.segments || [];
   const pts = plan.profile || [];
   if (pts.length < 2) return '';
-  const W = 1000, H = 230, P = { l: 46, r: 14, t: 14, b: 28 };
-  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
-  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const X = (v) => P.l + (v - x0) / (x1 - x0 || 1) * (W - P.l - P.r);
-  const Y = (v) => H - P.b - (v - y0) / (y1 - y0 || 1) * (H - P.t - P.b);
+  const W = 1000, PH = 250, SH = 16, GAP = 5;
+  const P = { l: 52, r: 16, t: 16 };
+  const stripsY = P.t + PH + 14;
+  const H = stripsY + (SH + GAP) * 3 + 30;
 
-  const bands = (plan.windows || []).filter((w) => w.light !== 'jour').map((w) =>
-    `<rect x="${X(w.km0).toFixed(1)}" y="${P.t}" width="${Math.max(0.5, X(w.km1) - X(w.km0)).toFixed(1)}"
-       height="${H - P.t - P.b}" class="${w.light === 'nuit' ? 'pf-night' : 'pf-dusk'}"/>`).join('');
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  const x0 = 0, x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const X = (v) => P.l + (v - x0) / (x1 - x0 || 1) * (W - P.l - P.r);
+  const Y = (v) => P.t + PH - (v - y0) / (y1 - y0 || 1) * PH;
+
+  // Le profil est dessiné en colonnes colorées par la pente : la couleur porte
+  // l'information que la seule silhouette ne donne pas.
+  const cols = segs.map((s) => {
+    const xa = X(s.km0), xb = X(s.km1);
+    return `<rect x="${xa.toFixed(1)}" y="${Y(s.alt).toFixed(1)}"
+      width="${Math.max(0.6, xb - xa).toFixed(1)}" height="${(P.t + PH - Y(s.alt)).toFixed(1)}"
+      class="sl-${slopeColor(s.slope)}"/>`;
+  }).join('');
 
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)} ${Y(p[1]).toFixed(1)}`).join('');
-  const area = `${line}L${X(x1).toFixed(1)} ${(H - P.b).toFixed(1)}L${X(x0).toFixed(1)} ${(H - P.b).toFixed(1)}Z`;
-  const ticks = [y0, (y0 + y1) / 2, y1].map((v) =>
+  const grid = [y0, (y0 + y1) / 2, y1].map((v) =>
     `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" class="pf-grid"/>
      <text x="${P.l - 8}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" class="pf-lab">${Math.round(v)}</text>`).join('');
-  const aid = (plan.aid || []).map((a) =>
-    `<line x1="${X(a.km).toFixed(1)}" x2="${X(a.km).toFixed(1)}" y1="${P.t}" y2="${H - P.b}" class="pf-aid"/>`).join('');
-  const xlab = [x0, x1 * 0.25, x1 * 0.5, x1 * 0.75, x1].map((v) =>
-    `<text x="${X(v).toFixed(1)}" y="${H - 9}" text-anchor="middle" class="pf-lab">${Math.round(v)}</text>`).join('');
 
-  return `<div class="pf"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
-      aria-label="Profil du parcours, avec les portions de nuit assombries">
-    ${bands}${ticks}<path d="${area}" class="pf-fill"/><path d="${line}" class="pf-line"/>${aid}${xlab}
-  </svg>
-  <p class="pf-cap mono">Altitude (m) par kilomètre · zones sombres : nuit · traits verticaux : ravitaillements</p></div>`;
+  // Ravitaillements : un repère, et le nom un rang sur deux pour éviter la bouillie.
+  const majors = (plan.aid || []).filter((a) => a.km > 1 && a.km < x1 - 1);
+  const marks = majors.map((a, i) => `
+    <line x1="${X(a.km).toFixed(1)}" x2="${X(a.km).toFixed(1)}" y1="${P.t}" y2="${P.t + PH}" class="pf-aid"/>
+    <text x="${X(a.km).toFixed(1)}" y="${P.t + 11 + (i % 2) * 13}" class="pf-aidlab"
+      text-anchor="${X(a.km) > W * 0.82 ? 'end' : 'middle'}">${esc(a.name.split(/[-–]/)[0].trim().slice(0, 14))}</text>`).join('');
+
+  const strip = (y, cells, label) => `
+    <text x="${P.l - 8}" y="${y + SH - 4}" text-anchor="end" class="pf-lab">${label}</text>
+    ${cells}`;
+  const cell = (s, y, cls) => `<rect x="${X(s.km0).toFixed(1)}" y="${y}"
+    width="${Math.max(0.6, X(s.km1) - X(s.km0)).toFixed(1)}" height="${SH}" class="${cls}"/>`;
+
+  const slopeStrip = strip(stripsY, segs.map((s) => cell(s, stripsY, `sl-${slopeColor(s.slope)}`)).join(''), 'pente');
+  const modeY = stripsY + SH + GAP;
+  const modeStrip = strip(modeY, segs.map((s) =>
+    cell(s, modeY, s.mode === 'marche' ? (s.poles ? 'md-poles' : 'md-walk') : 'md-run')).join(''), 'mode');
+  const lightY = modeY + SH + GAP;
+  const lightStrip = strip(lightY, segs.map((s) =>
+    cell(s, lightY, s.light === 'nuit' ? 'lt-n' : s.light === 'jour' ? 'lt-j' : 'lt-c')).join(''), 'lumière');
+
+  const xlab = [0, .2, .4, .6, .8, 1].map((f) => {
+    const v = x0 + (x1 - x0) * f;
+    return `<text x="${X(v).toFixed(1)}" y="${H - 8}" class="pf-lab"
+      text-anchor="${f === 0 ? 'start' : f === 1 ? 'end' : 'middle'}">${Math.round(v)} km</text>`;
+  }).join('');
+
+  const legend = [['g5', '≥ 20 %'], ['g4', '12–20 %'], ['g3', '6–12 %'], ['g2', '2–6 %'],
+    ['g1', 'plat'], ['d1', 'descente'], ['d2', 'descente raide']]
+    .map(([c, l]) => `<span class="lg"><i class="sw sl-${c}"></i>${l}</span>`).join('');
+  const legend2 = [['md-run', 'course'], ['md-walk', 'marche'], ['md-poles', 'bâtons'],
+    ['lt-n', 'nuit'], ['lt-c', 'chien et loup'], ['lt-j', 'jour']]
+    .map(([c, l]) => `<span class="lg"><i class="sw ${c}"></i>${l}</span>`).join('');
+
+  return `<div class="pf">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Profil du parcours, pente, mode et lumière">
+      ${grid}${cols}<path d="${line}" class="pf-line"/>${marks}
+      ${slopeStrip}${modeStrip}${lightStrip}${xlab}
+    </svg>
+    <div class="pf-legend">${legend}</div>
+    <div class="pf-legend">${legend2}</div>
+  </div>`;
 }
 
 /* ---------- Jour et nuit ---------- */
@@ -142,12 +189,14 @@ function strategy(plan) {
     const dist = g.segs[g.segs.length - 1].km1 - g.segs[0].km0;
     const dt = g.segs.reduce((a, s) => a + s.split, 0);
     const last = g.segs[g.segs.length - 1];
+    const vam = dt > 0 && up > 60 ? Math.round(up / (dt / 3600)) : null;
     const rows = g.segs.map((s) => `<tr class="${s.mode === 'marche' ? 'is-walk' : ''}">
       <td class="mono nowrap">${km2(s.km0)}</td>
       <td class="mono num">${s.alt}</td>
-      <td class="mono num ${s.slope >= 0 ? 'up' : 'dn'}">${s.slope > 0 ? '+' : ''}${km1(s.slope)} %</td>
+      <td class="mono num"><span class="cellslope"><span>${s.slope > 0 ? '+' : ''}${km1(s.slope)} %</span><i class="sl-${slopeColor(s.slope)}"></i></span></td>
       <td class="nowrap">${s.mode === 'marche' ? 'marche' : 'course'}${s.poles ? ' <span class="tag">bâtons</span>' : ''}</td>
       <td class="mono num strong">${esc(s.pace)}</td>
+      <td class="mono num vam">${s.vam ? `${s.vam}` : '—'}</td>
       <td class="mono num">${mmss(s.split)}</td>
       <td class="mono num">${esc(s.cumul)}</td>
       <td class="mono num">${esc(s.clock)}</td>
@@ -158,12 +207,12 @@ function strategy(plan) {
         <span class="grp-km mono">km ${km1(g.from)} – ${km1(g.to)}</span>
         <span class="grp-n">${esc(g.name)}</span>
         <span class="grp-m mono">${km1(dist)} km · +${Math.round(up)} / −${Math.round(down)} m ·
-          ${km1(walk)} km marchés · ${Math.floor(dt / 3600)}h${String(Math.round(dt % 3600 / 60)).padStart(2, '0')} ·
+          ${km1(walk)} km marchés · ${Math.floor(dt / 3600)}h${String(Math.round(dt % 3600 / 60)).padStart(2, '0')}${vam ? ` · ${vam} m/h` : ''} ·
           arrivée ${esc(last.clock)}</span>
       </summary>
       <div class="tw"><table class="tbl tbl-sm">
         <thead><tr><th>km</th><th class="num">Alt.</th><th class="num">Pente</th><th>Mode</th>
-          <th class="num">Allure</th><th class="num">Temps</th><th class="num">Cumul</th>
+          <th class="num">Allure</th><th class="num">VAM</th><th class="num">Temps</th><th class="num">Cumul</th>
           <th class="num">Heure</th><th class="num">Temp.</th></tr></thead>
         <tbody>${rows}</tbody></table></div>
     </details>`;

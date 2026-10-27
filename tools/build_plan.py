@@ -36,6 +36,20 @@ def cost_walk(i: float) -> float:
     i = max(-0.45, min(0.45, i))
     return max(1.2, 280.5*i**5 - 58.7*i**4 - 76.8*i**3 + 51.9*i**2 + 19.6*i + 2.5)
 
+# Minetti mesure un coût énergétique sur tapis : en descente il s'effondre, et le
+# modèle voudrait faire dévaler à 20 km/h. Sur un sentier de montagne, ce n'est plus
+# l'énergie qui limite mais le pied, la pente technique et les quadriceps. On plafonne
+# donc le gain de la descente au lieu de suivre la courbe jusqu'au bout.
+GAIN_RUN, GAIN_WALK = 1.18, 1.10
+# Plafond absolu : sur sentier alpin, même en descente et même frais, on ne
+# dépasse pas ces vitesses en ultra. Sans ça le modèle fait dévaler à 20 km/h.
+V_MAX_RUN, V_MAX_WALK, V_MIN = 13.5, 7.0, 1.0
+
+def speed_ratio(grade: float, walking: bool) -> float:
+    cost = cost_walk(grade) if walking else cost_run(grade)
+    flat = cost_walk(0.0) if walking else cost_run(0.0)
+    return min(flat / cost, GAIN_WALK if walking else GAIN_RUN)
+
 
 # --- Position du soleil (algorithme NOAA simplifié) : suffisant au degré près.
 def solar_elevation(when: datetime, lat: float, lon: float) -> float:
@@ -177,12 +191,10 @@ def simulate(segs, scale, a):
         walking = s["slope"] >= thr
         grade = s["slope"] / 100
         base = a.walk_flat if walking else a.run_flat
-        cost = cost_walk(grade) if walking else cost_run(grade)
-        flat_cost = cost_walk(0) if walking else cost_run(0)
         # Perte de rendement au fil des heures : la durabilité mesurée du coureur.
         fade = max(0.60, 1 - a.fatigue / 100 * max(0, hours - 1))
-        v = base * (flat_cost / cost) * fade * scale          # km/h
-        v = max(1.0, min(22.0, v))
+        v = base * speed_ratio(grade, walking) * fade * scale          # km/h
+        v = max(V_MIN, min(V_MAX_WALK if walking else V_MAX_RUN, v))
         dt = s["dist"] / 1000 / v * 3600
         t += dt
         rows.append((walking, v, dt, t, thr))
@@ -210,6 +222,9 @@ def main() -> int:
     p.add_argument("--run-flat", type=float, default=11.0, help="vitesse de course sur le plat, frais (km/h)")
     p.add_argument("--walk-flat", type=float, default=5.6, help="vitesse de marche sur le plat (km/h)")
     p.add_argument("--reference", help="JSON des temps de passage historiques, si tu en as")
+    p.add_argument("--splits", help="temps de passage appris (learn_splits.py) : le plan s'y cale")
+    p.add_argument("--night-penalty", type=float, default=0.0,
+                   help="surcoût mesuré de la nuit, en %% (ex. 4.6)")
     a = p.parse_args()
 
     try:
@@ -242,6 +257,70 @@ def main() -> int:
     rows, total = simulate(segs, (lo + hi) / 2, a)
     print(f"  Calibrage : objectif {hm(target)} · simulé {hms(total)}  (écart {abs(total-target):.0f} s)")
 
+    # --- Apprentissage : on recale chaque inter-ravitaillement sur le temps
+    # qu'y ont réellement mis les finishers du même chrono. La physique continue
+    # de répartir le temps à l'intérieur du tronçon, elle ne décide plus du rythme.
+    learned = None
+    if a.splits:
+        learned = json.loads(Path(a.splits).read_text(encoding="utf-8"))
+        # Seuls les points réellement observés servent d'ancre. Un point interpolé
+        # le serait linéairement en kilomètres, ce qui ignore le dénivelé : entre
+        # deux ancres, le modèle répartit bien mieux que ça.
+        anchors = [(p["km"], p["eta"]) for p in learned["points"]
+                   if p.get("matched") and not p.get("start") and p.get("eta")]
+        anchors = sorted({km: eta for km, eta in anchors}.items())
+        if anchors:
+            rows = list(rows)
+            prev_km, prev_t = 0.0, 0.0
+            shifts, capped = [], []
+            for km_mark, eta in anchors:
+                idx = [i for i, s in enumerate(segs) if prev_km <= s["km0"] < km_mark]
+                if not idx:
+                    continue
+                raw = sum(rows[i][2] for i in idx)
+                want = eta - prev_t
+                if raw > 0 and want > 0:
+                    # Chaque tronçon a un temps plancher, celui de sa vitesse maximale.
+                    # On ne comprime que ce qui dépasse ce plancher, sinon accélérer
+                    # un inter-ravitaillement ferait dévaler les descentes à 20 km/h.
+                    floor = [segs[i]["dist"] / 1000 / (V_MAX_WALK if rows[i][0] else V_MAX_RUN) * 3600
+                             for i in idx]
+                    base = sum(floor)
+                    if want >= raw:
+                        # Ralentir est toujours possible : on étire tout du même facteur.
+                        new = [rows[i][2] * (want / raw) for i in idx]
+                    elif want > base:
+                        # Accélérer, mais sans passer sous le temps plancher de chaque
+                        # tronçon : on ne comprime que la marge au-dessus du plancher.
+                        slack = [rows[i][2] - f for i, f in zip(idx, floor)]
+                        r = (want - base) / sum(slack)
+                        new = [f + sl * r for f, sl in zip(floor, slack)]
+                    else:
+                        # Le temps appris est plus rapide que le plafond de vitesse
+                        # ne l'autorise : on pose le plancher et on le signale.
+                        new = floor
+                        capped.append((prev_km, km_mark, want, base))
+                    for i, dt in zip(idx, new):
+                        walking, _, _, _, thr = rows[i]
+                        rows[i] = (walking, segs[i]["dist"] / 1000 / (dt / 3600), dt, 0.0, thr)
+                    shifts.append((prev_km, km_mark, want / raw))
+                prev_km, prev_t = km_mark, eta
+            # On redéroule les cumuls après recalage.
+            t = 0.0
+            for i, (walking, v, dt, _, thr) in enumerate(rows):
+                t += dt
+                rows[i] = (walking, v, dt, t, thr)
+            total = t
+            if capped:
+                print(f"  {len(capped)} inter-ravitaillements demandaient plus vite que le plafond "
+                      f"de vitesse : ils ont été posés au plancher.")
+            worst = max(shifts, key=lambda s: abs(s[2] - 1)) if shifts else None
+            print(f"  Recalé sur {len(anchors)} temps de passage appris de "
+                  f"{learned['runners']} finishers · total {hms(total)}")
+            if worst:
+                print(f"  Plus gros écart au modèle : km {worst[0]:.0f}–{worst[1]:.0f}, "
+                      f"{(worst[2]-1)*100:+.0f} % de temps")
+
     # Construction des tronçons enrichis.
     out_segs, walk_km = [], 0.0
     for s, (walking, v, dt, t, thr) in zip(segs, rows):
@@ -257,6 +336,8 @@ def main() -> int:
             "mode": "marche" if walking else "course",
             "poles": bool(walking and s["slope"] >= 15),
             "kmh": round(v, 2), "pace": pace_str(3600 / v),
+            # Vitesse ascensionnelle : mètres de dénivelé avalés par heure.
+            "vam": round(s["up"] / (dt / 3600)) if dt > 0 and s["up"] > 5 else None,
             "split": int(round(dt)), "cumul": hms(t),
             "clock": when.strftime("%H:%M"), "day": (when - start).days + 1,
             "light": light, "temp": round(temp, 1), "thr": round(thr, 1),
@@ -314,6 +395,9 @@ def main() -> int:
                   "walkKm": round(walk_km, 1), "runKm": round(total_km - walk_km, 1)},
         "conditions": {"temp": f"{a.tmin:.0f} à {a.tmax:.0f} °C en vallée",
                        "weather": f"Gradient d'altitude appliqué : −{LAPSE*1000:.1f} °C par 1000 m"},
+        "learnedFrom": ({"runners": learned["runners"], "years": learned["years"],
+                         "matched": learned["matched"], "total": learned["total"],
+                         "points": learned["points"]} if learned else None),
         "profile": [[round(s["km1"], 1), s["alt"]] for s in out_segs],
         "segments": out_segs, "aid": out_aid, "windows": windows, "hours": hours,
     }

@@ -22,7 +22,7 @@
 
 /* Profil */
 .pf { margin: 36px 0 8px; }
-.pf svg { width: 100%; height: 220px; display: block; }
+.pf svg { width: 100%; height: auto; display: block; }
 .pf-line { fill: none; stroke: var(--text); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
 .pf-fill { fill: var(--ghost-hover); stroke: none; }
 .pf-grid { stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
@@ -130,3 +130,37 @@
 .fg-bar.pos { background: var(--mark); }
 .fg-bar.neg { background: var(--dim); }
 .fg-v { font-size: 12px; text-align: right; }
+
+/* ---- Profil lisible : la pente devient une couleur ---- */
+/* Montée : du plus clair au plus soutenu. Descente : gris, car elle ne coûte
+   pas le même effort et ne doit pas tirer l'œil comme une montée raide. */
+.sl-g5 { fill: #B3251C; }
+.sl-g4 { fill: #D4372C; }
+.sl-g3 { fill: #E8705F; }
+.sl-g2 { fill: #F2A99B; }
+.sl-g1 { fill: #D9DBDD; }
+.sl-d1 { fill: #A9AEB4; }
+.sl-d2 { fill: #7C838B; }
+.md-run { fill: #15171A; }
+.md-walk { fill: #E8705F; }
+.md-poles { fill: #B3251C; }
+.lt-n { fill: #2A2E33; }
+.lt-c { fill: #8A9099; }
+.lt-j { fill: #E3E5E7; }
+.pf-aidlab { font-family: var(--mono); font-size: 9px; fill: var(--dim); }
+.pf-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px;
+  font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.lg { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 13px; height: 9px; border-radius: 2px; display: inline-block; }
+.sw.sl-g5 { background: #B3251C; } .sw.sl-g4 { background: #D4372C; }
+.sw.sl-g3 { background: #E8705F; } .sw.sl-g2 { background: #F2A99B; }
+.sw.sl-g1 { background: #D9DBDD; } .sw.sl-d1 { background: #A9AEB4; }
+.sw.sl-d2 { background: #7C838B; } .sw.md-run { background: #15171A; }
+.sw.md-walk { background: #E8705F; } .sw.md-poles { background: #B3251C; }
+.sw.lt-n { background: #2A2E33; } .sw.lt-c { background: #8A9099; }
+.sw.lt-j { background: #E3E5E7; border: 1px solid var(--line); }
+
+/* Pente colorée dans le tableau des 500 m */
+.cellslope { display: inline-flex; align-items: center; gap: 7px; justify-content: flex-end; }
+.cellslope i { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+.vam { color: var(--muted); font-size: 12px; }

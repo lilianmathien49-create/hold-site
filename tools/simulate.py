@@ -23,7 +23,8 @@ import argparse, json, math, random, statistics as st
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from build_plan import read_gpx, to_segments, locate_waypoints, cost_run, cost_walk, hms, hm
+from build_plan import (read_gpx, to_segments, locate_waypoints, speed_ratio,
+                        V_MAX_RUN, V_MAX_WALK, V_MIN, hms, hm)
 
 
 def one_race(segs, p, rng=None) -> tuple[float, list[float]]:
@@ -45,12 +46,11 @@ def one_race(segs, p, rng=None) -> tuple[float, list[float]]:
         walking = s["slope"] >= thr
         grade = s["slope"] / 100
         base = p["walk_flat"] if walking else p["run_flat"]
-        cost = cost_walk(grade) if walking else cost_run(grade)
-        flat = cost_walk(0) if walking else cost_run(0)
         fade = max(0.55, 1 - fatigue / 100 * max(0, hours - 1))
         # La chaleur coûte surtout quand on court : ~0,8 % de vitesse par degré au-dessus de 15.
         heat_cost = 1 - max(0.0, heat) * 0.008 * (0.3 if walking else 1.0)
-        v = max(1.0, min(22.0, base * (flat / cost) * fade * speed * p["scale"] * heat_cost))
+        v = base * speed_ratio(grade, walking) * fade * speed * p["scale"] * heat_cost
+        v = max(V_MIN, min(V_MAX_WALK if walking else V_MAX_RUN, v))
         t += s["dist"] / 1000 / v * 3600
         cum.append(t)
     return t + stop, cum
@@ -62,6 +62,8 @@ def main() -> int:
     ap.add_argument("--target", required=True, help="objectif h:mm")
     ap.add_argument("--runs", type=int, default=10000)
     ap.add_argument("--seed", type=int, default=12)
+    ap.add_argument("--keep-within", type=int, default=60,
+                    help="ne garder que les courses finissant à +/- N minutes de l'objectif")
     ap.add_argument("--out", help="écrit le résultat en JSON")
     ap.add_argument("--walk-thr", type=float, default=8.8)
     ap.add_argument("--walk-decay", type=float, default=0.775)
@@ -99,11 +101,15 @@ def main() -> int:
     p["scale"] = (lo + hi) / 2
 
     print(f"  {a.runs} courses simulées sur {len(segs)} tronçons…")
+    # On ne garde les trajectoires que des courses qui tiennent l'objectif :
+    # la fourchette d'un passage doit décrire les scénarios de réussite, pas
+    # mélanger ceux qui explosent avec ceux qui volent.
+    keep = a.keep_within * 60
     times, curves = [], []
-    for i in range(a.runs):
+    for _ in range(a.runs):
         t, cum = one_race(segs, p, rng)
         times.append(t)
-        if i < 400:
+        if abs(t - target) <= keep and len(curves) < 1500:
             curves.append(cum)
 
     times.sort()
@@ -113,6 +119,7 @@ def main() -> int:
     # Fourchette de passage à chaque ravitaillement.
     km_marks = [w["km"] for w in aid if w["km"] > 0.3]
     checkpoints = []
+    kept = len(curves)
     for w in aid:
         idx = next((i for i, s in enumerate(segs) if s["km1"] >= w["km"]), len(segs) - 1)
         col = sorted(c[idx] for c in curves)
@@ -129,13 +136,15 @@ def main() -> int:
            "p10": hms(q(0.10)), "p25": hms(q(0.25)), "median": hms(q(0.50)),
            "p75": hms(q(0.75)), "p90": hms(q(0.90)),
            "confidence": confidence,
+           "keptWithinMin": a.keep_within, "kept": kept,
            "checkpoints": checkpoints,
            "assumptions": {k: v for k, v in p.items() if k.startswith("sd_") or k == "stop_total"}}
 
     print(f"\n  Probabilité de tenir {a.target} : {under*100:.1f} %")
     print(f"  Fourchette : {hm(q(0.10))} (10 %) · {hm(q(0.5))} (médiane) · {hm(q(0.90))} (90 %)")
     print(f"  Course la plus rapide {hm(times[0])} · la plus lente {hm(times[-1])}")
-    print("\n  Passages prévus (10 % – médiane – 90 %) :")
+    print(f"\n  Passages, parmi les {kept} courses qui finissent à ±{a.keep_within} min "
+          f"de l'objectif (10 % – médiane – 90 %) :")
     for c in checkpoints[::4]:
         print(f"    km {c['km']:6.1f}  {c['name'][:26]:28s} {c['p10']:>9s}  {c['median']:>9s}  {c['p90']:>9s}")
 
