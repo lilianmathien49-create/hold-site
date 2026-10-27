@@ -36,7 +36,7 @@
 /* Blocs et tableaux */
 .pl-block { margin-top: 52px; }
 .pl-h { font-family: var(--serif); font-weight: 400; font-size: clamp(26px, 3vw, 36px); margin: 0 0 18px; }
-.tw { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+.tw { overflow-x: auto; border: 1px solid var(--line); background: transparent; }
 .tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 720px; }
 .tbl th, .tbl td { padding: 11px 14px; text-align: left; border-bottom: 1px solid var(--line); }
 .tbl th { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); font-weight: 400; white-space: nowrap; }
@@ -185,3 +185,49 @@
 .cl-up { font-family: var(--serif); font-size: 30px; line-height: 1.1; color: var(--red); margin-top: 2px; }
 .cl-d { font-size: 11px; color: var(--muted); margin-top: 3px; }
 @media (max-width: 760px) { .cl { border-right: 0; border-bottom: 1px solid var(--line); } }
+
+/* ======================================================================
+   POSTE DE PILOTAGE — la page est en surface sombre (classe .dark sur
+   <html>), donc tous les jetons de la charte sont déjà inversés. Aucune
+   couleur nouvelle : on se sert de l'encre claire et du rouge de marque.
+   ====================================================================== */
+.cock { margin: 28px 0 56px; border: 1px solid var(--line); background: var(--surface); }
+.cock-head { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline;
+  justify-content: space-between; padding: 18px 20px 12px; border-bottom: 1px solid var(--line); }
+.cock-hint { font-size: 11px; color: var(--dim); }
+.chartwrap { padding: 16px 20px 4px; }
+.pf-live svg { cursor: crosshair; }
+.cur { stroke: var(--mark); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.cur-dot { fill: var(--mark); stroke: var(--surface); stroke-width: 2; }
+
+.scrub { display: flex; align-items: center; gap: 14px; padding: 2px 20px 10px; }
+.scrub > span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--dim); white-space: nowrap; }
+.scrub input[type="range"] { flex: 1; height: 34px; }
+
+/* Les compteurs : un chiffre par case, gros, en chiffres à chasse fixe */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  border-top: 1px solid var(--line); }
+.tl { padding: 15px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-width: 0; }
+.tl-l { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.tl-v { font-family: var(--mono); font-size: 25px; line-height: 1.2; margin-top: 5px;
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-h { font-size: 10px; color: var(--dim); margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl[data-tile="mode"] .tl-v, .tl[data-tile="slope"] .tl-v { font-size: 19px; }
+.tl[data-tile="mode"] .tl-v { color: var(--mark); }
+.cock-gear { padding: 13px 20px; font-size: 11px; color: var(--muted); min-height: 42px; }
+
+/* Le sombre change deux ou trois choses ailleurs */
+.gate-box { background: rgba(255,255,255,.03); }
+.tw, .grps, .climbs, .fg, .mc, .contact { background: rgba(255,255,255,.02); }
+.tw-tall thead th { background: #0E0E0E; }
+.minibar { background: rgba(255,255,255,.10); }
+.pf-night, .lt-night td { background: rgba(255,255,255,.04); }
+
+@media (max-width: 760px) {
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+  .tl-v { font-size: 21px; }
+  .chartwrap { padding: 12px 12px 2px; }
+  .cock-head, .scrub, .cock-gear { padding-left: 14px; padding-right: 14px; }
+}

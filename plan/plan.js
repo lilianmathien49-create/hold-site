@@ -30,7 +30,41 @@ const LIGHT_ICON = { nuit: '●', jour: '○', 'entre chien et loup': '◐' };
 const terrainOf = (g) => g >= 12 ? 'raide' : g >= 4 ? 'montee' : g > -4 ? 'plat'
   : g > -12 ? 'descente' : 'plongeon';
 
-function profile(plan) {
+/* ---------- Le poste de pilotage ----------
+   Un seul curseur commande tout : le profil, les compteurs, la consigne.
+   On balaye le parcours et on lit où on sera, quand, par quel temps. */
+function cockpit(plan) {
+  const S = plan.segments || [];
+  if (!S.length) return '';
+  const tile = (k, label, hint) => `<div class="tl" data-tile="${k}">
+    <p class="tl-l mono">${esc(label)}</p>
+    <p class="tl-v" id="tv-${k}">—</p>
+    <p class="tl-h mono" id="th-${k}">${esc(hint || '')}</p></div>`;
+  return `<section class="cock" id="cock">
+    <div class="cock-head">
+      <p class="eyebrow">Poste de pilotage</p>
+      <p class="cock-hint mono" id="cockHint">Balaye le profil — ou fais glisser le curseur du temps</p>
+    </div>
+    <div class="chartwrap" id="chartWrap"></div>
+    <label class="scrub">
+      <span class="mono">Temps écoulé</span>
+      <input type="range" id="scrub" min="0" max="1000" step="1" value="0" aria-label="Avancer dans la course">
+    </label>
+    <div class="tiles">
+      ${tile('km', 'Kilomètre', 'depuis le départ')}
+      ${tile('alt', 'Altitude', 'mètres')}
+      ${tile('slope', 'Pente', 'sur 500 m')}
+      ${tile('mode', 'Consigne', '')}
+      ${tile('pace', 'Allure', 'par kilomètre')}
+      ${tile('vam', 'Ascension', 'mètres par heure')}
+      ${tile('clock', 'Heure', 'au mur')}
+      ${tile('temp', 'Température', 'ressentie au point')}
+    </div>
+    <p class="cock-gear mono" id="cockGear"></p>
+  </section>`;
+}
+
+function profile(plan, interactive) {
   const segs = plan.segments || [];
   const pts = plan.profile || [];
   if (pts.length < 2) return '';
@@ -92,10 +126,17 @@ function profile(plan) {
     ['l-nuit', 'nuit'], ['l-chien', 'chien et loup'], ['l-jour', 'jour']]
     .map(([c, l]) => `<span class="lg"><i class="sw ${c}"></i>${l}</span>`).join('');
 
-  return `<div class="pf">
-    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Profil du parcours, pente, mode et lumière">
+  // Le poste de pilotage a besoin de la géométrie pour replacer son curseur.
+  const geo = JSON.stringify({ w: W, l: P.l, r: P.r, t: P.t, ph: PH, y0, y1 });
+  const cursor = interactive
+    ? `<line id="curLine" x1="${P.l}" x2="${P.l}" y1="${P.t}" y2="${H - 26}" class="cur"/>
+       <circle id="curDot" cx="${P.l}" cy="${P.t}" r="5" class="cur-dot"/>`
+    : '';
+  return `<div class="pf${interactive ? ' pf-live' : ''}">
+    <svg viewBox="0 0 ${W} ${H}" data-geo='${geo}' role="img"
+         aria-label="Profil du parcours, pente, mode et lumière">
       ${grid}${cols}<path d="${line}" class="pf-line"/>${marks}
-      ${slopeStrip}${modeStrip}${lightStrip}${xlab}
+      ${slopeStrip}${modeStrip}${lightStrip}${xlab}${cursor}
     </svg>
     <div class="pf-legend">${legend}</div>
     <div class="pf-legend">${legend2}</div>
@@ -462,6 +503,73 @@ function montecarlo(plan) {
   </section>`;
 }
 
+/* ---------- Le curseur qui relie tout ---------- */
+function wireCockpit(plan) {
+  const wrap = $('chartWrap'), scrub = $('scrub');
+  if (!wrap || !scrub) return;
+  wrap.innerHTML = profile(plan, true);
+  const svg = wrap.querySelector('svg');
+  if (!svg || !svg.dataset.geo) return;
+  const S = plan.segments || [];
+  const totalKm = S[S.length - 1].km1;
+  const geo = JSON.parse(svg.dataset.geo);          // posé par profile()
+  const cur = svg.querySelector('#curLine');
+  const dot = svg.querySelector('#curDot');
+  const set = (id, v) => { const e = $(`tv-${id}`); if (e) e.textContent = v; };
+  const hint = (id, v) => { const e = $(`th-${id}`); if (e) e.textContent = v; };
+
+  const show = (i) => {
+    const s = S[Math.max(0, Math.min(S.length - 1, i))];
+    const x = geo.l + (s.km1 / totalKm) * (geo.w - geo.l - geo.r);
+    const y = geo.t + geo.ph - (s.alt - geo.y0) / (geo.y1 - geo.y0 || 1) * geo.ph;
+    cur.setAttribute('x1', x); cur.setAttribute('x2', x);
+    dot.setAttribute('cx', x); dot.setAttribute('cy', y);
+    set('km', km1(s.km1)); hint('km', `sur ${km1(totalKm)} km`);
+    set('alt', s.alt); hint('alt', `${s.up ? `+${s.up}` : '0'} m sur ce tronçon`);
+    set('slope', `${s.slope > 0 ? '+' : ''}${km1(s.slope)} %`);
+    hint('slope', CLS_LABEL[terrainOf(s.slope)] || '');
+    set('mode', s.mode === 'marche' ? (s.poles ? 'Marche · bâtons' : 'Marche') : 'Course');
+    hint('mode', `seuil du moment ${km1(s.thr)} %`);
+    set('pace', s.pace); hint('pace', `${km1(s.kmh)} km/h`);
+    set('vam', s.vam ? s.vam : '—'); hint('vam', s.vam ? 'mètres par heure' : 'pas de montée ici');
+    set('clock', s.clock); hint('clock', `cumul ${s.cumul.slice(0, 5)}`);
+    set('temp', degC(s.temp)); hint('temp', s.light);
+    const gear = [];
+    if (s.light === 'nuit') gear.push('frontale');
+    if (s.temp <= 8) gear.push('gants');
+    if (s.temp <= 4) gear.push('veste chaude');
+    if (s.temp <= 0) gear.push('bonnet');
+    if (s.poles) gear.push('bâtons sortis');
+    const g = $('cockGear');
+    if (g) g.innerHTML = gear.length
+      ? `À sortir ici : ${gear.map((x) => `<span class="tag">${esc(x)}</span>`).join(' ')}`
+      : '';
+    const near = (plan.aid || []).filter((a) => a.km <= s.km1).pop();
+    const next = (plan.aid || []).find((a) => a.km > s.km1);
+    const ch = $('cockHint');
+    if (ch) ch.textContent = next
+      ? `Prochain ravitaillement : ${next.name} dans ${km1(next.km - s.km1)} km`
+      : `Dernier passage : ${near ? near.name : ''}`;
+    scrub.value = Math.round(i / (S.length - 1) * 1000);
+  };
+
+  const fromX = (clientX) => {
+    const r = svg.getBoundingClientRect();
+    const f = (clientX - r.left) / r.width * geo.w;
+    const km = (f - geo.l) / (geo.w - geo.l - geo.r) * totalKm;
+    return S.findIndex((s) => s.km1 >= km);
+  };
+  const onMove = (e) => {
+    const cx = e.touches ? e.touches[0].clientX : e.clientX;
+    const i = fromX(cx);
+    if (i >= 0) show(i);
+  };
+  svg.addEventListener('mousemove', onMove);
+  svg.addEventListener('touchmove', (e) => { onMove(e); }, { passive: true });
+  scrub.addEventListener('input', () => show(Math.round(+scrub.value / 1000 * (S.length - 1))));
+  show(0);
+}
+
 /* ---------- Export vers la montre ----------
    Le plan reste chiffré sur le serveur ; le fichier est fabriqué ici, dans le
    navigateur, à partir des données déjà déchiffrées. Rien ne repart en ligne. */
@@ -559,7 +667,7 @@ function render(plan) {
       ${kpi('Dont nuit', night ? `${km1(night)} km` : '')}
       ${kpi('Températures', c.temp)}
     </div>
-    ${profile(plan)}
+    ${cockpit(plan)}
     ${athlete(plan)}
     ${reference(plan)}
     ${lessons(plan)}
@@ -592,6 +700,7 @@ function render(plan) {
 
   const slug = `${(plan.race || 'course')}-${(plan.runner || '')}`.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  try { wireCockpit(plan); } catch (e) { console.error('Hold : poste de pilotage', e); }
   $('dlGpx')?.addEventListener('click', () => download(`${slug}.gpx`, toGpx(plan), 'application/gpx+xml'));
   $('dlCsv')?.addEventListener('click', () => download(`${slug}.csv`, toCsv(plan), 'text/csv;charset=utf-8'));
   $('doPrint')?.addEventListener('click', () => window.print());
@@ -623,13 +732,23 @@ $('gateForm').addEventListener('submit', async (e) => {
   if (!pw) return;
   $('gateBtn').disabled = true;
   msg('Déchiffrement…');
+  let plan;
   try {
-    render(await decrypt(pack, pw));
+    plan = await decrypt(pack, pw);
   } catch {
     // AES-GCM refuse aussi bien un mauvais mot de passe qu'un fichier modifié : même message.
     msg('Mot de passe incorrect.');
     $('pw').select();
-  } finally {
+    $('gateBtn').disabled = false;
+    return;
+  }
+  // Le déchiffrement a réussi : une erreur d'affichage ne doit plus se faire
+  // passer pour un mauvais mot de passe, sinon le coureur cherche au mauvais endroit.
+  try {
+    render(plan);
+  } catch (e) {
+    console.error('Hold : affichage du plan', e);
+    msg("Le plan s'est ouvert mais n'a pas pu s'afficher. Préviens ton coach.");
     $('gateBtn').disabled = false;
   }
 });
