@@ -1,0 +1,12 @@
+# Ce fichier n'est lu qu'à la racine d'un domaine. Tant que le site est
+# servi depuis github.io/hold-site/, il reste décoratif : la vraie
+# protection de /plan/ et /paiement/ est leur balise noindex. Il prendra
+# effet le jour d'un nom de domaine propre.
+# L'espace du coureur et la page de paiement portent déjà une balise noindex.
+# On les écarte aussi ici : un plan de course n'a rien à faire dans un index.
+User-agent: *
+Allow: /
+Disallow: /plan/
+Disallow: /paiement/
+
+Sitemap: https://lilianmathien49-create.github.io/hold-site/sitemap.xml
