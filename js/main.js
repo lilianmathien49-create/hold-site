@@ -175,54 +175,93 @@ function initFilm() {
 
 /* ---------- La demande : un mail déjà rempli ---------- */
 const MAIL = 'lilian.mathien49@gmail.com';
+// Adresse du service qui reçoit le formulaire (Formspree, Web3Forms…). Vide,
+// le formulaire retombe sur le logiciel de mail du visiteur — ce qui échoue
+// chez beaucoup de monde. Dès qu'elle est remplie, le message part vraiment.
+const ENDPOINT = 'https://formspree.io/f/xgaaydkk';
 function initAsk() {
   const form = $('askForm'), hint = $('askHint');
-  const v = (id) => $(id).value.trim();
+  if (!form || !hint) return;
+  // Un champ absent ne doit plus faire tomber la fonction : le formulaire a
+  // déjà maigri une fois, il maigrira peut-être encore.
+  const v = (id) => { const e = $(id); return e ? e.value.trim() : ''; };
   const say = (msg) => { hint.textContent = msg; };
 
-  const subject = () => `Demande Hold — ${v('f-race') || 'projet de course'} — ${v('f-name')}`;
+  // L'offre cliquée n'est plus un champ du formulaire — c'était une question de
+  // plus à répondre pour une information qu'on a déjà. On la retient ici et
+  // elle part dans le message sans que le coureur ait rien à faire.
+  let offre = '';
+
+  const subject = () => `Réservation d'appel — ${v('f-name') || 'nouveau coureur'}`;
   const body = () => {
-    const l = ['Bonjour Lilian,', '', 'Je souhaite être accompagné pour ma course.', '',
-      `Nom          : ${v('f-name')}`,
-      `Email        : ${v('f-mail')}`,
-      `Course       : ${v('f-race')}`,
-      `Date         : ${v('f-date') || 'non fixée'}`,
-      `Objectif     : ${v('f-goal') || 'à définir'}`,
-      `Séances/sem. : ${v('f-freq')}`,
-      `Montre       : ${v('f-watch')}`,
-      `Strava       : ${v('f-strava')}`,
-      `Records      : ${v('f-pb') || '—'}`,
-      `Offre visée  : ${v('f-offer')}`];
-    if (v('f-note')) l.push('', 'Autre :', v('f-note'));
-    l.push('', 'Quand seriez-vous disponible pour un appel ?', '', v('f-name'));
+    const l = ['Bonjour Lilian,', '', "Je voudrais réserver un appel.", '',
+      `Nom   : ${v('f-name')}`,
+      `Email : ${v('f-mail')}`];
+    if (offre) l.push(`Offre : ${offre}`);
+    l.push('', 'Mon objectif :', v('f-goal') || '(on en parle à l\'appel)');
+    l.push('', 'Mes disponibilités :', v('f-slots') || '(à convenir)');
+    l.push('', 'À bientôt,', v('f-name'));
     return l.join('\n');
   };
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const miss = ['f-name', 'f-mail', 'f-race'].filter((id) => !v(id));
-    if (miss.length) { $(miss[0]).focus(); say('Il me faut au moins ton nom, ton email et ta course.'); return; }
+    const miss = ['f-name', 'f-mail'].filter((id) => !v(id));
+    if (miss.length) {
+      const el = $(miss[0]);
+      if (el) el.focus();
+      say('Il me faut juste ton nom et ton email.');
+      return;
+    }
+    // Avec un service de formulaire configuré, le message part vraiment : rien
+    // ne dépend du logiciel de mail du coureur, qui chez beaucoup n'existe pas.
+    if (ENDPOINT) {
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      say('Envoi…');
+      try {
+        const r = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            nom: v('f-name'), email: v('f-mail'), objectif: v('f-goal'),
+            disponibilites: v('f-slots'), offre: offre || 'non précisée',
+            _subject: subject(), _replyto: v('f-mail'),
+          }),
+        });
+        if (!r.ok) throw new Error(`réponse ${r.status}`);
+        form.reset();
+        say('Message envoyé. Je te réponds avec un créneau sous 24 h.');
+      } catch {
+        // L'envoi a échoué : on ne laisse pas le coureur sans recours.
+        say("L'envoi a échoué. Copie le message avec le bouton à côté et envoie-le moi par mail.");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+      return;
+    }
     location.href = `mailto:${MAIL}?subject=${encodeURIComponent(subject())}&body=${encodeURIComponent(body())}`;
     say("Ton logiciel de mail devrait s'ouvrir. Sinon, copie le message avec le bouton à côté.");
   });
 
   // Le mailto échoue en silence chez qui n'a pas de client mail configuré : on offre toujours la copie.
-  $('askCopy').addEventListener('click', async () => {
-    try {
-      if (!navigator.clipboard) throw new Error('presse-papiers indisponible');
-      await navigator.clipboard.writeText(`À : ${MAIL}\nObjet : ${subject()}\n\n${body()}`);
-      say(`Message copié. Colle-le dans un mail à ${MAIL}.`);
-    } catch {
-      say(`Copie impossible ici. Envoie tes infos à ${MAIL}.`);
-    }
-  });
-
-  // Chaque bouton d'offre arrive au formulaire avec son choix déjà coché.
-  for (const btn of document.querySelectorAll('[data-offer]')) {
-    btn.addEventListener('click', () => {
-      const sel = $('f-offer'), opt = [...sel.options].find((o) => o.text === btn.dataset.offer);
-      if (opt) sel.value = opt.value;
+  const copie = $('askCopy');
+  if (copie) {
+    copie.addEventListener('click', async () => {
+      try {
+        if (!navigator.clipboard) throw new Error('presse-papiers indisponible');
+        await navigator.clipboard.writeText(`À : ${MAIL}\nObjet : ${subject()}\n\n${body()}`);
+        say(`Message copié. Colle-le dans un mail à ${MAIL}.`);
+      } catch {
+        say(`Copie impossible ici. Envoie tes infos à ${MAIL}.`);
+      }
     });
+  }
+
+  // Le bouton d'offre n'a plus de menu à cocher : il retient le choix et
+  // descend au formulaire.
+  for (const btn of document.querySelectorAll('[data-offer]')) {
+    btn.addEventListener('click', () => { offre = btn.dataset.offer || ''; });
   }
 }
 

@@ -1,0 +1,196 @@
+{
+ "sessions": 900,
+ "blocks": 170000,
+ "knots": 5,
+ "coverage": {
+  "blocks": 170000,
+  "hours": 708.3,
+  "climbs": {
+   "sessions": 900,
+   "medianGain": 110,
+   "maxGain": 950,
+   "medianContinuous": 420,
+   "q90Continuous": 980,
+   "maxContinuous": 1310,
+   "above300": 180,
+   "above800": 46
+  },
+  "zoneBlocks": 18000,
+  "walkedInZone": 5.0,
+  "blocksBeyond2h": 24000,
+  "maxHours": 9.5,
+  "tempBlocks": 28000,
+  "threshold": {
+   "ok": true,
+   "why": "",
+   "validUpToClimbM": 980
+  },
+  "decay": {
+   "ok": true,
+   "why": ""
+  },
+  "durability": {
+   "ok": true,
+   "why": ""
+  },
+  "heat": {
+   "ok": true,
+   "why": ""
+  }
+ },
+ "walk": {
+  "curve": [
+   [
+    0,
+    20.5
+   ],
+   [
+    1,
+    17.4
+   ],
+   [
+    2,
+    14.3
+   ]
+  ],
+  "thr0": 20.5,
+  "decay4h": 0.82
+ },
+ "hr": {
+  "slope": [
+   [
+    -20,
+    -40.0
+   ],
+   [
+    -10,
+    -34.0
+   ],
+   [
+    0,
+    -36.0
+   ],
+   [
+    10,
+    -38.0
+   ],
+   [
+    20,
+    -33.0
+   ]
+  ],
+  "hours": [
+   [
+    0,
+    0.0
+   ],
+   [
+    1,
+    14.0
+   ],
+   [
+    3,
+    16.5
+   ],
+   [
+    5,
+    15.0
+   ],
+   [
+    7,
+    11.0
+   ],
+   [
+    9,
+    6.0
+   ]
+  ],
+  "hoursRange": [
+   0,
+   9.5
+  ],
+  "temp": [
+   [
+    10,
+    0.0
+   ],
+   [
+    15,
+    0.0
+   ],
+   [
+    20,
+    2.1
+   ],
+   [
+    25,
+    5.4
+   ],
+   [
+    30,
+    9.8
+   ],
+   [
+    34,
+    13.6
+   ]
+  ],
+  "walkOffset": -6.0,
+  "driftPerHour": 4.9,
+  "driftRange": [
+   0.2,
+   1.3
+  ],
+  "driftPerHour1to4": null,
+  "driftWhy1to4": "séance la plus longue : 3.2 h",
+  "heatPerDegAt18": 0.36,
+  "heatPerDegAt25": 0.78
+ },
+ "speed": {
+  "base": 12.5,
+  "runFlat": 12.6,
+  "walkFlat": 5.8,
+  "curve": [
+   [
+    0,
+    0.0
+   ],
+   [
+    2,
+    -1.2
+   ],
+   [
+    4,
+    -3.6
+   ],
+   [
+    6,
+    -7.1
+   ],
+   [
+    8,
+    -11.4
+   ]
+  ],
+  "lossPerHour1to3": 1.1,
+  "lossPerHour5to8": null
+ },
+ "heatSpeed": {
+  "perDegree": -0.09,
+  "pctPerDegree": -0.72,
+  "ci80": [
+   -0.13,
+   -0.05
+  ],
+  "sure": true,
+  "sessions": 120,
+  "months": 9,
+  "withinMonthSpread": 3.4,
+  "tempSpread": [
+   13.0,
+   30.0
+  ],
+  "above15": 96,
+  "floor": true
+ }
+}

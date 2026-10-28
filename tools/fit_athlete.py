@@ -25,14 +25,23 @@ from pathlib import Path
 import numpy as np
 
 
+def _num(v):
+    """Les vraies montres laissent des trous : cardio absent, température non
+    mesurée. On les marque comme manquants plutôt que de refuser le fichier."""
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return float("nan")
+
+
 def load(path: Path):
     by_session = defaultdict(list)
     with open(path, encoding="utf-8") as f:
         for r in csv.DictReader(f):
             by_session[int(r["session"])].append((
-                float(r["slope"]), float(r["t_s"]) / 3600.0,
+                _num(r["slope"]), _num(r["t_s"]) / 3600.0,
                 1.0 if r["mode"] == "marche" else 0.0,
-                float(r["kmh"]), float(r["hr"]), float(r["temp"]),
+                _num(r["kmh"]), _num(r["hr"]), _num(r["temp"]),
             ))
     return by_session
 

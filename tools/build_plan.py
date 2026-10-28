@@ -176,6 +176,34 @@ def terrain_class(slope: float) -> str:
     return "plongeon"
 
 
+def fr(v, d=2):
+    """Un nombre tel qu'un lecteur francophone l'écrit."""
+    return f"{v:.{d}f}".rstrip("0").rstrip(".").replace(".", ",") or "0"
+
+
+def longest_climbs(segs, floor_pct=2.0):
+    """Les montées continues de la course, en mètres de D+ d'affilée.
+
+    Même découpage que côté entraînement : une montée court tant que la pente
+    reste au-dessus de deux pour cent, et c'est sa hauteur qui compte, pas
+    celle de la course. Deux mille mètres de D+ en vingt bosses ne demandent
+    pas la même chose que deux mille en deux cols.
+    """
+    runs, cur = [], 0.0
+    for sg in segs:
+        if sg["slope"] > floor_pct:
+            cur += sg["up"]
+        elif cur:
+            runs.append(cur)
+            cur = 0.0
+    if cur:
+        runs.append(cur)
+    if not runs:
+        return {"median": 0, "max": 0, "count": 0}
+    runs.sort()
+    return {"median": int(runs[len(runs) // 2]), "max": int(runs[-1]), "count": len(runs)}
+
+
 def to_sections(out_segs, aid, min_km=2.0):
     """Regroupe les tronçons de 500 m en portions de terrain homogène, coupées
     aux ravitaillements. On obtient les bosses et les descentes réelles au lieu
@@ -320,26 +348,72 @@ def main() -> int:
         print("--start attend 'AAAA-MM-JJ HH:MM'", file=sys.stderr)
         return 1
 
+    pts, wpts = read_gpx(Path(a.gpx))
+    segs = to_segments(pts)
+
     # Les paramètres mesurés sur le coureur priment sur les valeurs par défaut.
     # Le niveau absolu des vitesses importe peu — la calibration le reprend —
     # mais leur RAPPORT décide du coût relatif de la marche, et il est mesuré.
+    #
+    # Un paramètre mesuré n'est pas pour autant applicable. Deux raisons de le
+    # refuser, et le plan doit dire laquelle : les données ne le mesurent pas
+    # (séances trop courtes), ou elles le mesurent sur autre chose que la
+    # course (des bosses quand la course a des cols). Un plan qui annonce
+    # « mesuré sur toi » un chiffre de référence est plus nuisible qu'un plan
+    # qui n'annonce rien.
+    params = {}
     if a.profile:
         prof = json.loads(Path(a.profile).read_text(encoding="utf-8"))
         w, sp = prof.get("walk") or {}, prof.get("speed") or {}
-        if w.get("thr0"):
+        cov = prof.get("coverage") or {}
+        source = params        # paramètre -> ce qui l'a décidé
+
+        # La course décide si le seuil du coureur est transférable : on mesure
+        # ses montées continues comme fit_gam.py mesure celles de
+        # l'entraînement, pour comparer deux fois la même chose.
+        race_climb = longest_climbs(segs)
+        limite = (cov.get("threshold") or {}).get("validUpToClimbM") or 0
+        if w.get("thr0") and (not limite or race_climb["median"] <= limite * 3):
             a.walk_thr = w["thr0"]
+            source["seuil de marche"] = "mesuré"
+        elif w.get("thr0"):
+            source["seuil de marche"] = (
+                f"référence — le tien ({fr(w['thr0'])} %) est mesuré sur des montées de "
+                f"{limite} m d'affilée au plus, cette course en enchaîne de "
+                f"{race_climb['median']} m en moyenne et jusqu'à {race_climb['max']} m")
+        else:
+            source["seuil de marche"] = "référence — non mesurable sur ces données"
+
         if w.get("decay4h"):
             a.walk_decay = w["decay4h"]
+            source["chute du seuil"] = "mesurée"
+        else:
+            why = (cov.get("decay") or {}).get("why") or "non mesurable"
+            source["chute du seuil"] = f"référence — {why}"
+
         if sp.get("lossPerHour1to3"):
             a.fatigue = sp["lossPerHour1to3"]
-        if sp.get("runFlat") and sp.get("walkFlat"):
-            ratio = sp["runFlat"] / sp["walkFlat"]
-            a.walk_flat = a.run_flat / ratio
-        print(f"  Profil mesuré : seuil {a.walk_thr} % · chute {a.walk_decay} pt/h · "
-              f"durabilité {a.fatigue} %/h · rapport course/marche {a.run_flat/a.walk_flat:.2f}")
+            source["durabilité"] = "mesurée"
+        else:
+            why = (cov.get("durability") or {}).get("why") or "non mesurable"
+            source["durabilité"] = f"référence — {why}"
 
-    pts, wpts = read_gpx(Path(a.gpx))
-    segs = to_segments(pts)
+        if sp.get("runFlat") and sp.get("walkFlat"):
+            a.walk_flat = a.run_flat / (sp["runFlat"] / sp["walkFlat"])
+            source["rapport course/marche"] = "mesuré"
+
+        print("  Profil du coureur, paramètre par paramètre :")
+        valeur = {"seuil de marche": f"{fr(a.walk_thr)} %",
+                  "chute du seuil": f"{fr(a.walk_decay, 3)} pt/h",
+                  "durabilité": f"{fr(a.fatigue)} %/h",
+                  "rapport course/marche": fr(a.run_flat / a.walk_flat)}
+        for nom, origine in source.items():
+            print(f"    {nom:<22} {valeur[nom]:>9}   {origine}")
+        mesures = sum(1 for o in source.values() if o.startswith("mesur"))
+        print(f"  {mesures} paramètre(s) sur {len(source)} viennent de ses données ; "
+              f"les autres sont des références de terrain. Ce sont des sorties longues "
+              f"et du dénivelé continu qui les remplaceront, pas un meilleur calcul.")
+
     # On garde un point tous les 25 m environ : assez dense pour suivre un
     # sentier, assez léger pour ne pas tripler le poids du fichier.
     track, last = [], None
@@ -501,7 +575,10 @@ def main() -> int:
         "distanceKm": round(total_km, 1), "elevationM": round(total_up),
         "revised": datetime.now().strftime("%d/%m/%Y"),
         "model": {"walkThr": a.walk_thr, "walkDecay": a.walk_decay, "fatigue": a.fatigue,
-                  "walkKm": round(walk_km, 1), "runKm": round(total_km - walk_km, 1)},
+                  "walkKm": round(walk_km, 1), "runKm": round(total_km - walk_km, 1),
+                  # D'où vient chaque réglage : le coureur a le droit de savoir
+                  # lesquels de ces chiffres sont les siens.
+                  "params": params},
         "conditions": {"temp": f"{a.tmin:.0f} à {a.tmax:.0f} °C en vallée",
                        "weather": f"Gradient d'altitude appliqué : −{LAPSE*1000:.1f} °C par 1000 m"},
         "learnedFrom": ({"runners": learned["runners"], "years": learned["years"],

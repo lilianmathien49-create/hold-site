@@ -14,17 +14,14 @@
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-<a class="skip" href="#essai">Aller à l'essai</a>
+<a class="skip" href="#objectif">Aller au contenu</a>
 
 <header class="nav dark" id="nav">
   <a href="#top" class="logo" aria-label="Hold, retour en haut">Hold<span class="logo-dot" aria-hidden="true"></span></a>
   <nav class="nav-links" id="navLinks">
     <a href="#objectif" class="link-btn">La méthode</a>
-    <a href="#film-section" class="link-btn">Le film</a>
-    <a href="#livrable" class="link-btn">Ce que tu reçois</a>
-    <a href="#lab" class="link-btn">Nos analyses</a>
-    <a href="#offres" class="link-btn">Offres</a>
-    <a href="#essai" class="link-btn">Essayer</a>
+    <a href="#offres" class="link-btn">Nos offres</a>
+    <a href="paiement/" class="link-btn">Paiement</a>
     <a href="plan/" class="link-btn link-espace">Mon espace</a>
   </nav>
   <div class="nav-r">
@@ -302,7 +299,7 @@
 
   <div class="offers-grid">
     <div class="offer reveal">
-      <p class="eyebrow">Le plan</p>
+      <p class="eyebrow">Plan découverte</p>
       <p class="price">69,99 € <small>/ mois</small></p>
       <p class="offer-once mono">sans engagement</p>
       <ul class="offer-list">
@@ -312,10 +309,10 @@
         <li>Échanges par message entre deux appels</li>
       </ul>
       <p class="offer-delay mono">Résiliable à tout moment</p>
-      <a href="#contact" class="btn btn-ghost" data-offer="Le plan · 69,99 €/mois">Choisir le plan</a>
+      <a href="#contact" class="btn btn-ghost" data-offer="Plan découverte · 69,99 €/mois">Choisir Découverte</a>
     </div>
     <div class="offer reveal">
-      <p class="eyebrow">Plan + suivi</p>
+      <p class="eyebrow">Plan confirmé</p>
       <p class="price">99,99 € <small>/ mois</small></p>
       <p class="offer-once mono">sans engagement</p>
       <ul class="offer-list">
@@ -325,10 +322,10 @@
         <li><b>Séances de renforcement incluses</b></li>
       </ul>
       <p class="offer-delay mono">Résiliable à tout moment</p>
-      <a href="#contact" class="btn btn-ghost" data-offer="Plan + suivi · 99,99 €/mois">Choisir plan + suivi</a>
+      <a href="#contact" class="btn btn-ghost" data-offer="Plan confirmé · 99,99 €/mois">Choisir Confirmé</a>
     </div>
     <div class="offer offer-pop reveal">
-      <p class="eyebrow">Plan + suivi + stratégie</p>
+      <p class="eyebrow">Plan pro</p>
       <p class="price">119,99 € <small>/ mois</small></p>
       <p class="offer-once mono">sans engagement</p>
       <ul class="offer-list">
@@ -339,7 +336,7 @@
         <li>Plan mis à jour jusqu'à la veille, selon les conditions</li>
       </ul>
       <p class="offer-delay mono">Jusqu'à la ligne d'arrivée</p>
-      <a href="#contact" class="btn" data-offer="Plan + suivi + stratégie · 119,99 €/mois">Tout, du plan au dossard</a>
+      <a href="#contact" class="btn" data-offer="Plan pro · 119,99 €/mois">Choisir Pro</a>
     </div>
   </div>
   <p class="hint lab-note">Pas sûr de ton choix&nbsp;? Remplis quand même le formulaire, on en parle à l'appel.</p>
@@ -351,43 +348,19 @@
     <div class="contact-head reveal">
       <p class="eyebrow">On se parle</p>
       <h2 class="title" id="contact-t">Dis-moi où tu vas.<br><span class="soft">On cale un appel.</span></h2>
-      <p class="sub" style="margin-top:20px">Deux minutes à remplir. Je reçois tout d'un coup — ta course, ton niveau, ton matériel — et je te réponds avec un créneau d'appel.</p>
+      <p class="sub" style="margin-top:20px">Quatre champs, trente secondes. Dis-moi ton objectif et quand tu peux parler : je te confirme un créneau. Le reste — ton niveau, ta montre, tes records — on en parle de vive voix, c'est plus rapide que de le taper.</p>
     </div>
     <form class="form reveal" id="askForm" novalidate>
       <div class="f-row">
         <label class="f"><span>Prénom et nom</span><input id="f-name" type="text" autocomplete="name" required></label>
         <label class="f"><span>Ton email</span><input id="f-mail" type="email" autocomplete="email" required></label>
       </div>
-      <div class="f-row">
-        <label class="f"><span>Ta course</span><input id="f-race" type="text" placeholder="Marathon de Paris, UTMB…" required></label>
-        <label class="f"><span>La date</span><input id="f-date" type="date"></label>
-      </div>
-      <div class="f-row">
-        <label class="f"><span>Ton objectif</span><input id="f-goal" type="text" placeholder="sub-3h, finir, top 100…"></label>
-        <label class="f"><span>Séances par semaine</span><select id="f-freq">
-          <option>1 à 2</option><option selected>3 à 4</option><option>5 à 6</option><option>7 et plus</option>
-        </select></label>
-      </div>
-      <div class="f-row">
-        <label class="f"><span>Ta montre</span><select id="f-watch">
-          <option>Garmin</option><option>Coros</option><option>Suunto</option><option>Polar</option>
-          <option>Apple Watch</option><option>Autre</option><option>Aucune pour l'instant</option>
-        </select></label>
-        <label class="f"><span>Compte Strava</span><select id="f-strava">
-          <option>Oui, je peux le connecter</option><option>Non</option>
-        </select></label>
-      </div>
-      <label class="f"><span>Tes records <em>(facultatif)</em></span><input id="f-pb" type="text" placeholder="10 km 42:10 · semi 1h33 · marathon 3h15"></label>
-      <label class="f"><span>L'offre qui t'intéresse</span><select id="f-offer">
-        <option>La stratégie seule · 49,99 €</option>
-        <option>Le plan · 69,99 €/mois</option>
-        <option>Plan + suivi · 99,99 €/mois</option>
-        <option>Plan + suivi + stratégie · 119,99 €/mois</option>
-        <option selected>Je ne sais pas encore, j'aimerais en parler</option>
-      </select></label>
-      <label class="f"><span>Autre chose à me dire <em>(facultatif)</em></span><textarea id="f-note" rows="3"></textarea></label>
+      <label class="f"><span>Ton objectif</span><textarea id="f-goal" rows="4"
+        placeholder="Quelle course, quand, et ce que tu veux y faire. Trois lignes suffisent."></textarea></label>
+      <label class="f"><span>Tes disponibilités pour l'appel</span><textarea id="f-slots" rows="3"
+        placeholder="Donne-moi deux ou trois créneaux. Par exemple : mardi après 18 h, jeudi midi, samedi matin."></textarea></label>
       <div class="f-actions">
-        <button type="submit" class="btn">Envoyer ma demande</button>
+        <button type="submit" class="btn">Demander un appel</button>
         <button type="button" class="btn btn-ghost" id="askCopy">Copier le message</button>
       </div>
       <p class="hint" id="askHint">Le bouton ouvre ton logiciel de mail, déjà rempli. Si rien ne s'ouvre, copie le message et envoie-le à <a href="mailto:lilian.mathien49@gmail.com" style="text-decoration:underline">lilian.mathien49@gmail.com</a>.</p>
@@ -402,21 +375,21 @@
     <div><span class="logo">Hold<span class="logo-dot" aria-hidden="true"></span></span><p class="sub">Un coach, tes données.<br>Lilian Mathien — entraîneur &amp; data scientist.</p></div>
     <nav class="foot-links" aria-label="Pied de page">
       <a href="mailto:lilian.mathien49@gmail.com">lilian.mathien49@gmail.com</a>
-      <a href="[LIEN INSTAGRAM]">Instagram</a>
-      <a href="[LIEN STRAVA]">Strava</a>
       <a href="mailto:lilian.mathien49@gmail.com?subject=Rendez-vous%20Hold">Prendre rendez-vous</a>
       <a href="plan/">Mon espace</a>
+      <a href="https://billing.stripe.com/p/login/00weV61jj27L5X47B67Zu00"
+         target="_blank" rel="noopener">Gérer mon abonnement</a>
     </nav>
   </div>
   <details class="legal" id="legal">
       <summary>Mentions légales · CGV · Confidentialité</summary>
       <div class="legal-grid">
-        <div><h4>Mentions légales</h4><p>Hold est édité par Lilian Mathien, entrepreneur individuel, [ADRESSE], SIRET [SIRET], [TVA NON APPLICABLE, ART. 293 B DU CGI]. Contact : lilian.mathien49@gmail.com. Hébergement : GitHub Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis. Directeur de la publication : Lilian Mathien.</p></div>
-        <div><h4>Conditions générales de vente</h4><p>La stratégie de course seule (49,99 € TTC) est un service numérique personnalisé, livré par email sous 72 h ouvrées après réception des fichiers de montre. Les formules de coaching (69,99 €, 99,99 € et 119,99 € TTC par mois) sont mensuelles, sans engagement, résiliables à tout moment pour le mois suivant. Conformément à l'article L221-28 du Code de la consommation, le client accepte expressément que l'exécution de la prestation commence avant la fin du délai de rétractation de 14 jours et renonce à ce droit une fois la prestation livrée. Paiement sécurisé par [STRIPE]. Médiation de la consommation : [MÉDIATEUR].</p></div>
-        <div><h4>Confidentialité</h4><p>Les fichiers de montre, les données de santé associées (fréquence cardiaque, sommeil, HRV) et les coordonnées sont utilisés uniquement pour produire les analyses et le coaching. Ils ne sont ni vendus ni partagés. Ils sont conservés [12 MOIS] puis supprimés, ou plus tôt sur simple demande à lilian.mathien49@gmail.com. Les cas publiés sur ce site le sont avec l'accord écrit du coureur. Pas de cookie de suivi.</p></div>
+        <div><h4>Mentions légales</h4><p>Hold est édité par Lilian Mathien, entrepreneur individuel, 6 impasse des Vieilles Vignes, 49750 Beaulieu-sur-Layon, SIRET 130 424 500 00010, TVA non applicable, art. 293 B du CGI. Contact : lilian.mathien49@gmail.com. Hébergement : GitHub Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis. Directeur de la publication : Lilian Mathien.</p></div>
+        <div><h4>Conditions générales de vente</h4><p>La stratégie de course seule (49,99 € TTC) est un service numérique personnalisé, livré par email sous 72 h ouvrées après réception des fichiers de montre. Les formules de coaching (69,99 €, 99,99 € et 119,99 € TTC par mois) sont mensuelles, sans engagement, résiliables à tout moment pour le mois suivant. Conformément à l'article L221-28 du Code de la consommation, le client accepte expressément que l'exécution de la prestation commence avant la fin du délai de rétractation de 14 jours et renonce à ce droit une fois la prestation livrée. Paiement sécurisé par Stripe Payments Europe, Ltd.</p></div>
+        <div><h4>Confidentialité</h4><p>Les fichiers de montre, les données de santé associées (fréquence cardiaque, sommeil, HRV) et les coordonnées sont utilisés uniquement pour produire les analyses et le coaching. Ils ne sont ni vendus ni partagés. Ils sont conservés douze mois puis supprimés, ou plus tôt sur simple demande à lilian.mathien49@gmail.com. Les cas publiés sur ce site le sont avec l'accord écrit du coureur. Pas de cookie de suivi.</p></div>
       </div>
     </details>
-  <p class="credits mono">© 2026 Hold · Lilian Mathien · SIRET [SIRET] · Cartes © OpenStreetMap, OpenFreeMap, Esri, Mapzen · MapLibre</p>
+  <p class="credits mono">© 2026 Hold · Lilian Mathien · SIRET 130 424 500 00010 · Cartes © OpenStreetMap, OpenFreeMap, Esri, Mapzen · MapLibre</p>
 </footer>
 
 <dialog class="film dark" id="film" aria-label="Le film Hold, 49 secondes">

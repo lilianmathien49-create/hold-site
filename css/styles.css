@@ -226,6 +226,7 @@ select.field option { background: var(--surface); color: var(--text); }
 .foot-links { display: flex; gap: 8px 28px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
 .foot-links a { min-height: 44px; display: inline-flex; align-items: center; }
 .foot-links a:hover { color: var(--text); }
+.foot-links a[hidden] { display: none; }
 .legal { border-top: 1px solid var(--line); }
 .legal summary { cursor: pointer; min-height: 56px; display: flex; align-items: center; font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); list-style: none; }
 .legal summary::-webkit-details-marker { display: none; }

@@ -1,0 +1,147 @@
+{
+ "sessions": 900,
+ "blocks": 170000,
+ "knots": 5,
+ "coverage": {
+  "blocks": 170000,
+  "hours": 708.3,
+  "climbs": {
+   "sessions": 900,
+   "medianGain": 110,
+   "maxGain": 950,
+   "medianContinuous": 15,
+   "q90Continuous": 35,
+   "maxContinuous": 640,
+   "above300": 2,
+   "above800": 0
+  },
+  "zoneBlocks": 18000,
+  "walkedInZone": 5.0,
+  "blocksBeyond2h": 1100,
+  "maxHours": 3.2,
+  "tempBlocks": 28000,
+  "threshold": {
+   "ok": true,
+   "why": "",
+   "validUpToClimbM": 35
+  },
+  "decay": {
+   "ok": false,
+   "why": "seulement 1100 blocs au-delà de deux heures de course"
+  },
+  "durability": {
+   "ok": false,
+   "why": "séances trop courtes : 1100 blocs au-delà de deux heures"
+  },
+  "heat": {
+   "ok": true,
+   "why": ""
+  }
+ },
+ "walk": {
+  "curve": [
+   [
+    0,
+    20.5
+   ],
+   [
+    1,
+    17.4
+   ],
+   [
+    2,
+    14.3
+   ]
+  ],
+  "thr0": 20.5,
+  "decay4h": null
+ },
+ "hr": {
+  "slope": [
+   [
+    -20,
+    -40.0
+   ],
+   [
+    -10,
+    -34.0
+   ],
+   [
+    0,
+    -36.0
+   ],
+   [
+    10,
+    -38.0
+   ],
+   [
+    20,
+    -33.0
+   ]
+  ],
+  "hours": [
+   [
+    0,
+    0.0
+   ],
+   [
+    0.5,
+    13.5
+   ],
+   [
+    1,
+    15.0
+   ],
+   [
+    2,
+    14.8
+   ],
+   [
+    3,
+    9.4
+   ]
+  ],
+  "hoursRange": [
+   0,
+   3.2
+  ],
+  "temp": null,
+  "walkOffset": -6.0,
+  "driftPerHour": 4.9,
+  "driftRange": [
+   0.2,
+   1.3
+  ],
+  "driftPerHour1to4": null,
+  "driftWhy1to4": "séance la plus longue : 3.2 h",
+  "heatPerDegAt18": null,
+  "heatPerDegAt25": null,
+  "heatWhy": "effet non séparable de la saison à l'échelle de la FC"
+ },
+ "speed": {
+  "base": 12.5,
+  "runFlat": 12.6,
+  "walkFlat": 5.8,
+  "curve": null,
+  "lossPerHour1to3": null,
+  "lossPerHour5to8": null
+ },
+ "heatSpeed": {
+  "perDegree": -0.02,
+  "pctPerDegree": -0.16,
+  "ci80": [
+   -0.044,
+   0.008
+  ],
+  "sure": false,
+  "sessions": 120,
+  "months": 9,
+  "withinMonthSpread": 3.4,
+  "tempSpread": [
+   13.0,
+   30.0
+  ],
+  "above15": 102,
+  "floor": true
+ }
+}

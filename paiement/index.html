@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hold — Paiement</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F2F3F4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  /* Cette page ne contient aucun script : un lien de paiement est un lien
+     hypertexte, et il doit fonctionner même si tout le reste casse. */
+  .pay { max-width: 820px; margin: 0 auto; padding: 128px 24px 80px; }
+  .pay-h { font-family: var(--serif); font-weight: 400; font-size: clamp(34px, 6vw, 54px);
+    line-height: 1.04; margin: 0 0 16px; }
+  .pay-sub { font-size: 17px; color: var(--sub-text); max-width: 62ch; margin: 0 0 10px; }
+  .pay-note { font-family: var(--mono); font-size: 12px; color: var(--dim); margin: 0 0 44px; }
+
+  .pay-list { border-top: 1px solid var(--line); margin: 0; }
+  .pay-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 6px 24px; align-items: center; padding: 22px 0;
+    border-bottom: 1px solid var(--line); }
+  .pay-n { font-size: 18px; font-weight: 500; margin: 0; }
+  .pay-d { font-size: 14px; color: var(--muted); margin: 4px 0 0; max-width: 46ch; }
+  .pay-p { font-family: var(--serif); font-size: 30px; white-space: nowrap;
+    font-variant-numeric: tabular-nums; }
+  .pay-p small { font-family: var(--mono); font-size: 11px; color: var(--dim);
+    letter-spacing: .08em; display: block; margin-top: 2px; }
+
+  .pay-after { margin-top: 48px; padding: 20px 22px;
+    border-left: 2px solid var(--mark); background: var(--surface); }
+  .pay-after h2 { font-family: var(--serif); font-weight: 400; font-size: 22px; margin: 0 0 10px; }
+  .pay-after p { font-size: 15px; color: var(--sub-text); margin: 0; max-width: 60ch; }
+  .pay-after p + p { margin-top: 8px; }
+
+  .pay-trust { display: flex; flex-wrap: wrap; gap: 8px 26px; margin-top: 36px;
+    font-family: var(--mono); font-size: 11px; color: var(--dim); }
+
+  @media (max-width: 680px) {
+    .pay { padding: 96px 16px 60px; }
+    .pay-row { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    .pay-p { font-size: 26px; }
+    .pay-row .btn { justify-self: start; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a href="../" class="logo" aria-label="Hold, retour au site">Hold<span class="logo-dot" aria-hidden="true"></span></a>
+  <div class="nav-r">
+    <a href="../" class="link-btn">Retour au site</a>
+  </div>
+</header>
+
+<main class="pay">
+  <p class="eyebrow">Paiement</p>
+  <h1 class="pay-h">Règle ta formule.</h1>
+  <p class="pay-sub">Paie l'offre qu'on a validée pendant l'appel. Si tu n'as pas encore
+    eu l'appel, ne paie rien : <a href="../#contact" style="text-decoration:underline">demande
+    un créneau</a> d'abord, c'est plus sûr pour toi comme pour moi.</p>
+  <p class="pay-note">Paiement par Stripe. Ta carte ne passe jamais par ce site.</p>
+
+  <div class="pay-list">
+    <div class="pay-row">
+      <div>
+        <p class="pay-n">La stratégie seule</p>
+        <p class="pay-d">Ta course écrite au pas de 500 m, livrée sous 72 h. Tu t'entraînes
+          déjà de ton côté.</p>
+      </div>
+      <p class="pay-p">49,99 €<small>paiement unique</small></p>
+      <a class="btn" href="https://buy.stripe.com/7sY14gaTT3bPdpw4oU7Zu03"
+         target="_blank" rel="noopener">Payer</a>
+    </div>
+
+    <div class="pay-row">
+      <div>
+        <p class="pay-n">Plan découverte</p>
+        <p class="pay-d">Ton plan d'entraînement, un appel par mois.</p>
+      </div>
+      <p class="pay-p">69,99 €<small>par mois</small></p>
+      <a class="btn btn-ghost" href="https://buy.stripe.com/dRm9AM7HHh2Fadk5sY7Zu02"
+         target="_blank" rel="noopener">Payer</a>
+    </div>
+
+    <div class="pay-row">
+      <div>
+        <p class="pay-n">Plan confirmé</p>
+        <p class="pay-d">Un appel par semaine, plan individualisé, séances de renforcement
+          incluses.</p>
+      </div>
+      <p class="pay-p">99,99 €<small>par mois</small></p>
+      <a class="btn btn-ghost" href="https://buy.stripe.com/8x23co2nnaEh718f3y7Zu01"
+         target="_blank" rel="noopener">Payer</a>
+    </div>
+
+    <div class="pay-row">
+      <div>
+        <p class="pay-n">Plan pro</p>
+        <p class="pay-d">Tout le suivi, plus ta stratégie de course remise à jour jusqu'à
+          la veille, selon les conditions.</p>
+      </div>
+      <p class="pay-p">119,99 €<small>par mois</small></p>
+      <a class="btn" href="https://buy.stripe.com/00weV61jj27L5X47B67Zu00"
+         target="_blank" rel="noopener">Payer</a>
+    </div>
+  </div>
+
+  <div class="pay-after">
+    <h2>Ce qui se passe ensuite</h2>
+    <p>Stripe te demande ta course, sa date, ton objectif et ton lien Strava au moment du
+      paiement. Remplis-les : c'est avec ça que je commence, sans avoir à te relancer.</p>
+    <p>Tu reçois un reçu de Stripe tout de suite, et tes identifiants d'accès à ton espace
+      sous 72 h.</p>
+  </div>
+
+  <div class="pay-trust">
+    <span>Sans engagement · résiliable à tout moment</span>
+    <span><a href="https://billing.stripe.com/p/login/00weV61jj27L5X47B67Zu00"
+             target="_blank" rel="noopener" style="text-decoration:underline">Gérer mon abonnement</a></span>
+    <span><a href="../#legal" style="text-decoration:underline">CGV et mentions légales</a></span>
+  </div>
+</main>
+
+</body>
+</html>
