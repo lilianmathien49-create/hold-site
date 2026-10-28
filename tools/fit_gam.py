@@ -204,10 +204,18 @@ def durability(groups, n_knots=5):
     coef = ridge_fit(X, y)
     coef_h = coef[:nb]
     base = float(np.mean([k[:, 1].mean() for k in keep]))
+    # Vitesses de référence sur le plat, séparées par mode : c'est ce que le plan
+    # utilisait jusqu'ici comme réglage par défaut, sans l'avoir jamais mesuré.
+    allk = np.vstack(keep)
+    fresh = allk[allk[:, 0] <= 1.0]                      # première heure, avant fatigue
+    runf = fresh[fresh[:, 2] < 0.5][:, 1]
+    walkf = fresh[fresh[:, 2] > 0.5][:, 1]
     eff = lambda v: float((spline_basis(np.array([v]), kn)[:, 1:] @ coef_h)[0])
     e0 = eff(0.5)
     return {
         "base": round(base, 2),
+        "runFlat": round(float(np.median(runf)), 2) if len(runf) > 200 else None,
+        "walkFlat": round(float(np.median(walkf)), 2) if len(walkf) > 200 else None,
         "curve": [[h, round((eff(h) - e0) / base * 100, 2)] for h in (0.5, 1, 2, 3, 4, 5, 6, 7, 8)],
         "lossPerHour1to3": round(-(eff(3) - eff(1)) / 2 / base * 100, 3),
         "lossPerHour5to8": round(-(eff(8) - eff(5)) / 3 / base * 100, 3),

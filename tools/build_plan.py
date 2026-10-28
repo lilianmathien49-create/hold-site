@@ -302,6 +302,7 @@ def main() -> int:
     p.add_argument("--walk-flat", type=float, default=5.6, help="vitesse de marche sur le plat (km/h)")
     p.add_argument("--reference", help="JSON des temps de passage historiques, si tu en as")
     p.add_argument("--splits", help="temps de passage appris (learn_splits.py) : le plan s'y cale")
+    p.add_argument("--profile", help="profil mesuré du coureur (fit_gam.py) : remplace les réglages par défaut")
     p.add_argument("--night-penalty", type=float, default=0.0,
                    help="surcoût mesuré de la nuit, en %% (ex. 4.6)")
     a = p.parse_args()
@@ -318,6 +319,24 @@ def main() -> int:
     except ValueError:
         print("--start attend 'AAAA-MM-JJ HH:MM'", file=sys.stderr)
         return 1
+
+    # Les paramètres mesurés sur le coureur priment sur les valeurs par défaut.
+    # Le niveau absolu des vitesses importe peu — la calibration le reprend —
+    # mais leur RAPPORT décide du coût relatif de la marche, et il est mesuré.
+    if a.profile:
+        prof = json.loads(Path(a.profile).read_text(encoding="utf-8"))
+        w, sp = prof.get("walk") or {}, prof.get("speed") or {}
+        if w.get("thr0"):
+            a.walk_thr = w["thr0"]
+        if w.get("decay4h"):
+            a.walk_decay = w["decay4h"]
+        if sp.get("lossPerHour1to3"):
+            a.fatigue = sp["lossPerHour1to3"]
+        if sp.get("runFlat") and sp.get("walkFlat"):
+            ratio = sp["runFlat"] / sp["walkFlat"]
+            a.walk_flat = a.run_flat / ratio
+        print(f"  Profil mesuré : seuil {a.walk_thr} % · chute {a.walk_decay} pt/h · "
+              f"durabilité {a.fatigue} %/h · rapport course/marche {a.run_flat/a.walk_flat:.2f}")
 
     pts, wpts = read_gpx(Path(a.gpx))
     segs = to_segments(pts)
