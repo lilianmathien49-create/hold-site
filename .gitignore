@@ -9,3 +9,4 @@ tools/*.json
 tools/.cache-utmb/
 tools/*.csv
 __pycache__/
+METHODE.txt

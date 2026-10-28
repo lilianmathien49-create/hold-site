@@ -990,6 +990,48 @@ function exporter(plan) {
   </section>`;
 }
 
+function validation(plan) {
+  const b = plan.backtest;
+  if (!b) return '';
+  const rows = (b.byFraction || []).map((f) => `<tr>
+    <td class="mono num">${Math.round(f.from * 100)}–${Math.round((f.from + .1) * 100)} %</td>
+    <td class="mono num strong">${km1(f.mae)} min</td>
+    <td class="mono num">${km1(f.effort)} min</td>
+    <td class="mono num ${Math.abs(f.bias) > 3 ? 'late' : ''}">${f.bias > 0 ? '+' : ''}${km1(f.bias)} min</td>
+  </tr>`).join('');
+  const ok = Math.abs(b.cover80 - 80) < 6;
+  return `<section class="pl-block">
+    <h2 class="pl-h">La preuve que ça tient</h2>
+    <p class="sub pl-wide">On retire une édition, on apprend sur les ${b.editions - 1} autres, puis on prédit les
+      temps de passage de celle qu'on a cachée. Douze fois, une par année.
+      <b>${(b.observations || 0).toLocaleString('fr-FR')} passages</b> prédits sans jamais avoir vu la course.</p>
+    <div class="three">
+      <div class="big"><p class="big-l mono">Erreur moyenne</p><p class="big-v">${km1(b.mae)} min</p>
+        <p class="big-h mono">par point de passage, sur une course de 28 h</p></div>
+      <div class="big"><p class="big-l mono">Règle du coach</p><p class="big-v">${km1(b.effortMae)} min</p>
+        <p class="big-h mono">kilomètre-effort : 100 m de D+ valent 1 km</p></div>
+      <div class="big"><p class="big-l mono">Intervalle à 80 %</p><p class="big-v">${km1(b.cover80)} %</p>
+        <p class="big-h mono">des passages réels y tombent — attendu 80</p></div>
+    </div>
+    <p class="sub pl-wide" style="margin:22px 0 14px">${ok
+      ? `La deuxième mesure compte autant que la première. Un modèle peu fautif mais dont les intervalles
+         mentent est dangereux : il donne confiance au mauvais moment. Ici, quand on annonce huit chances
+         sur dix, c'est bien huit fois sur dix.`
+      : `Attention : les intervalles ne sont pas calibrés. Les fourchettes annoncées sont à prendre
+         avec prudence.`}</p>
+    <div class="tw"><table class="tbl">
+      <thead><tr><th class="num">Part de course</th><th class="num">Erreur du modèle</th>
+        <th class="num">Règle du coach</th><th class="num">Biais</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="hint">Le biais positif du milieu de course dit qu'on t'y annonce un peu plus lent que la
+      réalité : les coureurs y vont relativement plus vite que le modèle ne le prévoit, et paient
+      davantage ensuite. L'écart reste sous ${km1(Math.max(...(b.byFraction || [{bias:0}]).map((f) => Math.abs(f.bias))))} minutes.</p>
+    <p class="hint pl-warn">Ce que cette validation ne prouve pas : le modèle est appris et testé sur des
+      coureurs arrivés autour du même chrono. Pour un objectif très différent, il faudrait refaire
+      l'apprentissage sur la bande correspondante.</p>
+  </section>`;
+}
+
 function method(plan) {
   const m = plan.model || {}, L = plan.learnedFrom;
   return `<section class="pl-block">
@@ -1037,7 +1079,7 @@ function render(plan) {
     moi: `${athlete(plan)}`,
     autres: `${reference(plan)}${lessons(plan)}`,
     simu: `${montecarlo(plan)}${simCharts(plan)}`,
-    emporter: `${exporter(plan)}${method(plan)}`,
+    emporter: `${exporter(plan)}${validation(plan)}${method(plan)}`,
   };
   const tabs = TABS.filter(([k]) => (body[k] || '').trim());
 
