@@ -129,8 +129,10 @@ def fit_durability(by_session):
         fe = flat_equivalent(g)
         m = np.isfinite(fe) & (fe > 1) & (fe < 25)
         if m.sum() >= 40:
-            keep.append(np.column_stack([g[m][:, 1], fe[m], g[m][:, 5]]))
-    y, X = _within(keep, lambda g: g[:, 1], [lambda g: g[:, 0]])
+            # Colonne de marche : sans elle, la montée de la part marchée au fil
+            # des heures se confond avec la fatigue.
+            keep.append(np.column_stack([g[m][:, 1], fe[m], g[m][:, 5], g[m][:, 2]]))
+    y, X = _within(keep, lambda g: g[:, 1], [lambda g: g[:, 0], lambda g: g[:, 3]])
     slope_h = np.linalg.lstsq(X, y, rcond=None)[0][0]
     base = float(np.mean([g[:, 1].mean() for g in keep]))
 

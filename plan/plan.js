@@ -653,6 +653,74 @@ function strategy(plan) {
 }
 
 /* ---------- Ce qu'on a mesuré sur le coureur ---------- */
+/* ---------- Les réponses de l'athlète, en courbes ---------- */
+function gamCharts(plan) {
+  const g = plan.gam;
+  if (!g) return '';
+  const out = [];
+
+  if ((g.walk || {}).curve) {
+    const c = g.walk.curve;
+    out.push(chart({
+      title: 'Ton seuil de marche s\'effondre avec les heures',
+      note: "La pente à laquelle tu bascules de la course à la marche. Elle n'est pas fixe : "
+        + "ce qui se court au départ se marche en fin de course, et ce glissement est mesuré sur tes séances.",
+      height: 220,
+      series: [{ pts: c.map(([h, v]) => [h, v]), kind: 'line', cls: 'c-red' }],
+      yLabel: '% de pente', xLabel: 'heures de course',
+      yFmt: (v) => `${v}`, xFmt: (v) => `${v} h`,
+    }));
+  }
+
+  if ((g.hr || {}).slope) {
+    out.push(chart({
+      title: 'Ce que la pente coûte à ton cœur',
+      note: "Battements en plus ou en moins, par rapport au plat. La courbe n'est pas une droite : "
+        + "c'est pour ça qu'on ne l'approche plus par une.",
+      height: 210,
+      series: [{ pts: g.hr.slope, kind: 'line', cls: 'c-ink' }],
+      yLabel: 'bpm', xLabel: 'pente (%)', yFmt: (v) => `${v > 0 ? '+' : ''}${Math.round(v)}`,
+    }));
+  }
+
+  if ((g.hr || {}).temp) {
+    out.push(chart({
+      title: 'Ce que la chaleur coûte à ton cœur',
+      note: 'Battements en plus par rapport à 15 °C, à effort égal. '
+        + "C'est l'écart qu'il faut accepter de perdre le jour J plutôt que de s'entêter sur l'allure.",
+      height: 200,
+      series: [{ pts: g.hr.temp, kind: 'line', cls: 'c-red' }],
+      yLabel: 'bpm', xLabel: 'température', yFmt: (v) => `${v > 0 ? '+' : ''}${Math.round(v)}`,
+      xFmt: (v) => `${Math.round(v)} °`,
+    }));
+  }
+
+  if ((g.speed || {}).curve) {
+    out.push(chart({
+      title: 'Ta durabilité : ce que tu perds, heure après heure',
+      note: 'Vitesse perdue par rapport au début, à pente et à mode égaux. '
+        + 'La perte ne commence pas tout de suite, et une droite la décrirait mal.',
+      height: 200,
+      series: [{ pts: g.speed.curve.map(([h, v]) => [h, v]), kind: 'line', cls: 'c-red' }],
+      yLabel: '% de vitesse', xLabel: 'heures de course',
+      yFmt: (v) => `${Math.round(v)}`, xFmt: (v) => `${v} h`,
+    }));
+  }
+
+  const nonLin = (g.hr || {}).heatPerDegAt25 && (g.hr || {}).heatPerDegAt18;
+  return `<div class="panel">
+    <h2 class="pl-h">Tes réponses, telles qu'elles sont</h2>
+    <p class="sub pl-wide">Les premiers calculs supposaient des droites : qu'un degré coûte autant à 16 °C
+      qu'à 30, qu'une heure pèse autant la première que la huitième. C'est faux, et ça se voyait dans les
+      écarts. Chaque réponse est maintenant une courbe libre, ajustée sur
+      ${(g.blocks || 0).toLocaleString('fr-FR')} blocs de quinze secondes.</p>
+    ${nonLin ? `<p class="hint pl-warn">Un exemple de ce qu'une droite masquait : la chaleur coûte
+      ${km1(g.hr.heatPerDegAt18)} battement par degré vers 18 °C, mais ${km1(g.hr.heatPerDegAt25)} vers 25 °C.
+      Le coût s'accélère — supposer qu'il est constant revient à sous-estimer les journées chaudes.</p>` : ''}
+    ${out.join('')}
+  </div>`;
+}
+
 function athlete(plan) {
   const a = plan.athlete;
   if (!a) return '';
@@ -1138,7 +1206,7 @@ function render(plan) {
   const body = {
     course: `${cockpit(plan)}${raceCharts(plan)}${sections(plan)}${aidTable(plan)}${strategy(plan)}`,
     chaleur: `${heatPlan(plan)}${heatCharts(plan)}${nutrition(plan)}${windows(plan)}${hours(plan)}`,
-    moi: `${athlete(plan)}`,
+    moi: `${athlete(plan)}${gamCharts(plan)}`,
     autres: `${reference(plan)}${liveSection(plan)}${lessons(plan)}`,
     simu: `${montecarlo(plan)}${simCharts(plan)}`,
     emporter: `${exporter(plan)}${validation(plan)}${method(plan)}`,

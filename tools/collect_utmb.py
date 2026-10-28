@@ -119,6 +119,12 @@ def main() -> int:
     p.add_argument("--window", type=int, default=40, help="fenêtre autour de l'objectif, en minutes")
     p.add_argument("--years", default="", help="ex. 2019-2025 ; toutes par défaut")
     p.add_argument("--max-per-year", type=int, default=25, help="plafond de coureurs par édition")
+    p.add_argument("--spread", action="store_true",
+                   help="échantillonner tout le peloton au lieu de la fenêtre autour de l'objectif. "
+                        "Indispensable pour voir ceux qui sont partis vite et ont explosé : "
+                        "filtrer sur le chrono d'arrivée les efface des données.")
+    p.add_argument("--spread-from", default="23:00", help="borne basse du peloton échantillonné")
+    p.add_argument("--spread-to", default="46:00", help="borne haute")
     p.add_argument("--out", required=True)
     a = p.parse_args()
 
@@ -141,8 +147,20 @@ def main() -> int:
         if not board:
             print(f"  {y} : pas de classement")
             continue
-        near = sorted((r for r in board if abs(r["time"] - target) <= window),
-                      key=lambda r: abs(r["time"] - target))[:a.max_per_year]
+        if a.spread:
+            # Échantillon régulier sur toute la plage de chronos : chaque tranche
+            # du peloton est représentée, les rapides comme les traînards.
+            lo_s, hi_s = (int(x.split(":")[0]) * 3600 + int(x.split(":")[1]) * 60
+                          for x in (a.spread_from, a.spread_to))
+            pool = sorted((r for r in board if lo_s <= r["time"] <= hi_s), key=lambda r: r["time"])
+            if not pool:
+                near = []
+            else:
+                k = max(1, len(pool) // a.max_per_year)
+                near = pool[::k][:a.max_per_year]
+        else:
+            near = sorted((r for r in board if abs(r["time"] - target) <= window),
+                          key=lambda r: abs(r["time"] - target))[:a.max_per_year]
         got = 0
         for r in near:
             d = runner(y, r["bib"])
@@ -151,7 +169,8 @@ def main() -> int:
                 collected.append(d)
                 got += 1
         per_year[y] = {"finishers": len(board), "retained": got}
-        print(f"  {y} : {len(board):>5} finishers · {got} retenus autour de {a.target}")
+        how = f"répartis sur {a.spread_from}–{a.spread_to}" if a.spread else f"autour de {a.target}"
+        print(f"  {y} : {len(board):>5} finishers · {got} retenus {how}")
 
     if not collected:
         print("Rien à analyser.", file=sys.stderr)
