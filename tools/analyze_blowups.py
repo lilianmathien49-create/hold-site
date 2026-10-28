@@ -38,6 +38,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("source")
     ap.add_argument("--target", default="28:00")
+    ap.add_argument("--reference", required=True,
+                    help="échantillon des coureurs arrivés à l'objectif : c'est LEUR courbe qui "
+                         "définit ce que veut dire « être sur les bases de 28 h »")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     hh, mm = a.target.split(":")
@@ -55,12 +58,20 @@ def main() -> int:
         print("Pas assez de coureurs.")
         return 1
 
-    # Référence : part du temps dépensée à chaque lieu, sur TOUT le peloton.
+    # La référence vient des coureurs qui ONT réussi l'objectif. Prise sur tout
+    # le peloton, elle décrirait un chrono médian de quarante heures et « être
+    # sur les bases de 28 h » n'aurait plus de sens.
+    ref = json.loads(Path(a.reference).read_text(encoding="utf-8"))
     sh = defaultdict(list)
-    for r in runners:
-        for _, el, n in r["pts"]:
-            sh[n].append(el / r["time"])
+    for r in ref["runners"]:
+        if not r.get("time"):
+            continue
+        for s_ in r["splits"]:
+            if (s_.get("km") or 0) >= 1.0:
+                sh[canon(s_["name"])].append(s_["elapsed"] / r["time"])
     share = {k: st.median(v) for k, v in sh.items() if len(v) >= 40}
+    print(f"  Référence : {len(ref['runners'])} coureurs arrivés autour de {a.target}, "
+          f"{len(share)} lieux\n")
 
     grid = [0.15, 0.25, 0.35, 0.5, 0.65, 0.8]
     out = {"runners": len(runners), "years": sorted({r["year"] for r in runners}),

@@ -35,6 +35,7 @@ def main() -> int:
     ap.add_argument("--backtest")
     ap.add_argument("--live")
     ap.add_argument("--gam")
+    ap.add_argument("--blowups")
     ap.add_argument("--notes")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
@@ -70,13 +71,16 @@ def main() -> int:
     gam = load(a.gam)
     if gam:
         plan["gam"] = gam
+    bw = load(a.blowups)
+    if bw:
+        plan["blowups"] = bw
     if a.notes:
         plan["notes"] = a.notes
 
     Path(a.out).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
     have = [n for n, v in (("plan", plan), ("profil coureur", fit),
                            ("référence historique", ref), ("leçons des autres", les),
-                           ("Monte-Carlo", mc), ("validation", bt), ("pacing en course", lv), ("modèle additif", gam)) if v]
+                           ("Monte-Carlo", mc), ("validation", bt), ("pacing en course", lv), ("modèle additif", gam), ("peloton entier", bw)) if v]
     size = Path(a.out).stat().st_size // 1024
     print(f"  Assemblé : {', '.join(have)}")
     print(f"  Écrit : {a.out} ({size} Ko)\n")

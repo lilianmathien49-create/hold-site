@@ -1060,63 +1060,66 @@ function exporter(plan) {
 
 /* ---------- Ce que vaut une avance prise en course ---------- */
 function liveSection(plan) {
-  const L = plan.live;
-  if (!L || !(L.betas || []).length) return '';
-  const b = L.betas, rows = L.rows || [];
-  const at = (f) => (b.reduce((p, x) => (Math.abs(x.seen - f) < Math.abs(p.seen - f) ? x : p), b[0]));
-  const mid = at(0.5), early = at(0.2);
+  const B = plan.blowups;
+  if (!B || !(B.points || []).length) return '';
+  const p0 = B.points[0];
+  const hm = (sec) => `${Math.floor(sec / 3600)}h${String(Math.round(sec % 3600 / 60)).padStart(2, '0')}`;
 
-  const curve = chart({
-    title: "Ce qu'il reste d'une avance, selon le moment où tu l'as prise",
-    note: "Un coefficient de 1 voudrait dire qu'une minute gagnée est une minute gardée. "
-      + "Plus il est bas, plus l'avance s'évapore avant l'arrivée.",
-    height: 230,
-    series: [
-      { pts: [[0, 1], [1, 1]], kind: 'line', cls: 'c-even', label: 'avance intégralement conservée' },
-      { pts: b.map((x) => [x.seen * 100, x.beta]), kind: 'line', cls: 'c-red', label: 'ce qui se conserve vraiment' },
-    ],
-    x0: 0, x1: 100, yRange: [0, 1.1],
-    yLabel: 'part conservée', xLabel: '% de course déjà fait',
-    yFmt: (v) => `${Math.round(v * 100)} %`, xFmt: (v) => `${Math.round(v)}`,
-  });
-
-  const tbl = rows.filter((r) => Math.round(r.seen * 100) % 20 === 0).map((r) => `<tr>
-    <td class="mono num">${Math.round(r.seen * 100)} %</td>
-    <td class="mono num">${km1(r.mediane)} min</td>
-    <td class="mono num ${r.report > r.mediane ? 'late' : ''}">${km1(r.report)} min</td>
-    <td class="mono num strong">${km1(r.regresse)} min</td>
+  const rows = B.points.map((p) => `<tr>
+    <td class="mono num">${Math.round(p.stage * 100)} %</td>
+    <td class="mono num">${p.n}</td>
+    <td class="mono num strong">${hm(p.median)}</td>
+    <td class="mono num">${hm(p.p75)}</td>
+    <td class="mono num late">${hm(p.p90)}</td>
+    <td class="mono num">${km1(p.holdPct)} %</td>
   </tr>`).join('');
 
+  const betaChart = (B.betas || []).length ? chart({
+    title: 'Deux mesures qui se contredisent — et pourquoi',
+    note: "Sur le peloton entier, l'écart constaté se conserve presque entièrement : un coureur rapide "
+      + "est rapide, voilà tout. Sur les seuls finishers du même chrono, il s'évapore — forcément, "
+      + "puisqu'on les a choisis pour arriver ensemble. Aucune des deux courbes ne dit ce que coûte, "
+      + "à TOI, un départ trop rapide : il faudrait te voir courir la même course plusieurs fois.",
+    height: 220,
+    series: [
+      { pts: [[0, 1], [100, 1]], kind: 'line', cls: 'c-even', label: 'écart intégralement conservé' },
+      { pts: B.betas.map((b) => [b.seen * 100, b.beta]), kind: 'line', cls: 'c-ink',
+        label: 'peloton entier (toutes capacités)' },
+      ...(plan.live && plan.live.betas ? [{ pts: plan.live.betas.map((b) => [b.seen * 100, b.beta]),
+        kind: 'line', cls: 'c-red', label: 'seulement ceux arrivés au même chrono' }] : []),
+    ],
+    x0: 0, x1: 100, yRange: [0, 1.15],
+    yLabel: 'part conservée', xLabel: '% de course déjà fait',
+    yFmt: (v) => `${Math.round(v * 100)} %`, xFmt: (v) => `${Math.round(v)}`,
+  }) : '';
+
   return `<section class="pl-block">
-    <h2 class="pl-h">Être en avance ne veut presque rien dire</h2>
-    <p class="sub pl-wide">On a pris ${L.runners || 712} finishers et mesuré, à chaque point du parcours,
-      ce que devenait une avance prise à cet endroit-là. Le résultat va contre l'instinct.</p>
+    <h2 class="pl-h">Être sur les bases ne veut pas dire tenir</h2>
+    <p class="sub pl-wide">On a pris <b>${B.runners} coureurs</b> de tout le peloton, des plus rapides
+      aux derniers arrivés, sur ${(B.years || []).length} éditions. Puis on a isolé ceux qui, à chaque
+      stade, étaient sur les bases de ${esc(B.target)}. Et on a regardé ce qu'ils ont réellement couru.</p>
     <div class="three">
-      <div class="big"><p class="big-l mono">À un cinquième de course</p>
-        <p class="big-v">${Math.round(early.beta * 100)} %</p>
-        <p class="big-h mono">de l'avance survit jusqu'à l'arrivée</p></div>
-      <div class="big"><p class="big-l mono">À mi-course</p>
-        <p class="big-v">${Math.round(mid.beta * 100)} %</p>
-        <p class="big-h mono">il en reste à peine un tiers</p></div>
-      <div class="big"><p class="big-l mono">À dix kilomètres de l'arrivée</p>
-        <p class="big-v">${Math.round(at(0.9).beta * 100)} %</p>
-        <p class="big-h mono">là, enfin, l'avance compte</p></div>
+      <div class="big"><p class="big-l mono">Leur chrono médian</p><p class="big-v">${hm(p0.median)}</p>
+        <p class="big-h mono">au lieu des ${esc(B.target)} annoncés au ${Math.round(p0.stage * 100)}e pour cent</p></div>
+      <div class="big"><p class="big-l mono">Un sur dix</p><p class="big-v">${hm(p0.p90)}</p>
+        <p class="big-h mono">a fini au-delà de ce chrono</p></div>
+      <div class="big"><p class="big-l mono">Ont tenu l'objectif</p><p class="big-v">${km1(p0.holdPct)} %</p>
+        <p class="big-h mono">à une demi-heure près</p></div>
     </div>
-    ${curve}
-    <p class="sub pl-wide">Concrètement : si tu as <b>trente minutes d'avance</b> sur ton plan à mi-course,
-      n'en compte que <b>${Math.round(30 * mid.beta)} à l'arrivée</b>. Le reste, tu l'as emprunté à la
-      seconde moitié et tu le rembourseras avec intérêts.</p>
-    <h3 class="pl-h3">Et pour prédire le chrono final en cours de route</h3>
     <div class="tw"><table class="tbl">
-      <thead><tr><th class="num">Course déjà faite</th><th class="num">Sans rien savoir</th>
-        <th class="num">En reportant l'avance</th><th class="num">En la régressant</th></tr></thead>
-      <tbody>${tbl}</tbody></table></div>
-    <p class="hint">Reporter naïvement l'avance est <b>pire que de ne rien savoir</b> jusqu'aux deux tiers
-      de la course : l'extrapolation se trompe plus que la moyenne. C'est exactement l'erreur que fait
-      un coureur qui recalcule son chrono au ravitaillement.</p>
-    <p class="hint pl-warn">Une limite qui compte : ces coureurs ont tous <b>fini</b>. Ceux qui sont partis
-      trop vite et ont abandonné ne sont pas dans les données. La pénalité réelle d'un départ rapide est
-      donc <b>plus lourde</b> que ce que ces chiffres montrent, pas plus légère.</p>
+      <thead><tr><th class="num">Sur les bases à</th><th class="num">Coureurs</th>
+        <th class="num">Chrono médian</th><th class="num">1 sur 4 au-delà</th>
+        <th class="num">1 sur 10 au-delà</th><th class="num">Tiennent</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="sub pl-wide" style="margin-top:18px">Autrement dit : passer aux bases de ${esc(B.target)}
+      au premier sixième de course annonce, en moyenne, <b>${hm(p0.median)}</b>. L'écart ne se rattrape pas,
+      il se creuse — et plus tard on vérifie, plus la prédiction devient fiable.</p>
+    ${betaChart}
+    <p class="hint pl-warn">Deux réserves qui comptent. D'abord ces effectifs sont petits —
+      ${p0.n} coureurs au premier point — parce qu'être pile sur les bases d'un chrono donné est rare :
+      prends les ordres de grandeur, pas la décimale. Ensuite <b>tous ces coureurs ont fini</b> :
+      ceux qui sont partis trop vite et ont abandonné ne sont nulle part dans ces chiffres. La réalité
+      est donc plus dure que ce tableau, pas plus douce.</p>
   </section>`;
 }
 
