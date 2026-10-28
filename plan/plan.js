@@ -3,7 +3,6 @@
 const $ = (id) => document.getElementById(id);
 const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const slug = (location.hash || '').replace(/^#/, '').trim() || 'demo';
 
 async function decrypt(pack, password) {
   const enc = new TextEncoder();
@@ -1163,8 +1162,6 @@ function toCsv(plan) {
 }
 
 function exporter(plan) {
-  const slug = `${(plan.race || 'course')}-${(plan.runner || '')}`.toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const n = (plan.aid || []).filter((a) => a.lat != null).length
     + (plan.sections || []).filter((s) => s.lat != null).length;
   return `<section class="pl-block">
@@ -1396,45 +1393,137 @@ function render(plan) {
   document.title = `Hold — ${plan.race || 'Plan'} · ${plan.runner || ''}`;
 }
 
-/* ---------- La porte ---------- */
-let pack = null;
+/* ---------- La porte ----------
+   Deux chemins d'entrée. Par le lien direct, l'identifiant est dans l'adresse
+   et seul le mot de passe manque. Sans lien, le coureur tape un code unique
+   qui porte les deux, séparés par le premier tiret — un seul chose à retenir. */
+const STORE = 'hold.plan';
+
+function splitCode(raw) {
+  const t = String(raw || '').trim();
+  const i = t.indexOf('-');
+  if (i < 1 || i === t.length - 1) return null;
+  return { slug: t.slice(0, i).toLowerCase(), pw: t.slice(i + 1) };
+}
+
+// Le navigateur peut refuser le stockage : fenêtre privée, cookies bloqués.
+// La page doit marcher sans, donc chaque accès est protégé.
+const store = {
+  read() {
+    try { return JSON.parse(localStorage.getItem(STORE) || 'null'); } catch { return null; }
+  },
+  write(v) {
+    try { localStorage.setItem(STORE, JSON.stringify(v)); } catch { /* tant pis */ }
+  },
+  clear() {
+    try { localStorage.removeItem(STORE); } catch { /* tant pis */ }
+  },
+};
+
+let pack = null, slug = null;
 const msg = (t) => { $('gateMsg').textContent = t; };
 
-(async function boot() {
-  try {
-    const res = await fetch(`data/${encodeURIComponent(slug)}.json`, { cache: 'no-store' });
-    if (!res.ok) throw new Error(res.status);
-    pack = await res.json();
-  } catch {
-    msg("Aucun plan à cette adresse. Vérifie le lien que ton coach t'a envoyé.");
-    $('pw').disabled = true; $('gateBtn').disabled = true;
-  }
-})();
+async function load(s) {
+  const res = await fetch(`data/${encodeURIComponent(s)}.json`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(String(res.status));
+  return res.json();
+}
 
-$('gateForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  if (!pack) return;
-  const pw = $('pw').value;
-  if (!pw) return;
-  $('gateBtn').disabled = true;
-  msg('Déchiffrement…');
+async function unlock(s, pw, remember) {
+  const data = pack && slug === s ? pack : await load(s);
   let plan;
   try {
-    plan = await decrypt(pack, pw);
+    plan = await decrypt(data, pw);
   } catch {
-    // AES-GCM refuse aussi bien un mauvais mot de passe qu'un fichier modifié : même message.
-    msg('Mot de passe incorrect.');
-    $('pw').select();
-    $('gateBtn').disabled = false;
-    return;
+    // AES-GCM refuse aussi bien un mauvais mot de passe qu'un fichier modifié.
+    throw new Error('mot de passe');
   }
-  // Le déchiffrement a réussi : une erreur d'affichage ne doit plus se faire
-  // passer pour un mauvais mot de passe, sinon le coureur cherche au mauvais endroit.
+  pack = data; slug = s;
+  if (remember) store.write({ slug: s, pw });
+  else store.clear();
+  // Le déchiffrement a réussi : une erreur d'affichage ne doit pas se faire
+  // passer pour un mauvais code, sinon le coureur cherche au mauvais endroit.
   try {
     render(plan);
   } catch (e) {
     console.error('Hold : affichage du plan', e);
     msg("Le plan s'est ouvert mais n'a pas pu s'afficher. Préviens ton coach.");
-    $('gateBtn').disabled = false;
+  }
+}
+
+(async function boot() {
+  const hash = (location.hash || '').replace(/^#/, '').trim();
+  const saved = store.read();
+
+  // Un lien direct peut porter le code entier : on accepte les deux formes.
+  const fromHash = hash ? (splitCode(hash) || { slug: hash, pw: null }) : null;
+
+  if (fromHash) {
+    slug = fromHash.slug;
+    $('codeWrap').hidden = true;
+    $('pwWrap').hidden = false;
+    try {
+      pack = await load(slug);
+    } catch {
+      $('codeWrap').hidden = false;
+      $('pwWrap').hidden = true;
+      msg("Aucun plan à cette adresse. Vérifie le lien, ou entre ton code complet.");
+      return;
+    }
+    if (fromHash.pw) {       // code complet dans l'adresse : on ouvre directement
+      try { await unlock(slug, fromHash.pw, false); } catch { msg('Code incorrect.'); }
+      return;
+    }
+  }
+
+  if (saved && saved.slug && saved.pw) {
+    $('remember').checked = true;
+    try {
+      await unlock(saved.slug, saved.pw, true);
+      return;
+    } catch {
+      store.clear();          // le plan a changé de mot de passe, ou n'existe plus
+      msg('Ton accès enregistré ne fonctionne plus. Entre ton code à nouveau.');
+      $('codeWrap').hidden = false;
+      $('pwWrap').hidden = true;
+    }
+  }
+})();
+
+$('gateForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const remember = $('remember').checked;
+  const btn = $('gateBtn');
+  let s, pw;
+
+  if (!$('pwWrap').hidden) {
+    s = slug; pw = $('pw').value;
+    if (!pw) { msg('Entre ton mot de passe.'); return; }
+  } else {
+    const parsed = splitCode($('code').value);
+    if (!parsed) {
+      msg("Le code ressemble à « a7f3c921-arete-allure-105 », avec un tiret après l'identifiant.");
+      return;
+    }
+    s = parsed.slug; pw = parsed.pw;
+  }
+
+  btn.disabled = true;
+  msg('Ouverture…');
+  try {
+    if (!pack || slug !== s) pack = await load(s);
+    slug = s;
+  } catch {
+    msg("Aucun plan ne correspond à ce code. Vérifie la première partie, avant le tiret.");
+    btn.disabled = false;
+    return;
+  }
+  try {
+    await unlock(s, pw, remember);
+  } catch {
+    msg('Code incorrect.');
+    ($('pwWrap').hidden ? $('code') : $('pw')).select();
+  } finally {
+    btn.disabled = false;
   }
 });

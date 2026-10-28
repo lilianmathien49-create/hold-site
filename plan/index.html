@@ -26,15 +26,34 @@
   <!-- La porte : tant que le mot de passe n'est pas bon, rien n'est déchiffré -->
   <section class="gate" id="gate">
     <form class="gate-box" id="gateForm">
-      <p class="eyebrow">Accès privé</p>
+      <p class="eyebrow">Ton espace</p>
       <h1 class="title">Ton plan<br><span class="soft">de course.</span></h1>
-      <p class="sub" id="gateFor">Entre le mot de passe que ton coach t'a transmis.</p>
-      <label class="f">
-        <span>Mot de passe</span>
-        <input id="pw" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" required>
+      <p class="sub" id="gateFor">Entre le code que ton coach t'a transmis.</p>
+
+      <!-- Un seul champ quand on arrive sans lien : le code contient l'identifiant
+           du plan et le mot de passe, séparés par le premier tiret. -->
+      <label class="f" id="codeWrap">
+        <span>Ton code</span>
+        <input id="code" type="text" autocapitalize="off" autocorrect="off" spellcheck="false"
+               autocomplete="off" placeholder="a7f3c921-arete-allure-105">
       </label>
+
+      <!-- Quand on arrive par le lien direct, l'identifiant est déjà connu :
+           on ne demande plus que le mot de passe. -->
+      <label class="f" id="pwWrap" hidden>
+        <span>Mot de passe</span>
+        <input id="pw" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false">
+      </label>
+
+      <label class="remember">
+        <input type="checkbox" id="remember">
+        <span>Rester connecté sur cet appareil</span>
+      </label>
+
       <button type="submit" class="btn" id="gateBtn">Ouvrir mon plan</button>
       <p class="hint" id="gateMsg" role="status" aria-live="polite"></p>
+      <p class="hint gate-help">Tu as perdu ton code&nbsp;?
+        <a href="mailto:lilian.mathien49@gmail.com?subject=Code%20d%27acc%C3%A8s%20Hold">Demande-le</a>.</p>
     </form>
   </section>
 

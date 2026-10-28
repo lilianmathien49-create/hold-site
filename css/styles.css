@@ -407,3 +407,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
     display: flex; align-items: baseline; gap: 9px; font-size: 32px; }
   .dv-big small { margin-top: 0; }
 }
+
+/* L'accès à l'espace coureur, séparé du reste de la navigation */
+.link-espace { border: 1px solid var(--ghost-line); border-radius: 6px; }
+.link-espace:hover { border-color: var(--text); }

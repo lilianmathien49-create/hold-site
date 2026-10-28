@@ -313,3 +313,11 @@
   .bi-v { font-size: 30px; }
   .bi-u { margin-top: 0; }
 }
+
+/* La porte : un seul code à retenir */
+.remember { display: flex; align-items: center; gap: 9px; font-size: 13px;
+  color: var(--muted); cursor: pointer; margin-top: -4px; }
+.remember input { width: 16px; height: 16px; accent-color: var(--mark); flex: none; }
+.gate-help { margin-top: 2px; }
+.gate-help a { text-decoration: underline; }
+.f[hidden] { display: none; }

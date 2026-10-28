@@ -59,8 +59,11 @@ def main() -> int:
     # Sans slug imposé, on en tire un opaque : le nom du fichier est visible
     # sur le dépôt public, il ne doit donc rien dire du coureur.
     slug = (a.slug or secrets.token_hex(5)).strip().lower()
-    if not slug.replace("-", "").isalnum():
-        print("Le slug ne doit contenir que des lettres, des chiffres et des tirets.", file=sys.stderr)
+    if not slug.isalnum():
+        # Le code unique se coupe au premier tiret : un identifiant qui en
+        # contient rendrait la séparation ambiguë.
+        print("L'identifiant ne doit contenir que des lettres et des chiffres, "
+              "sans tiret.", file=sys.stderr)
         return 1
 
     password = a.password or make_password()
@@ -73,10 +76,13 @@ def main() -> int:
 
     print(f"\n  Écrit        {out.relative_to(ROOT)}  ({out.stat().st_size // 1024} Ko)")
     print(f"  Coureur      {plan.get('runner', '—')} · {plan.get('race', '—')}")
-    print("\n  À transmettre au coureur :")
-    print(f"    Lien       {a.base_url}/plan/#{slug}")
-    print(f"    Mot de passe   {password}")
-    print("\n  Le mot de passe n'est stocké nulle part : note-le maintenant.")
+    code = f"{slug}-{password}"
+    print("\n  À TRANSMETTRE AU COUREUR — une seule chose à retenir :")
+    print(f"\n    Son espace   {a.base_url}/plan/")
+    print(f"    Son code     {code}")
+    print("\n  Il peut aussi ouvrir directement, sans rien taper :")
+    print(f"    {a.base_url}/plan/#{code}")
+    print("\n  Le code n'est stocké nulle part : note-le maintenant.")
     print("  Puis : git add plan/data && git commit && git push\n")
     return 0
 
