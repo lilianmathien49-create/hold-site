@@ -1,0 +1,137 @@
+/* La revue : des pages de lecture.
+   Tout le reste du site se regarde ; ici on lit. La mesure du texte compte
+   donc plus que la mise en scène — une colonne, de l'air, et des repères
+   typographiques plutôt que des cadres. Les couleurs viennent de styles.css. */
+
+.rv-index, .rv-art {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 128px 24px 90px;
+}
+
+.rv-index h1, .rv-art h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(34px, 6vw, 56px);
+  line-height: 1.03;
+  letter-spacing: -.01em;
+  margin: 10px 0 18px;
+  text-wrap: balance;
+}
+
+.rv-lede {
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--sub-text);
+  margin: 0 0 8px;
+}
+
+/* ── La liste des articles ────────────────────────────────────────────────── */
+.rv-list { list-style: none; margin: 46px 0 0; padding: 0; border-top: 1px solid var(--line); }
+.rv-item { border-bottom: 1px solid var(--line); }
+.rv-item a {
+  display: block;
+  padding: 26px 0;
+  color: inherit;
+  transition: opacity .2s;
+}
+.rv-item a:hover { opacity: .64; }
+.rv-date { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin: 0 0 8px; }
+.rv-item h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(22px, 3vw, 30px);
+  line-height: 1.16;
+  margin: 0 0 8px;
+  text-wrap: balance;
+}
+.rv-item p { font-size: 15.5px; color: var(--muted); margin: 0; max-width: 58ch; }
+.rv-vide { margin-top: 40px; color: var(--muted); }
+.rv-vide a { color: var(--red); text-decoration: underline; }
+
+/* ── Le corps d'un article ────────────────────────────────────────────────── */
+.rv-corps { margin-top: 38px; }
+.rv-corps p {
+  font-size: 17px;
+  line-height: 1.72;
+  color: var(--text);
+  margin: 0 0 22px;
+}
+.rv-corps h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(25px, 3.4vw, 33px);
+  line-height: 1.14;
+  margin: 46px 0 14px;
+  text-wrap: balance;
+}
+.rv-corps h3 {
+  font-size: 15px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 36px 0 12px;
+}
+.rv-corps a { color: var(--red); text-decoration: underline; text-underline-offset: 2px; }
+.rv-corps strong { font-weight: 500; }
+.rv-corps code {
+  font-family: var(--mono);
+  font-size: .88em;
+  background: var(--ghost-hover, rgba(21, 23, 26, .05));
+  padding: 1px 5px;
+}
+.rv-corps ul, .rv-corps ol { margin: 0 0 22px; padding-left: 22px; }
+.rv-corps li { font-size: 17px; line-height: 1.66; margin-bottom: 9px; }
+.rv-corps blockquote {
+  margin: 28px 0;
+  padding: 2px 0 2px 20px;
+  border-left: 2px solid var(--mark);
+}
+.rv-corps blockquote p {
+  font-family: var(--serif);
+  font-size: 21px;
+  line-height: 1.42;
+  color: var(--sub-text);
+  margin: 0;
+}
+.rv-sep { border: 0; border-top: 1px solid var(--line); margin: 40px 0; }
+
+/* ── Les sources, l'appel, le retour ──────────────────────────────────────── */
+.rv-src { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); }
+.rv-src h2 {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+.rv-src ul { margin: 0; padding-left: 18px; }
+.rv-src li { font-size: 13.5px; line-height: 1.6; color: var(--muted); margin-bottom: 9px; word-break: break-word; }
+.rv-src a { color: var(--red); text-decoration: underline; }
+
+.rv-cta {
+  margin-top: 44px;
+  padding: 24px 24px 26px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.rv-cta p { font-size: 16px; line-height: 1.6; color: var(--sub-text); margin: 0 0 16px; max-width: 54ch; }
+.rv-cta strong { color: var(--text); font-weight: 500; }
+
+.rv-retour { margin-top: 36px; }
+.rv-retour a {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rv-retour a:hover { color: var(--text); }
+
+@media (max-width: 680px) {
+  .rv-index, .rv-art { padding: 96px 16px 64px; }
+  .rv-corps p, .rv-corps li { font-size: 16.5px; }
+  .rv-lede { font-size: 17.5px; }
+}

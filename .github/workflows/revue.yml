@@ -1,0 +1,44 @@
+# Publie La revue toute seule.
+#
+# Lilian écrit un article depuis le navigateur GitHub : revue/_articles/ →
+# « Add file » → « Create new file ». Dès que le fichier est enregistré, cette
+# action fabrique les pages et les met en ligne. Aucun terminal, aucune
+# installation — ça marche aussi depuis un téléphone.
+name: Publier La revue
+
+on:
+  push:
+    paths:
+      - 'revue/_articles/**'
+      - 'tools/build_revue.py'
+  workflow_dispatch:        # permet aussi de relancer à la main depuis l'onglet Actions
+
+permissions:
+  contents: write
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Fabriquer les pages
+        run: python3 tools/build_revue.py
+
+      - name: Enregistrer le résultat
+        run: |
+          git config user.name  "Publication automatique"
+          git config user.email "noreply@github.com"
+          git add revue sitemap.xml
+          # Rien à enregistrer si l'article n'a rien changé au rendu : on sort
+          # sans faire échouer l'action.
+          if git diff --cached --quiet; then
+            echo "Aucun changement à publier."
+            exit 0
+          fi
+          git commit -m "Publie La revue"
+          git push
