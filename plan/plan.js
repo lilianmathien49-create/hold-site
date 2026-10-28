@@ -127,6 +127,133 @@ function chart(o) {
   </figure>`;
 }
 
+/* ---------- Ta course en quelques consignes ----------
+   Tout le reste du rapport est une justification. Ici, on dit quoi faire :
+   chaque consigne est calculée à partir du plan, pas écrite à la main. */
+function briefing(plan) {
+  const S = plan.segments || [], secs = plan.sections || [], aid = plan.aid || [];
+  if (!S.length) return '';
+  const m = plan.model || {}, g = plan.gam || {};
+  const items = [];
+
+  // 1. L'allure de départ, et ce qu'elle coûte si on la dépasse.
+  const early = secs.filter((s) => s.km1 <= 15);
+  if (early.length) {
+    const dt = early.reduce((a, s) => a + s.split, 0);
+    const km = early[early.length - 1].km1;
+    const bw = plan.blowups && (plan.blowups.points || [])[0];
+    const hm = (x) => `${Math.floor(x / 3600)}h${String(Math.round(x % 3600 / 60)).padStart(2, '0')}`;
+    items.push({
+      n: '01', title: `Pars à ${mmss(dt / km)} au kilomètre — pas plus vite`,
+      body: `Sur les ${km1(km)} premiers kilomètres. C'est la consigne la plus facile à trahir et la plus chère.`,
+      proof: bw ? `Sur douze éditions, ceux qui passaient sur les bases de ${esc(plan.goal)} à ce stade
+        ont fini en ${hm(bw.median)} en médiane. Un sur dix au-delà de ${hm(bw.p90)}.` : '',
+      big: mmss(dt / km), unit: '/km',
+    });
+  }
+
+  // 2. Le seuil de marche, qui bouge avec les heures.
+  const thr0 = (g.walk || {}).thr0 ?? m.walkThr;
+  const curve = (g.walk || {}).curve;
+  const late = curve ? (curve.find((c) => c[0] === 4) || [])[1] : null;
+  if (thr0) {
+    items.push({
+      n: '02', title: `Marche dès ${km1(thr0)} % de pente${late ? `, puis dès ${km1(late)} % après quatre heures` : ''}`,
+      body: `Ton seuil n'est pas fixe : il descend au fil de la course. Ce qui se court au départ
+        se marche à la quinzième heure, et s'entêter coûte plus que ça ne rapporte.`,
+      proof: m.walkKm != null ? `Au total ${km1(m.walkKm)} km marchés sur ${km1(plan.distanceKm)}.` : '',
+      big: `${km1(thr0)} %`, unit: 'au départ',
+    });
+  }
+
+  // 3. Où sortir les bâtons — on fusionne les portions contiguës.
+  const poleRuns = [];
+  for (const s of secs) {
+    if (!s.poles) continue;
+    const last = poleRuns[poleRuns.length - 1];
+    if (last && s.km0 - last.km1 < 3) last.km1 = s.km1;
+    else poleRuns.push({ km0: s.km0, km1: s.km1 });
+  }
+  if (poleRuns.length) {
+    const tot = poleRuns.reduce((a, r) => a + r.km1 - r.km0, 0);
+    items.push({
+      n: '03', title: 'Bâtons sortis sur ces portions',
+      body: poleRuns.slice(0, 6).map((r) => `km ${km1(r.km0)} – ${km1(r.km1)}`).join(' · ')
+        + (poleRuns.length > 6 ? ` · et ${poleRuns.length - 6} autres` : ''),
+      proof: 'Rangés ailleurs : les sortir et les ranger coûte du temps, le faire trop souvent en coûte plus.',
+      big: `${km1(tot)}`, unit: 'km avec bâtons',
+    });
+  }
+
+  // 4. Le gros arrêt, celui qu'on ne doit pas écourter.
+  const stops = (plan.lessons || {}).stops || [];
+  if (stops.length) {
+    const top = stops[0];
+    const totMin = Math.round(stops.reduce((a, s) => a + s.median, 0) / 60);
+    items.push({
+      n: '04', title: `À ${esc(top.name)}, arrête-toi vraiment`,
+      body: `Les finishers du même chrono y passent ${Math.round(top.median / 60)} minutes en médiane,
+        et un sur dix y reste ${Math.round(top.p90 / 60)}. C'est un investissement, pas une perte.`,
+      proof: `Sur l'ensemble des points, ils cumulent environ ${totMin} minutes à l'arrêt.`,
+      big: `${Math.round(top.median / 60)}`, unit: 'minutes',
+    });
+  }
+
+  // 5. Ce qu'il faut avaler, par heure.
+  const hours = S.length ? hmsToSec(S[S.length - 1].cumul) / 3600 : 0;
+  if (hours > 1) {
+    const carbs = Math.round(CARB_PER_H * hours), tempMoy =
+      S.reduce((a, s) => a + s.temp, 0) / S.length;
+    const fluid = S.reduce((a, s, i) => {
+      const prev = i ? hmsToSec(S[i - 1].cumul) : 0;
+      return a + fluidPerH(s.temp) * (hmsToSec(s.cumul) - prev) / 3600;
+    }, 0);
+    items.push({
+      n: '05', title: `Mange ${CARB_PER_H} g de glucides par heure, sans attendre la faim`,
+      body: `Soit un gel toutes les vingt-cinq minutes, ou l'équivalent en solide. Et bois
+        ${Math.round(fluidPerH(tempMoy) / 50) * 50} ml par heure en moyenne, davantage quand il fera chaud.`,
+      proof: `Sur la course entière : ${(carbs / 1000).toFixed(1).replace('.', ',')} kg de glucides
+        et ${(fluid / 1000).toFixed(1).replace('.', ',')} litres. Teste ces volumes à l'entraînement avant.`,
+      big: `${CARB_PER_H}`, unit: 'g/h',
+    });
+  }
+
+  // 6. La nuit et le froid.
+  const night = (plan.windows || []).filter((w) => w.light === 'nuit');
+  if (night.length) {
+    const tot = night.reduce((a, w) => a + w.km1 - w.km0, 0);
+    const cold = aid.filter((a2) => (a2.gear || []).includes('gants'))[0];
+    items.push({
+      n: '06', title: `Frontale de ${night.map((w) => `km ${km1(w.km0)} à ${km1(w.km1)}`).join(', et de ')}`,
+      body: cold ? `Gants à partir de ${esc(cold.name)} — il y fera ${degC(cold.temp)}.
+        L'air perd six degrés et demi par millier de mètres : les cols de nuit passent sous zéro.`
+        : 'Calculé sur la position réelle du soleil à la date et au lieu de ta course.',
+      proof: `${km1(tot)} km de nuit sur ${km1(plan.distanceKm)}.`,
+      big: `${km1(tot)}`, unit: 'km de nuit',
+    });
+  }
+
+  return `<section class="brief">
+    <div class="brief-head">
+      <p class="eyebrow">Ta course, en ${items.length} consignes</p>
+      <h2 class="title">Ce que tu dois faire.</h2>
+      <p class="sub">Tout le reste de ce document existe pour justifier ces ${items.length} lignes.
+        Si tu ne lis rien d'autre, lis celles-ci.</p>
+    </div>
+    <ol class="brief-list">
+      ${items.map((i) => `<li class="bi">
+        <div class="bi-n mono">${i.n}</div>
+        <div class="bi-main">
+          <h3>${i.title}</h3>
+          <p class="bi-b">${i.body}</p>
+          ${i.proof ? `<p class="bi-p mono">${i.proof}</p>` : ''}
+        </div>
+        <div class="bi-big"><span class="bi-v">${esc(i.big)}</span><span class="bi-u mono">${esc(i.unit)}</span></div>
+      </li>`).join('')}
+    </ol>
+  </section>`;
+}
+
 function cockpit(plan) {
   const S = plan.segments || [];
   if (!S.length) return '';
@@ -1207,7 +1334,7 @@ function render(plan) {
     <p class="hk-v">${esc(v)}</p><p class="hk-h mono">${esc(h || '')}</p></div>` : '';
 
   const body = {
-    course: `${cockpit(plan)}${raceCharts(plan)}${sections(plan)}${aidTable(plan)}${strategy(plan)}`,
+    course: `${briefing(plan)}${cockpit(plan)}${raceCharts(plan)}${sections(plan)}${aidTable(plan)}${strategy(plan)}`,
     chaleur: `${heatPlan(plan)}${heatCharts(plan)}${nutrition(plan)}${windows(plan)}${hours(plan)}`,
     moi: `${athlete(plan)}${gamCharts(plan)}`,
     autres: `${reference(plan)}${liveSection(plan)}${lessons(plan)}`,
