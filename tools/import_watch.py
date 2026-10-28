@@ -27,6 +27,9 @@ Trois choix qui méritent d'être explicités :
 from __future__ import annotations
 
 import argparse, csv, math, re, statistics as st, sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from fitread import read_fit
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
@@ -56,9 +59,19 @@ def parse_time(t: str):
 
 def read_points(path: Path):
     """Renvoie [(instant, lat, lon, altitude, fc, cadence, température)]."""
+    if path.name.lower().endswith((".fit", ".fit.gz")):
+        # La cadence FIT compte une jambe : on la double pour parler en pas par minute.
+        return [(p["t"], p["lat"], p["lon"], p.get("alt", 0.0), p.get("hr"),
+                 (p["cad"] * 2 if p["cad"] < 120 else p["cad"]) if p.get("cad") else None,
+                 p.get("temp"))
+                for p in read_fit(path) if "t" in p and "lat" in p and "lon" in p]
     try:
-        root = ET.parse(path).getroot()
-    except ET.ParseError:
+        if path.name.lower().endswith(".gz"):
+            import gzip
+            root = ET.fromstring(gzip.decompress(path.read_bytes()))
+        else:
+            root = ET.parse(path).getroot()
+    except (ET.ParseError, OSError):
         return []
     ns = root.tag.split("}")[0].strip("{") if "}" in root.tag else ""
     out = []
@@ -149,6 +162,10 @@ def to_blocks(pts, sid, kind, writer):
         if cads:
             walking = st.mean(cads) < 140
         else:
+            # Repli sans cadence. Il est nettement moins sûr : sur du terrain
+            # raide, une course lente et une marche rapide se recouvrent autour
+            # de 5 à 6 km/h, et aucune vitesse ne les sépare. Si tes fichiers
+            # n'ont pas la cadence, le seuil de marche sera mal estimé.
             walking = kmh < 6.5
         writer.writerow([sid, t0.date().isoformat(), kind, int(t_start), round(slope, 2),
                          "marche" if walking else "course", round(kmh, 2),
@@ -169,15 +186,17 @@ def main() -> int:
     if not folder.is_dir():
         print(f"Dossier introuvable : {folder}", file=sys.stderr)
         return 1
-    files = sorted([p for p in folder.rglob("*") if p.suffix.lower() in (".gpx", ".tcx")])
+    EXT = (".gpx", ".tcx", ".fit")
+    files = sorted([p for p in folder.rglob("*")
+                    if p.name.lower().endswith(EXT) or p.name.lower().endswith(tuple(e + ".gz" for e in EXT))])
     if not files:
         print(f"Aucun .gpx ni .tcx dans {folder}.", file=sys.stderr)
-        print("Les .fit ne sont pas lisibles ici : dans Strava, demande l'export en GPX, "
-              "ou passe par Garmin Connect qui exporte en TCX.", file=sys.stderr)
+        print("Formats lus : .gpx, .tcx, .fit, et leurs versions .gz telles que "
+              "Strava les livre.", file=sys.stderr)
         return 1
 
     print(f"  {len(files)} fichiers trouvés")
-    sid = total = with_temp = skipped = with_hr = 0
+    sid = total = with_temp = skipped = with_hr = with_cad = 0
     with open(a.out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["session", "date", "type", "t_s", "slope", "mode", "kmh", "hr", "temp"])
@@ -204,6 +223,8 @@ def main() -> int:
             with_temp += t
             if any(p[4] for p in pts):
                 with_hr += 1
+            if any(p[5] for p in pts):
+                with_cad += 1
 
     print(f"  {sid} séances retenues · {skipped} écartées")
     if no_time:
@@ -213,7 +234,12 @@ def main() -> int:
             print(f"      {nm}")
     print(f"  {total:,} blocs de {BLOCK_S} s, soit {total*BLOCK_S/3600:.0f} heures".replace(",", " "))
     print(f"  {with_hr} séances avec fréquence cardiaque")
+    print(f"  {with_cad} séances avec cadence")
     print(f"  {with_temp} séances avec température")
+    if with_cad < sid * 0.5:
+        print("\n  Attention : moins de la moitié des séances portent la cadence. Sans elle, "
+              "marche et course se distinguent par la vitesse seule, ce qui échoue sur terrain "
+              "raide où les deux se recouvrent. Le seuil de marche en pâtira.")
     if with_hr < sid * 0.5:
         print("\n  Attention : moins de la moitié des séances portent la FC. "
               "La dérive cardiaque et le coût de la chaleur seront mal estimés.")
