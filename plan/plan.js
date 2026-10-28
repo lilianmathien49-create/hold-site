@@ -33,6 +33,100 @@ const terrainOf = (g) => g >= 12 ? 'raide' : g >= 4 ? 'montee' : g > -4 ? 'plat'
 /* ---------- Le poste de pilotage ----------
    Un seul curseur commande tout : le profil, les compteurs, la consigne.
    On balaye le parcours et on lit où on sera, quand, par quel temps. */
+/* ---------- Moteur de graphiques ----------
+   Un seul endroit décide des axes, des graduations et des couleurs : sans ça
+   chaque courbe invente sa propre échelle et plus rien ne se compare. */
+const NICE = [1, 2, 2.5, 5, 10];
+function niceStep(span, target = 5) {
+  const raw = span / target, mag = Math.pow(10, Math.floor(Math.log10(raw || 1)));
+  return (NICE.find((n) => raw / mag <= n) || 10) * mag;
+}
+function axisTicks(lo, hi, target = 5) {
+  if (!(hi > lo)) return { lo: lo - 1, hi: lo + 1, ticks: [lo] };
+  const step = niceStep(hi - lo, target);
+  const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step;
+  const ticks = [];
+  for (let v = a; v <= b + step * 0.001; v += step) ticks.push(+v.toFixed(6));
+  return { lo: a, hi: b, ticks };
+}
+
+/* series : { pts:[[x,y]], kind:'line'|'area'|'bars'|'band', cls, axis:'l'|'r', label } */
+function chart(o) {
+  const W = o.width || 1000, H = o.height || 260;
+  const P = { l: o.padLeft ?? 54, r: o.padRight ?? (o.right ? 54 : 16), t: 16, b: 34 };
+  const all = (ax) => o.series.filter((s) => (s.axis || 'l') === ax).flatMap((s) => s.pts);
+  const xs = o.series.flatMap((s) => s.pts.map((p) => p[0]));
+  const xa = axisTicks(o.x0 ?? Math.min(...xs), o.x1 ?? Math.max(...xs), o.xTicks || 5);
+  const mk = (ax, forced) => {
+    const v = all(ax).map((p) => p[1]).filter((n) => Number.isFinite(n));
+    if (!v.length) return null;
+    return axisTicks(forced?.[0] ?? Math.min(...v), forced?.[1] ?? Math.max(...v), 4);
+  };
+  const ya = mk('l', o.yRange), yb = o.right ? mk('r', o.yRangeRight) : null;
+
+  const X = (v) => P.l + (v - xa.lo) / (xa.hi - xa.lo || 1) * (W - P.l - P.r);
+  const Y = (v, ax) => {
+    const a = ax === 'r' && yb ? yb : ya;
+    return P.t + (H - P.t - P.b) - (v - a.lo) / (a.hi - a.lo || 1) * (H - P.t - P.b);
+  };
+  const fmt = (f, v) => (f ? f(v) : String(Math.round(v * 100) / 100).replace('.', ','));
+
+  const grid = ya.ticks.map((v) =>
+    `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v, 'l').toFixed(1)}" y2="${Y(v, 'l').toFixed(1)}" class="ch-grid"/>
+     <text x="${P.l - 9}" y="${(Y(v, 'l') + 4).toFixed(1)}" text-anchor="end" class="ch-lab">${fmt(o.yFmt, v)}</text>`).join('');
+  const gridR = yb ? yb.ticks.map((v) =>
+    `<text x="${W - P.r + 9}" y="${(Y(v, 'r') + 4).toFixed(1)}" class="ch-lab ch-lab-r">${fmt(o.yFmtRight, v)}</text>`).join('') : '';
+  const xlab = xa.ticks.map((v) =>
+    `<text x="${X(v).toFixed(1)}" y="${H - 11}" text-anchor="middle" class="ch-lab">${fmt(o.xFmt, v)}</text>`).join('');
+
+  const bands = (o.bands || []).map((b) =>
+    `<rect x="${X(b.x0).toFixed(1)}" y="${P.t}" width="${Math.max(0.5, X(b.x1) - X(b.x0)).toFixed(1)}"
+       height="${H - P.t - P.b}" class="${b.cls || 'ch-band'}"/>`).join('');
+  const marks = (o.marks || []).map((m) =>
+    `<line x1="${X(m.x).toFixed(1)}" x2="${X(m.x).toFixed(1)}" y1="${P.t}" y2="${H - P.b}" class="${m.cls || 'ch-mark'}"/>`).join('');
+
+  const draw = o.series.map((s) => {
+    const ax = s.axis || 'l';
+    const pts = s.pts.filter((p) => Number.isFinite(p[1]));
+    if (!pts.length) return '';
+    if (s.kind === 'bars') {
+      const bw = Math.max(1.5, (W - P.l - P.r) / pts.length * 0.72);
+      return pts.map((p) => {
+        const y = Y(Math.max(p[1], ya.lo), ax), base = Y(Math.max(0, ya.lo), ax);
+        return `<rect x="${(X(p[0]) - bw / 2).toFixed(1)}" y="${Math.min(y, base).toFixed(1)}"
+          width="${bw.toFixed(1)}" height="${Math.max(1, Math.abs(base - y)).toFixed(1)}" class="${s.cls}"/>`;
+      }).join('');
+    }
+    const d = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)} ${Y(p[1], ax).toFixed(1)}`).join('');
+    if (s.kind === 'area') {
+      const base = Y(Math.max(ya.lo, 0), ax);
+      return `<path d="${d}L${X(pts[pts.length - 1][0]).toFixed(1)} ${base.toFixed(1)}L${X(pts[0][0]).toFixed(1)} ${base.toFixed(1)}Z" class="${s.cls}"/>`;
+    }
+    if (s.kind === 'band') {
+      const up = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)} ${Y(p[1], ax).toFixed(1)}`).join('');
+      const dn = pts.slice().reverse().map((p) => `L${X(p[0]).toFixed(1)} ${Y(p[2], ax).toFixed(1)}`).join('');
+      return `<path d="${up}${dn}Z" class="${s.cls}"/>`;
+    }
+    return `<path d="${d}" class="${s.cls}"/>`;
+  }).join('');
+
+  const legend = (o.series.filter((s) => s.label).map((s) =>
+    `<span class="lg"><i class="sw ${s.swatch || s.cls}"></i>${esc(s.label)}</span>`).join('')
+    + (o.extraLegend || ''));
+
+  return `<figure class="ch">
+    ${o.title ? `<figcaption class="ch-t">${esc(o.title)}</figcaption>` : ''}
+    ${o.note ? `<p class="ch-n">${esc(o.note)}</p>` : ''}
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.title || 'graphique')}">
+      ${bands}${grid}${gridR}${draw}${marks}${xlab}
+      ${o.yLabel ? `<text x="2" y="11" class="ch-ax">${esc(o.yLabel)}</text>` : ''}
+      ${o.yLabelRight ? `<text x="${W - 2}" y="11" text-anchor="end" class="ch-ax">${esc(o.yLabelRight)}</text>` : ''}
+      ${o.xLabel ? `<text x="${W - P.r}" y="${H - 11}" text-anchor="end" class="ch-ax">${esc(o.xLabel)}</text>` : ''}
+    </svg>
+    ${legend ? `<div class="pf-legend">${legend}</div>` : ''}
+  </figure>`;
+}
+
 function cockpit(plan) {
   const S = plan.segments || [];
   if (!S.length) return '';
@@ -62,6 +156,18 @@ function cockpit(plan) {
     </div>
     <p class="cock-gear mono" id="cockGear"></p>
   </section>`;
+}
+
+// Le générateur écrit les cumuls de deux façons : « 12:53:35 » pour les tronçons,
+// « 12h53 » pour les ravitaillements. Un parseur qui n'en connaît qu'une produit
+// des NaN silencieux jusque dans les totaux affichés.
+function hmsToSec(c) {
+  const t = String(c ?? '').trim();
+  let m = t.match(/^(\d+):(\d{1,2})(?::(\d{1,2}))?$/);
+  if (m) return (+m[1]) * 3600 + (+m[2]) * 60 + (+(m[3] || 0));
+  m = t.match(/^(\d+)h(\d{1,2})?$/i);
+  if (m) return (+m[1]) * 3600 + (+(m[2] || 0)) * 60;
+  return NaN;
 }
 
 /* ---------- Chaleur : ce que la température du jour va te coûter ---------- */
@@ -109,12 +215,11 @@ const sodiumPerH = (t) => Math.round(500 + Math.max(0, t - 15) * 45);
 function nutrition(plan) {
   const aid = plan.aid || [];
   if (aid.length < 2) return '';
-  const secs = (s) => { const [h, m, x] = (s || '0:00:00').split(':'); return +h * 3600 + +m * 60 + +x; };
   const legs = [];
   for (let i = 0; i < aid.length - 1; i++) {
     const a = aid[i], b = aid[i + 1];
-    const dt = secs(b.cumul.length <= 5 ? `${b.cumul}:00` : b.cumul) - secs(a.cumul.length <= 5 ? `${a.cumul}:00` : a.cumul);
-    if (dt <= 0) continue;
+    const dt = hmsToSec(b.cumul) - hmsToSec(a.cumul);
+    if (!Number.isFinite(dt) || dt <= 0) continue;
     const h = dt / 3600, t = (a.temp + b.temp) / 2;
     legs.push({
       from: a.name, to: b.name, km0: a.km, km1: b.km, h,
@@ -221,6 +326,152 @@ function profile(plan, interactive) {
 }
 
 /* ---------- Jour et nuit ---------- */
+/* ---------- Les courbes de la course ---------- */
+function raceCharts(plan) {
+  const S = plan.segments || [];
+  if (S.length < 5) return '';
+  const nightBands = (plan.windows || []).filter((w) => w.light === 'nuit')
+    .map((w) => ({ x0: w.km0, x1: w.km1, cls: 'ch-night' }));
+  const aidMarks = (plan.aid || []).filter((a) => a.km > 1).map((a) => ({ x: a.km }));
+
+  // 1. Vitesse, avec la marche en rouge et la course en encre.
+  const run = S.map((s) => [s.km1, s.mode === 'marche' ? NaN : s.kmh]);
+  const walk = S.map((s) => [s.km1, s.mode === 'marche' ? s.kmh : NaN]);
+  const speed = chart({
+    title: 'Ta vitesse, kilomètre par kilomètre',
+    note: "Les creux sont les montées, les pics les descentes. Le rouge marque les portions marchées : "
+      + "elles ne sont pas des faiblesses mais des choix, décidés à partir de ton seuil.",
+    height: 250, bands: nightBands, marks: aidMarks,
+    series: [
+      { pts: run, kind: 'line', cls: 'c-ink', label: 'en courant' },
+      { pts: walk, kind: 'line', cls: 'c-red', label: 'en marchant' },
+    ],
+    yLabel: 'km/h', xLabel: 'km', yFmt: (v) => `${v}`,
+    extraLegend: '<span class="lg"><i class="sw sw-night"></i>nuit</span>'
+      + '<span class="lg"><i class="sw sw-mark"></i>ravitaillement</span>',
+  });
+
+  // 2. Dénivelé cumulé : la vraie mesure de ce qui reste à payer.
+  let up = 0;
+  const climb = S.map((s) => { up += s.up; return [s.km1, up]; });
+  const cum = chart({
+    title: 'Dénivelé cumulé',
+    note: 'Un kilomètre ne dit rien de l\'effort restant. Cette courbe, si : sa pente est la difficulté du moment.',
+    height: 220, bands: nightBands, marks: aidMarks,
+    series: [{ pts: climb, kind: 'area', cls: 'c-fill' }, { pts: climb, kind: 'line', cls: 'c-red' }],
+    yLabel: 'mètres de D+', xLabel: 'km', yFmt: (v) => `${Math.round(v)}`,
+  });
+
+  // 3. Vitesse ascensionnelle des montées : où tu dois vraiment pousser.
+  const climbs = (plan.sections || []).filter((s) => s.vam && s.up > 150);
+  const vam = climbs.length >= 3 ? chart({
+    title: 'Vitesse ascensionnelle, montée par montée',
+    note: 'Mètres de dénivelé avalés par heure. Les premières montées sont les plus rapides : '
+      + 'c\'est normal, et c\'est exactement là qu\'on se grille en partant trop fort.',
+    height: 210,
+    series: [{ pts: climbs.map((c) => [(c.km0 + c.km1) / 2, c.vam]), kind: 'bars', cls: 'c-bar' }],
+    x0: 0, x1: S[S.length - 1].km1,
+    yLabel: 'm/h', xLabel: 'km', yFmt: (v) => `${Math.round(v)}`,
+  }) : '';
+
+  // 4. Ta répartition d'effort contre celle des finishers du même chrono.
+  let pace = '';
+  const ref = plan.reference;
+  if (ref && (ref.points || []).length) {
+    const totKm = S[S.length - 1].km1, totT = hmsToSec(S[S.length - 1].cumul);
+    const mine = S.map((s) => [s.km1 / totKm * 100, hmsToSec(s.cumul) / totT * 100]);
+    const them = ref.points.map((p) => [p.dist * 100, p.median * 100, p.p25 * 100]);
+    const band = ref.points.map((p) => [p.dist * 100, p.p75 * 100, p.p25 * 100]);
+    pace = chart({
+      title: `Ta répartition d'effort contre ${ref.runners} finishers du même chrono`,
+      note: 'Horizontalement la part de distance, verticalement la part de temps déjà dépensée. '
+        + 'La diagonale serait une course parfaitement régulière. Au-dessus d\'eux, tu es en retard ; '
+        + 'en dessous, tu pars plus vite qu\'ils ne l\'ont fait.',
+      height: 250,
+      series: [
+        { pts: band, kind: 'band', cls: 'c-bandfill', label: 'moitié centrale des finishers', swatch: 'c-bandfill' },
+        { pts: [[0, 0], [100, 100]], kind: 'line', cls: 'c-even', label: 'course régulière' },
+        { pts: them.map((p) => [p[0], p[1]]), kind: 'line', cls: 'c-grey', label: 'leur médiane' },
+        { pts: mine, kind: 'line', cls: 'c-red', label: 'ton plan' },
+      ],
+      x0: 0, x1: 100, yRange: [0, 100],
+      yLabel: '% du temps', xLabel: '% de la distance',
+      yFmt: (v) => `${Math.round(v)}`, xFmt: (v) => `${Math.round(v)}`,
+    });
+  }
+
+  return `<div class="panel">${speed}${cum}${vam}${pace}</div>`;
+}
+
+/* ---------- Température, altitude et nutrition en courbes ---------- */
+function heatCharts(plan) {
+  const S = plan.segments || [];
+  if (S.length < 5) return '';
+  const nightBands = (plan.windows || []).filter((w) => w.light === 'nuit')
+    .map((w) => ({ x0: w.km0, x1: w.km1, cls: 'ch-night' }));
+
+  const temp = chart({
+    title: 'Température et altitude, le long du parcours',
+    note: "L'air perd 6,5 °C par millier de mètres : les deux courbes sont l'image l'une de l'autre. "
+      + "C'est pourquoi un col de nuit passe sous zéro alors qu'il fait doux en vallée.",
+    height: 240, bands: nightBands, right: true,
+    series: [
+      { pts: S.map((s) => [s.km1, s.alt]), kind: 'area', cls: 'c-fill', axis: 'r' },
+      { pts: S.map((s) => [s.km1, s.alt]), kind: 'line', cls: 'c-grey', axis: 'r', label: 'altitude (m)' },
+      { pts: S.map((s) => [s.km1, s.temp]), kind: 'line', cls: 'c-red', label: 'température (°C)' },
+    ],
+    yLabel: '°C', yLabelRight: 'altitude', xLabel: 'km',
+    yFmt: (v) => `${Math.round(v)}`, yFmtRight: (v) => `${Math.round(v)}`,
+    extraLegend: '<span class="lg"><i class="sw sw-night"></i>nuit</span>',
+  });
+
+  // Besoins cumulés : ce que le corps aura consommé à chaque instant.
+  let c = 0, f = 0;
+  const carbs = [], fluid = [];
+  let prev = 0;
+  for (const s of S) {
+    const t = hmsToSec(s.cumul), dt = Math.max(0, t - prev) / 3600;
+    prev = t;
+    c += CARB_PER_H * dt;
+    f += fluidPerH(s.temp) * dt;
+    carbs.push([s.km1, c]);
+    fluid.push([s.km1, f / 1000]);
+  }
+  const fuel = chart({
+    title: 'Ce que tu auras consommé, au fil des kilomètres',
+    note: 'Les besoins en liquide accélèrent dans les portions chaudes : la courbe se redresse là où '
+      + 'la température monte, pas là où le terrain est dur.',
+    height: 220, bands: nightBands, right: true,
+    series: [
+      { pts: carbs, kind: 'line', cls: 'c-ink', label: 'glucides (g)' },
+      { pts: fluid, kind: 'line', cls: 'c-red', axis: 'r', label: 'liquide (L)' },
+    ],
+    yLabel: 'g', yLabelRight: 'litres', xLabel: 'km',
+    yFmt: (v) => `${Math.round(v)}`, yFmtRight: (v) => `${Math.round(v * 10) / 10}`.replace('.', ','),
+  });
+
+  return `${temp}${fuel}`;
+}
+
+/* ---------- La distribution des chronos simulés ---------- */
+function simCharts(plan) {
+  const m = plan.montecarlo;
+  if (!m || !(m.histogram || []).length) return '';
+  const target = hmsToSec(m.target.length <= 5 ? `${m.target}:00` : m.target);
+  const bins = m.histogram.map((b) => [b[0] / 3600, b[1]]);
+  return chart({
+    title: `Les ${(m.runs || 0).toLocaleString('fr-FR')} courses simulées`,
+    note: 'Chaque barre compte les simulations tombées dans cette tranche de chrono. '
+      + 'La ligne rouge est ton objectif : tout ce qui est à sa gauche l\'a tenu.',
+    height: 230,
+    series: [{ pts: bins, kind: 'bars', cls: 'c-bar' }],
+    marks: [{ x: target / 3600, cls: 'ch-target' }],
+    yLabel: 'courses', xLabel: 'heures', yFmt: (v) => `${Math.round(v)}`,
+    xFmt: (v) => `${Math.round(v)}h`,
+    extraLegend: '<span class="lg"><i class="sw sw-target"></i>ton objectif</span>',
+  });
+}
+
 function windows(plan) {
   if (!(plan.windows || []).length) return '';
   const rows = plan.windows.map((w) => `<tr class="lt-${w.light === 'nuit' ? 'night' : w.light === 'jour' ? 'day' : 'dusk'}">
@@ -781,11 +1032,11 @@ function render(plan) {
     <p class="hk-v">${esc(v)}</p><p class="hk-h mono">${esc(h || '')}</p></div>` : '';
 
   const body = {
-    course: `${cockpit(plan)}${sections(plan)}${aidTable(plan)}${strategy(plan)}`,
-    chaleur: `${heatPlan(plan)}${nutrition(plan)}${windows(plan)}${hours(plan)}`,
+    course: `${cockpit(plan)}${raceCharts(plan)}${sections(plan)}${aidTable(plan)}${strategy(plan)}`,
+    chaleur: `${heatPlan(plan)}${heatCharts(plan)}${nutrition(plan)}${windows(plan)}${hours(plan)}`,
     moi: `${athlete(plan)}`,
     autres: `${reference(plan)}${lessons(plan)}`,
-    simu: `${montecarlo(plan)}`,
+    simu: `${montecarlo(plan)}${simCharts(plan)}`,
     emporter: `${exporter(plan)}${method(plan)}`,
   };
   const tabs = TABS.filter(([k]) => (body[k] || '').trim());

@@ -252,3 +252,35 @@
    « none » ne reçoit aucun événement : on force donc la captation plutôt que
    de dépendre du comportement par défaut, qui échouerait sans rien signaler. */
 #curHit { pointer-events: all; cursor: crosshair; }
+
+/* ---- Graphiques : une seule grammaire pour toutes les courbes ---- */
+.ch { margin: 0 0 34px; }
+.ch-t { font-family: var(--serif); font-weight: 400; font-size: clamp(19px, 2.1vw, 25px);
+  line-height: 1.15; margin-bottom: 6px; }
+.ch-n { font-size: 13px; line-height: 1.55; color: var(--sub-text); max-width: 680px; margin-bottom: 12px; }
+.ch svg { width: 100%; height: auto; display: block; border: 1px solid var(--line);
+  background: var(--surface); }
+.ch-grid { stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ch-lab { font-family: var(--mono); font-size: 10px; fill: var(--dim); }
+.ch-ax { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+.ch-band { fill: var(--text); fill-opacity: .05; }
+.ch-night { fill: var(--text); fill-opacity: .07; }
+.ch-mark { stroke: var(--text); stroke-opacity: .16; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.ch-target { stroke: var(--mark); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+
+.c-ink { fill: none; stroke: var(--text); stroke-width: 1.5; vector-effect: non-scaling-stroke;
+  stroke-linejoin: round; }
+.c-red { fill: none; stroke: var(--mark); stroke-width: 1.9; vector-effect: non-scaling-stroke;
+  stroke-linejoin: round; }
+.c-grey { fill: none; stroke: var(--muted); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.c-even { fill: none; stroke: var(--dim); stroke-width: 1; stroke-dasharray: 5 5; vector-effect: non-scaling-stroke; }
+.c-fill { fill: var(--text); fill-opacity: .07; stroke: none; }
+.c-bandfill { fill: var(--text); fill-opacity: .10; stroke: none; }
+.c-bar { fill: var(--mark); fill-opacity: .72; }
+
+.sw.c-ink { background: var(--text); } .sw.c-red { background: var(--mark); }
+.sw.c-grey { background: var(--muted); } .sw.c-bar { background: var(--mark); opacity: .72; }
+.sw.c-even { background: var(--dim); } .sw.c-fill, .sw.c-bandfill { background: var(--text); opacity: .12; }
+.sw-night { background: var(--text); opacity: .07; border: 1px solid var(--line); }
+.sw-mark { background: var(--text); opacity: .16; }
+.sw-target { background: var(--mark); }

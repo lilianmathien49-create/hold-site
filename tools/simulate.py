@@ -127,6 +127,16 @@ def main() -> int:
         checkpoints.append({"km": round(w["km"], 1), "name": w["name"],
                             "p10": hms(pick(0.1)), "median": hms(pick(0.5)), "p90": hms(pick(0.9))})
 
+    # Distribution des chronos, en tranches de six minutes : de quoi dessiner
+    # la forme du risque plutôt que d'en donner trois quantiles.
+    BIN = 360
+    counts = {}
+    for t in times:
+        k = int(t // BIN) * BIN
+        counts[k] = counts.get(k, 0) + 1
+    lo_b, hi_b = min(counts), max(counts)
+    histogram = [[k, counts.get(k, 0)] for k in range(lo_b, hi_b + BIN, BIN)]
+
     # Viser sa médiane, c'est jouer à pile ou face. Voici le chrono à annoncer
     # selon le niveau de certitude qu'on veut avoir en franchissant la ligne.
     confidence = [{"level": int(c * 100), "time": hm(q(c))} for c in (0.5, 0.7, 0.8, 0.9)]
@@ -137,6 +147,7 @@ def main() -> int:
            "p75": hms(q(0.75)), "p90": hms(q(0.90)),
            "confidence": confidence,
            "keptWithinMin": a.keep_within, "kept": kept,
+           "histogram": histogram, "binSec": BIN,
            "checkpoints": checkpoints,
            "assumptions": {k: v for k, v in p.items() if k.startswith("sd_") or k == "stop_total"}}
 
