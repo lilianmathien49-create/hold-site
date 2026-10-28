@@ -65,6 +65,34 @@ def learn(runners, min_obs=30):
     return out
 
 
+def bias_curve(train, model, bins=10):
+    """Le modèle se trompe-t-il systématiquement selon l'avancement ?
+    On mesure ça sur les éditions d'entraînement, jamais sur celle qu'on teste :
+    sinon on corrige avec la réponse et on se ment à soi-même."""
+    acc = defaultdict(list)
+    for r in train:
+        sp = sorted((s for s in r["splits"] if s.get("km")), key=lambda s: s["km"])
+        if len(sp) < 5 or not r.get("time"):
+            continue
+        total_km = sp[-1]["km"]
+        for s in sp:
+            if s["km"] < 1.0 or s["km"] >= total_km - 0.5:
+                continue
+            m = model.get(canon(s["name"]))
+            if not m:
+                continue
+            frac = s["km"] / total_km
+            # Erreur en part de temps, pas en minutes : transposable à tout objectif.
+            acc[min(bins - 1, int(frac * bins))].append(m["med"] - s["elapsed"] / r["time"])
+    return {k: st.median(v) for k, v in acc.items() if len(v) >= 40}
+
+
+def corrected(m, frac, bias, bins=10):
+    """Applique la correction, en gardant les bornes cohérentes avec la médiane."""
+    b = bias.get(min(bins - 1, int(frac * bins)), 0.0)
+    return {k: (v - b if k in ("med", "p10", "p25", "p75", "p90") else v) for k, v in m.items()}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("source")
@@ -82,7 +110,8 @@ def main() -> int:
         model = learn(train)
         if not model or not test:
             continue
-        errs, naive_errs, eff_errs, hit50, hit80, n = [], [], [], 0, 0, 0
+        bias = bias_curve(train, model)
+        errs, raw_errs, naive_errs, eff_errs, hit50, hit80, n = [], [], [], [], 0, 0, 0
         for r in test:
             sp = sorted((s for s in r["splits"] if s.get("km")), key=lambda s: s["km"])
             if len(sp) < 5:
@@ -94,7 +123,10 @@ def main() -> int:
                 m = model.get(canon(s["name"]))
                 if not m:
                     continue
-                pred = m["med"] * total_t
+                frac_km = s["km"] / total_km
+                mc = corrected(m, frac_km, bias)
+                pred = mc["med"] * total_t
+                raw = m["med"] * total_t
                 # Deux références. L'allure constante, qui ignore le relief. Et le
                 # kilomètre-effort, règle classique de coach : 100 m de dénivelé
                 # coûtent autant qu'un kilomètre. C'est elle qu'il faut battre.
@@ -103,19 +135,21 @@ def main() -> int:
                 eff_tot = total_km + (sp[-1].get("climb") or 0) / 100
                 effort = eff_here / eff_tot * total_t if eff_tot else naive
                 errs.append(abs(pred - s["elapsed"]))
+                raw_errs.append(abs(raw - s["elapsed"]))
                 naive_errs.append(abs(naive - s["elapsed"]))
                 eff_errs.append(abs(effort - s["elapsed"]))
                 frac = s["elapsed"] / total_t
-                if m["p25"] <= frac <= m["p75"]:
+                if mc["p25"] <= frac <= mc["p75"]:
                     hit50 += 1
-                if m["p10"] <= frac <= m["p90"]:
+                if mc["p10"] <= frac <= mc["p90"]:
                     hit80 += 1
                 n += 1
                 rows.append({"year": y, "dist": s["km"] / total_km,
                              "err": (pred - s["elapsed"]) / 60, "naive": (naive - s["elapsed"]) / 60,
                              "effort": (effort - s["elapsed"]) / 60})
         if n:
-            per_year[y] = {"n": n, "mae": st.mean(errs) / 60, "naiveMae": st.mean(naive_errs) / 60,
+            per_year[y] = {"n": n, "mae": st.mean(errs) / 60, "rawMae": st.mean(raw_errs) / 60,
+                           "naiveMae": st.mean(naive_errs) / 60,
                            "effortMae": st.mean(eff_errs) / 60,
                            "cover50": hit50 / n * 100, "cover80": hit80 / n * 100,
                            "runners": len(test)}
@@ -128,6 +162,7 @@ def main() -> int:
     mae = sum(v["mae"] * v["n"] for v in per_year.values()) / tot
     nmae = sum(v["naiveMae"] * v["n"] for v in per_year.values()) / tot
     emae = sum(v["effortMae"] * v["n"] for v in per_year.values()) / tot
+    rmae = sum(v["rawMae"] * v["n"] for v in per_year.values()) / tot
     c50 = sum(v["cover50"] * v["n"] for v in per_year.values()) / tot
     c80 = sum(v["cover80"] * v["n"] for v in per_year.values()) / tot
 
@@ -144,7 +179,8 @@ def main() -> int:
                             "n": len(sel)})
 
     res = {"editions": len(per_year), "observations": tot,
-           "mae": round(mae, 2), "naiveMae": round(nmae, 2), "effortMae": round(emae, 2),
+           "mae": round(mae, 2), "rawMae": round(rmae, 2),
+           "naiveMae": round(nmae, 2), "effortMae": round(emae, 2),
            "gain": round((1 - mae / nmae) * 100, 1),
            "gainEffort": round((1 - mae / emae) * 100, 1),
            "cover50": round(c50, 1), "cover80": round(c80, 1),
@@ -155,7 +191,8 @@ def main() -> int:
 
     print(f"  {len(per_year)} éditions testées, chacune apprise sur les {len(per_year)-1} autres")
     print(f"  {tot} temps de passage prédits\n")
-    print(f"  Erreur moyenne        {mae:6.1f} min")
+    print(f"  Erreur moyenne        {mae:6.1f} min   (avec correction de biais)")
+    print(f"  Sans correction       {rmae:6.1f} min")
     print(f"  Kilometre-effort      {emae:6.1f} min   (regle de coach)")
     print(f"  Allure constante      {nmae:6.1f} min   (epouvantail)")
     print(f"  Gain sur le km-effort {(1-mae/emae)*100:6.1f} %\n")

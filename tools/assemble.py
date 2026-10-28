@@ -33,6 +33,7 @@ def main() -> int:
     ap.add_argument("--montecarlo")
     ap.add_argument("--lessons")
     ap.add_argument("--backtest")
+    ap.add_argument("--live")
     ap.add_argument("--notes")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
@@ -61,13 +62,17 @@ def main() -> int:
     bt = load(a.backtest)
     if bt:
         plan["backtest"] = bt
+    lv = load(a.live)
+    if lv:
+        lv["runners"] = (les or {}).get("runners") or (ref or {}).get("runners")
+        plan["live"] = lv
     if a.notes:
         plan["notes"] = a.notes
 
     Path(a.out).write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
     have = [n for n, v in (("plan", plan), ("profil coureur", fit),
                            ("référence historique", ref), ("leçons des autres", les),
-                           ("Monte-Carlo", mc), ("validation", bt)) if v]
+                           ("Monte-Carlo", mc), ("validation", bt), ("pacing en course", lv)) if v]
     size = Path(a.out).stat().st_size // 1024
     print(f"  Assemblé : {', '.join(have)}")
     print(f"  Écrit : {a.out} ({size} Ko)\n")

@@ -990,6 +990,68 @@ function exporter(plan) {
   </section>`;
 }
 
+/* ---------- Ce que vaut une avance prise en course ---------- */
+function liveSection(plan) {
+  const L = plan.live;
+  if (!L || !(L.betas || []).length) return '';
+  const b = L.betas, rows = L.rows || [];
+  const at = (f) => (b.reduce((p, x) => (Math.abs(x.seen - f) < Math.abs(p.seen - f) ? x : p), b[0]));
+  const mid = at(0.5), early = at(0.2);
+
+  const curve = chart({
+    title: "Ce qu'il reste d'une avance, selon le moment où tu l'as prise",
+    note: "Un coefficient de 1 voudrait dire qu'une minute gagnée est une minute gardée. "
+      + "Plus il est bas, plus l'avance s'évapore avant l'arrivée.",
+    height: 230,
+    series: [
+      { pts: [[0, 1], [1, 1]], kind: 'line', cls: 'c-even', label: 'avance intégralement conservée' },
+      { pts: b.map((x) => [x.seen * 100, x.beta]), kind: 'line', cls: 'c-red', label: 'ce qui se conserve vraiment' },
+    ],
+    x0: 0, x1: 100, yRange: [0, 1.1],
+    yLabel: 'part conservée', xLabel: '% de course déjà fait',
+    yFmt: (v) => `${Math.round(v * 100)} %`, xFmt: (v) => `${Math.round(v)}`,
+  });
+
+  const tbl = rows.filter((r) => Math.round(r.seen * 100) % 20 === 0).map((r) => `<tr>
+    <td class="mono num">${Math.round(r.seen * 100)} %</td>
+    <td class="mono num">${km1(r.mediane)} min</td>
+    <td class="mono num ${r.report > r.mediane ? 'late' : ''}">${km1(r.report)} min</td>
+    <td class="mono num strong">${km1(r.regresse)} min</td>
+  </tr>`).join('');
+
+  return `<section class="pl-block">
+    <h2 class="pl-h">Être en avance ne veut presque rien dire</h2>
+    <p class="sub pl-wide">On a pris ${L.runners || 712} finishers et mesuré, à chaque point du parcours,
+      ce que devenait une avance prise à cet endroit-là. Le résultat va contre l'instinct.</p>
+    <div class="three">
+      <div class="big"><p class="big-l mono">À un cinquième de course</p>
+        <p class="big-v">${Math.round(early.beta * 100)} %</p>
+        <p class="big-h mono">de l'avance survit jusqu'à l'arrivée</p></div>
+      <div class="big"><p class="big-l mono">À mi-course</p>
+        <p class="big-v">${Math.round(mid.beta * 100)} %</p>
+        <p class="big-h mono">il en reste à peine un tiers</p></div>
+      <div class="big"><p class="big-l mono">À dix kilomètres de l'arrivée</p>
+        <p class="big-v">${Math.round(at(0.9).beta * 100)} %</p>
+        <p class="big-h mono">là, enfin, l'avance compte</p></div>
+    </div>
+    ${curve}
+    <p class="sub pl-wide">Concrètement : si tu as <b>trente minutes d'avance</b> sur ton plan à mi-course,
+      n'en compte que <b>${Math.round(30 * mid.beta)} à l'arrivée</b>. Le reste, tu l'as emprunté à la
+      seconde moitié et tu le rembourseras avec intérêts.</p>
+    <h3 class="pl-h3">Et pour prédire le chrono final en cours de route</h3>
+    <div class="tw"><table class="tbl">
+      <thead><tr><th class="num">Course déjà faite</th><th class="num">Sans rien savoir</th>
+        <th class="num">En reportant l'avance</th><th class="num">En la régressant</th></tr></thead>
+      <tbody>${tbl}</tbody></table></div>
+    <p class="hint">Reporter naïvement l'avance est <b>pire que de ne rien savoir</b> jusqu'aux deux tiers
+      de la course : l'extrapolation se trompe plus que la moyenne. C'est exactement l'erreur que fait
+      un coureur qui recalcule son chrono au ravitaillement.</p>
+    <p class="hint pl-warn">Une limite qui compte : ces coureurs ont tous <b>fini</b>. Ceux qui sont partis
+      trop vite et ont abandonné ne sont pas dans les données. La pénalité réelle d'un départ rapide est
+      donc <b>plus lourde</b> que ce que ces chiffres montrent, pas plus légère.</p>
+  </section>`;
+}
+
 function validation(plan) {
   const b = plan.backtest;
   if (!b) return '';
@@ -1077,7 +1139,7 @@ function render(plan) {
     course: `${cockpit(plan)}${raceCharts(plan)}${sections(plan)}${aidTable(plan)}${strategy(plan)}`,
     chaleur: `${heatPlan(plan)}${heatCharts(plan)}${nutrition(plan)}${windows(plan)}${hours(plan)}`,
     moi: `${athlete(plan)}`,
-    autres: `${reference(plan)}${lessons(plan)}`,
+    autres: `${reference(plan)}${liveSection(plan)}${lessons(plan)}`,
     simu: `${montecarlo(plan)}${simCharts(plan)}`,
     emporter: `${exporter(plan)}${validation(plan)}${method(plan)}`,
   };
