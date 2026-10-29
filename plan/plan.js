@@ -1614,6 +1614,8 @@ async function unlock(s, pw, remember) {
   }
 }
 
+window.addEventListener('hashchange', () => { location.reload(); });
+
 (async function boot() {
   const hash = (location.hash || '').replace(/^#/, '').trim();
   const saved = store.read();

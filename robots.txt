@@ -9,4 +9,4 @@ Allow: /
 Disallow: /plan/
 Disallow: /paiement/
 
-Sitemap: https://lilianmathien49-create.github.io/hold-site/sitemap.xml
+Sitemap: https://holdrunning.fr/sitemap.xml

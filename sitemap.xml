@@ -2,13 +2,13 @@
 <!-- Écrit par tools/build_revue.py : ne pas modifier à la main. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://lilianmathien49-create.github.io/hold-site/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <loc>https://holdrunning.fr/</loc>
+    <lastmod>2026-10-29</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://lilianmathien49-create.github.io/hold-site/revue/</loc>
-    <lastmod>2026-10-28</lastmod>
+    <loc>https://holdrunning.fr/revue/</loc>
+    <lastmod>2026-10-29</lastmod>
     <priority>0.8</priority>
   </url>
 </urlset>

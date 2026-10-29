@@ -42,7 +42,7 @@ def main() -> int:
     ap.add_argument("slug", nargs="?", help="identifiant dans l'URL ; tiré au sort si omis. "
                                             "Évite le nom du coureur : le dépôt est public.")
     ap.add_argument("--password", help="mot de passe imposé (sinon tiré au sort)")
-    ap.add_argument("--base-url", default="https://lilianmathien49-create.github.io/hold-site",
+    ap.add_argument("--base-url", default="https://holdrunning.fr",
                     help="adresse du site, pour afficher le lien complet")
     a = ap.parse_args()
 

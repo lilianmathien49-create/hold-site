@@ -33,7 +33,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent.parent
 SOURCES = RACINE / "revue" / "_articles"
 SORTIE = RACINE / "revue"
-BASE = "https://lilianmathien49-create.github.io/hold-site"
+BASE = "https://holdrunning.fr"
 
 MOIS = ("janvier février mars avril mai juin juillet août septembre octobre "
         "novembre décembre").split()
@@ -189,7 +189,7 @@ def tete_html(titre: str, description: str, url: str, profondeur: int, extra: st
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400..700&family=Fraunces:opsz,wght@9..144,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{racine}css/styles.css">
 <link rel="stylesheet" href="{racine}revue/revue.css">
 {extra}</head>

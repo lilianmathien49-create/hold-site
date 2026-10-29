@@ -134,6 +134,37 @@ function initTry() {
 }
 
 /* ---------- Le film, à la demande ---------- */
+function initReel() {
+  // La vignette du film se lance toute seule, en silence, quand elle arrive à
+  // l'écran — et s'arrête quand elle en sort. Un film muet qui tourne dans le
+  // vide consomme de la batterie pour personne.
+  //
+  // Le son reste sur le clic, qui ouvre le film en grand : un navigateur
+  // refuse de lancer une vidéo sonore sans geste de l'utilisateur, et il a
+  // raison de le refuser.
+  const v = $('reelVideo');
+  if (!v) return;
+  if (reduce) return;        // on respecte qui demande moins d'animation : le poster suffit
+
+  const io = new IntersectionObserver((entrees) => {
+    for (const e of entrees) {
+      if (e.isIntersecting) {
+        // play() rend une promesse qui peut être refusée (onglet en veille,
+        // économiseur de données) : ce n'est pas une erreur, on laisse le poster.
+        v.play().catch(() => {});
+      } else {
+        v.pause();
+      }
+    }
+  }, { threshold: 0.4 });
+  io.observe(v);
+
+  // Quand le film s'ouvre en grand avec le son, la vignette se tait.
+  const grand = $('filmVideo');
+  if (grand) grand.addEventListener('play', () => v.pause());
+}
+
+
 function initFilm() {
   const dlg = $('film'), v = $('filmVideo'), overlay = $('filmOverlay'), playBtn = $('filmPlay');
   const bar = $('filmBar'), prog = $('filmProgress'), timeEl = $('filmTime');
@@ -265,6 +296,126 @@ function initAsk() {
   }
 }
 
+function initApercu() {
+  // Le curseur du profil, sur la page d'accueil. Amélioration progressive :
+  // la barre de lecture est déjà remplie par le générateur, ce script ne fait
+  // que la rendre mobile. S'il ne tourne pas, la page reste juste.
+  const svg = $('apSvg'), brut = $('apData');
+  if (!svg || !brut) return;
+
+  let geo, segs;
+  try {
+    geo = JSON.parse(svg.dataset.geo);
+    segs = JSON.parse(brut.textContent);
+  } catch { return; }
+  if (!geo || !segs || !segs.length) return;
+
+  const tige = $('apTige'), point = $('apPoint');
+  const champs = { km: $('apKm'), alt: $('apAlt'), pente: $('apPente'), mode: $('apMode'),
+    allure: $('apAllure'), heure: $('apHeure'), temp: $('apTemp') };
+  if (!tige || !point || !champs.km) return;
+
+  // Mêmes formules que le générateur, dans l'autre sens.
+  const largeur = geo.w - geo.g - geo.d;
+  const xDe = (km) => geo.g + (km / geo.total) * largeur;
+  const yDe = (alt) => geo.haut + geo.ph - ((alt - geo.y0) / (geo.y1 - geo.y0)) * geo.ph;
+  const fr1 = (v) => Number(v).toFixed(1).replace('.', ',').replace('-', '\u2212');
+  const mille = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f');
+
+  // Les mêmes seuils que classe_pente() côté Python : si l'un bouge, l'autre
+  // doit bouger. Ils décident de la couleur ET du sens du mot « raide ».
+  const classe = (p) => (p < -4 ? 'descente' : p < 4 ? 'plat' : p < 10 ? 'doux'
+    : p < 15 ? 'raide' : 'mur');
+
+  let index = -1;
+  function montrer(i) {
+    i = Math.max(0, Math.min(segs.length - 1, i));
+    if (i === index) return;
+    index = i;
+    const [km, alt, pente, marche, allure, heure, temp] = segs[i];
+    const px = xDe(km), py = yDe(alt);
+    tige.setAttribute('x1', px); tige.setAttribute('x2', px);
+    point.setAttribute('cx', px); point.setAttribute('cy', py);
+    champs.km.textContent = fr1(km);
+    champs.alt.innerHTML = `${mille(alt)}<small> m</small>`;
+    champs.pente.textContent = `${fr1(pente)} %`;
+    champs.pente.className = `ap-p ap-p-${classe(pente)}`;
+    champs.mode.textContent = marche ? 'Marche' : 'Course';
+    champs.allure.textContent = allure;
+    champs.heure.textContent = heure;
+    champs.temp.innerHTML = temp === null ? '—' : `${fr1(temp)}<small> °C</small>`;
+  }
+
+  // Du pointeur vers le tronçon : on repasse par le kilomètre, pas par une
+  // recherche du point le plus proche à l'écran — les tronçons sont réguliers
+  // en distance, pas en pixels.
+  function auPointeur(clientX) {
+    const r = svg.getBoundingClientRect();
+    if (!r.width) return;
+    const px = ((clientX - r.left) / r.width) * geo.w;
+    const km = ((px - geo.g) / largeur) * geo.total;
+    let lo = 0, hi = segs.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (segs[mid][0] < km) lo = mid + 1; else hi = mid;
+    }
+    montrer(lo);
+  }
+
+  svg.addEventListener('pointermove', (e) => auPointeur(e.clientX));
+  svg.addEventListener('pointerdown', (e) => { auPointeur(e.clientX); svg.focus(); });
+
+  // Au clavier : le profil est focalisable, les flèches le parcourent.
+  svg.addEventListener('keydown', (e) => {
+    const pas = e.shiftKey ? 20 : 1;
+    if (e.key === 'ArrowRight') { montrer(index < 0 ? 0 : index + pas); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { montrer(index < 0 ? 0 : index - pas); e.preventDefault(); }
+    else if (e.key === 'Home') { montrer(0); e.preventDefault(); }
+    else if (e.key === 'End') { montrer(segs.length - 1); e.preventDefault(); }
+  });
+
+  const aide = $('apAide');
+  if (aide) aide.textContent = 'Balaye le profil · flèches au clavier';
+}
+
+
+function initVoie() {
+  // Le sélecteur de la méthode : complète, coaching seul, pacing seul.
+  // Amélioration progressive — sans ce script, les quatre temps s'affichent,
+  // ce qui est exactement la méthode complète.
+  const tabs = document.querySelectorAll('.how-tabs [data-voie]');
+  const etapes = document.querySelectorAll('.how-steps [data-voie]');
+  const sous = $('howSub');
+  if (!tabs.length || !etapes.length) return;
+
+  const TEXTES = {
+    general: "Quatre temps, dans cet ordre. Chacun sert le suivant : sans objectif pas "
+      + "d'entraînement ciblé, et sans entraînement suivi pas de stratégie fiable.",
+    coaching: "Tu veux progresser, sans course précise en tête. On s'arrête à "
+      + "l'entraînement : objectif, analyse de tes séances, plan réajusté chaque semaine.",
+    pacing: "Tu t'entraînes déjà de ton côté. On part de tes données et du parcours pour "
+      + "écrire ta course — sans toucher à ton plan.",
+  };
+
+  function choisir(voie) {
+    for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.voie === voie));
+    let visibles = 0;
+    for (const e of etapes) {
+      const dedans = (e.dataset.voie || '').split(' ').includes(voie);
+      e.hidden = !dedans;
+      if (dedans) visibles += 1;
+    }
+    // La grille compte autant de colonnes que de temps affichés, sinon la
+    // place du temps masqué reste vide.
+    const liste = etapes[0].parentElement;
+    if (liste) liste.style.setProperty('--cols', String(visibles));
+    if (sous && TEXTES[voie]) sous.textContent = TEXTES[voie];
+  }
+
+  for (const t of tabs) t.addEventListener('click', () => choisir(t.dataset.voie));
+}
+
+
 function initReveal() {
   const els = document.querySelectorAll('.reveal');
   if (reduce) { els.forEach((e) => e.classList.add('in')); return; }
@@ -282,12 +433,7 @@ run(initAnalyses);
 run(initTry);
 run(initAsk);
 run(initFilm);
+run(initReel);
+run(initApercu);
+run(initVoie);
 run(initReveal);
-run(function initSound() {
-  const btn = $('navSound');
-  if (!btn) return;
-  btn.addEventListener('click', function () {
-    if (audio.isRunning()) { audio.stop(); btn.setAttribute('aria-pressed', 'false'); }
-    else { audio.start(); btn.setAttribute('aria-pressed', 'true'); }
-  });
-});

@@ -48,6 +48,29 @@ FIELDS = {
     13: ("temp", float),
     73: ("speed", lambda v: v / 1000.0),      # version étendue, même sens
     78: ("alt", lambda v: v / 5.0 - 500),     # altitude étendue
+    # Dynamique de course. Ces montres n'écrivent pas la cadence (champ 4),
+    # mais elles écrivent la longueur de foulée : la cadence s'en déduit,
+    # vitesse divisée par foulée. Vérifié sur une séance où la médiane tombe
+    # à 154 pas/min, contre 156 affichés par la montre.
+    39: ("oscillation", lambda v: v / 10.0),  # oscillation verticale, mm
+    41: ("contact", lambda v: v / 10.0),      # temps de contact au sol, ms
+    83: ("ratio_vert", lambda v: v / 100.0),  # ratio vertical, %
+    85: ("foulee", lambda v: v / 10000.0),    # longueur de foulée, m
+}
+
+LAP_MSG = 19
+# Les tours tels que la montre les a enregistrés. C'est la découpe du coureur,
+# pas une reconstruction : une séance de 4 × 2 km a quatre tours de 2 km.
+LAP_FIELDS = {
+    253: ("fin", lambda v: FIT_EPOCH + timedelta(seconds=v)),
+    2: ("debut", lambda v: FIT_EPOCH + timedelta(seconds=v)),
+    7: ("duree", lambda v: v / 1000.0),
+    9: ("dist", lambda v: v / 100.0),
+    13: ("speed", lambda v: v / 1000.0),
+    14: ("speed_max", lambda v: v / 1000.0),
+    15: ("hr", float),
+    16: ("hr_max", float),
+    21: ("montee", float),
 }
 
 
@@ -58,8 +81,18 @@ def _open(path: Path) -> bytes:
     return raw
 
 
+def read_laps(path: Path) -> list[dict]:
+    """Les tours enregistrés par la montre, dans l'ordre."""
+    return _lire(path, LAP_MSG, LAP_FIELDS)
+
+
 def read_fit(path: Path) -> list[dict]:
     """Renvoie la liste des points de mesure, dans l'ordre du fichier."""
+    return _lire(path, RECORD_MSG, FIELDS)
+
+
+def _lire(path: Path, msg: int, champs: dict) -> list[dict]:
+    """Décode un type de message et lui seul ; le reste du fichier est sauté."""
     buf = _open(Path(path))
     if len(buf) < 14 or buf[8:12] != b".FIT":
         return []
@@ -81,7 +114,7 @@ def read_fit(path: Path) -> list[dict]:
             d = defs.get(local)
             if not d:
                 break                          # sans définition on ne sait plus avancer
-            rec, pos, ts = _read_data(buf, pos, d, last_ts, offset)
+            rec, pos, ts = _read_data(buf, pos, d, last_ts, offset, msg, champs)
             if ts is not None:
                 last_ts = ts
             if rec is not None:
@@ -114,7 +147,7 @@ def read_fit(path: Path) -> list[dict]:
         d = defs.get(local)
         if not d:
             break
-        rec, pos, ts = _read_data(buf, pos, d, last_ts, None)
+        rec, pos, ts = _read_data(buf, pos, d, last_ts, None, msg, champs)
         if ts is not None:
             last_ts = ts
         if rec is not None:
@@ -123,10 +156,11 @@ def read_fit(path: Path) -> list[dict]:
     return out
 
 
-def _read_data(buf, pos, d, last_ts, offset):
+def _read_data(buf, pos, d, last_ts, offset, msg=RECORD_MSG, champs=None):
     """Lit un message de données. Renvoie (point ou None, position, horodatage)."""
+    champs = FIELDS if champs is None else champs
     gnum, endian, fields = d
-    rec = {} if gnum == RECORD_MSG else None
+    rec = {} if gnum == msg else None
     ts = None
     for fnum, size, base in fields:
         spec = BASE.get(base)
@@ -134,7 +168,7 @@ def _read_data(buf, pos, d, last_ts, offset):
             pos += size
             continue
         width, fmt, invalid = spec
-        if rec is None or fnum not in FIELDS or size != width:
+        if rec is None or fnum not in champs or size != width:
             pos += size                        # champ inutile, ou tableau : on saute
             continue
         try:
@@ -145,7 +179,7 @@ def _read_data(buf, pos, d, last_ts, offset):
         pos += size
         if invalid is not None and raw == invalid:
             continue
-        name, conv = FIELDS[fnum]
+        name, conv = champs[fnum]
         try:
             val = conv(raw)
         except (ValueError, OverflowError, OSError):
