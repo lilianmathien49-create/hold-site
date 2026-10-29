@@ -46,6 +46,15 @@
     .pay-row .btn { justify-self: start; }
   }
 </style>
+<!-- Mesure d'audience sans cookie : la page peut continuer d'annoncer qu'elle
+     n'en dépose aucun, et aucun bandeau n'est nécessaire. Chargé en async : si
+     le script ne répond pas, rien d'autre n'attend. -->
+<script async src="https://plausible.io/js/pa-o1S6dEzqPCDWmIjVCmp5f.js"></script>
+<script>
+  window.plausible = window.plausible || function () { (plausible.q = plausible.q || []).push(arguments) };
+  plausible.init = plausible.init || function (i) { plausible.o = i || {} };
+  plausible.init();
+</script>
 </head>
 <body>
 
@@ -124,6 +133,14 @@
     <span><a href="../#legal" style="text-decoration:underline">CGV et mentions légales</a></span>
   </div>
 </main>
+
+<script>
+  for (const a of document.querySelectorAll('a[href*="buy.stripe.com"]')) {
+    a.addEventListener('click', () => {
+      if (typeof window.plausible === 'function') window.plausible('Départ vers le paiement');
+    });
+  }
+</script>
 
 </body>
 </html>

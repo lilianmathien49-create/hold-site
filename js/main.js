@@ -416,6 +416,60 @@ function initVoie() {
 }
 
 
+function initMesure() {
+  // Quatre signaux, pour répondre à quatre questions : combien arrivent,
+  // jusqu'où ils descendent, combien commencent à écrire, combien partent
+  // payer. Rien d'identifiant n'est envoyé — seulement des étiquettes.
+  const envoyer = (nom, props) => {
+    if (typeof window.plausible === 'function') window.plausible(nom, props ? { props } : undefined);
+  };
+
+  // Profondeur de lecture. On ne signale chaque palier qu'une fois, et on
+  // n'écoute le défilement qu'au repos : mesurer ne doit pas ralentir la page.
+  const paliers = [25, 50, 75, 100];
+  const vus = new Set();
+  let enAttente = false;
+  function jauger() {
+    enAttente = false;
+    const h = document.documentElement;
+    const total = h.scrollHeight - h.clientHeight;
+    if (total < 400) return;                // page trop courte pour un palier
+    const pct = Math.min(100, Math.round((h.scrollTop / total) * 100));
+    for (const p of paliers) {
+      if (pct >= p && !vus.has(p)) {
+        vus.add(p);
+        envoyer('Lecture', { palier: `${p} %` });
+      }
+    }
+  }
+  window.addEventListener('scroll', () => {
+    if (enAttente) return;
+    enAttente = true;
+    requestAnimationFrame(jauger);
+  }, { passive: true });
+
+  // Formulaire entamé : la première frappe suffit, et une seule fois.
+  const form = $('askForm');
+  if (form) {
+    let entame = false;
+    form.addEventListener('input', () => {
+      if (entame) return;
+      entame = true;
+      envoyer('Formulaire entamé');
+    }, { once: false });
+    form.addEventListener('submit', () => envoyer('Formulaire envoyé'));
+  }
+
+  // Les offres, et les départs vers Stripe depuis n'importe quelle page.
+  for (const b of document.querySelectorAll('[data-offer]')) {
+    b.addEventListener('click', () => envoyer('Offre regardée', { offre: b.dataset.offer || '' }));
+  }
+  for (const a of document.querySelectorAll('a[href*="buy.stripe.com"]')) {
+    a.addEventListener('click', () => envoyer('Départ vers le paiement'));
+  }
+}
+
+
 function initReveal() {
   const els = document.querySelectorAll('.reveal');
   if (reduce) { els.forEach((e) => e.classList.add('in')); return; }
@@ -436,4 +490,5 @@ run(initFilm);
 run(initReel);
 run(initApercu);
 run(initVoie);
+run(initMesure);
 run(initReveal);

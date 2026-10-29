@@ -192,6 +192,14 @@ def tete_html(titre: str, description: str, url: str, profondeur: int, extra: st
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400..700&family=Fraunces:opsz,wght@9..144,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{racine}css/styles.css">
 <link rel="stylesheet" href="{racine}revue/revue.css">
+<!-- Mesure d'audience sans cookie : la page peut continuer d'annoncer qu'elle
+     n'en dépose aucun, et aucun bandeau n'est nécessaire. -->
+<script async src="https://plausible.io/js/pa-o1S6dEzqPCDWmIjVCmp5f.js"></script>
+<script>
+  window.plausible = window.plausible || function () {{ (plausible.q = plausible.q || []).push(arguments) }};
+  plausible.init = plausible.init || function (i) {{ plausible.o = i || {{}} }};
+  plausible.init();
+</script>
 {extra}</head>
 <body>
 
