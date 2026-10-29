@@ -145,6 +145,10 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
 .display { font-size: clamp(52px, 8.4vw, 118px); line-height: .92; letter-spacing: -.025em; }
 .title { font-size: clamp(30px, 3.8vw, 54px); line-height: 1.04; letter-spacing: -.015em; }
 .sub { font-size: clamp(16px, 1.3vw, 19px); line-height: 1.55; color: var(--sub-text); max-width: 460px; }
+/* L'accroche de chaque carte : une phrase, pour dire à qui elle s'adresse. */
+.offer-hook { font-family: var(--serif); font-size: 17px; line-height: 1.3;
+  color: var(--sub-text); margin: 14px 0 0; }
+
 /* ── Comparer les formules ──────────────────────────────────────────────────
    Replié par défaut : qui a déjà choisi n'en a pas besoin, et un tableau
    déployé sous quatre cartes noie la décision au lieu de l'éclairer. */
