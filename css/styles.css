@@ -164,6 +164,7 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
 .logo-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mark); margin-bottom: 9px; }
 .nav-links { display: flex; align-items: center; gap: 6px; }
 .nav-r { display: flex; align-items: center; gap: 14px; }
+.nav-espace { pointer-events: auto; }
 .link-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; border: 0; background: none; cursor: pointer; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); transition: color .2s; border-radius: 6px; }
 .link-btn:hover { color: var(--text); background: var(--ghost-hover); }
 .nav-sound { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--ghost-line); border-radius: 50%; background: none; cursor: pointer; transition: border-color .2s, background-color .2s; }
@@ -402,7 +403,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .contact-head { position: static; }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1080px) {
   .nav { padding: 0 16px; height: 64px; }
   .nav-burger { display: block; }
   .nav-links { position: fixed; inset: 64px 0 0 0; background: var(--bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); flex-direction: column; align-items: stretch; padding: 20px 24px; gap: 0; opacity: 0; pointer-events: none; transform: translateY(-12px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
@@ -696,6 +697,9 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 .pf-from { font-size: clamp(38px, 6vw, 62px); color: var(--muted); }
 .pf-to { font-size: clamp(56px, 10vw, 104px); color: var(--mark); }
 .pf-arrow { color: var(--dim); padding-bottom: clamp(14px, 2.6vw, 26px); flex: none; }
+.proof-note { font-size: 15.5px; line-height: 1.62; color: var(--muted);
+  margin: 32px 0 0; max-width: 56ch; padding-top: 24px; border-top: 1px solid var(--line); }
+.proof-note b { color: var(--text); font-weight: 500; }
 
 @media (max-width: 760px) {
   .proof { padding: 76px 16px 16px; }
