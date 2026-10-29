@@ -177,7 +177,7 @@ function initFilm() {
 }
 
 /* ---------- La demande : un mail déjà rempli ---------- */
-const MAIL = 'lilian.mathien49@gmail.com';
+const MAIL = 'contact.holdrunning@gmail.com';
 // Adresse du service qui reçoit le formulaire (Formspree, Web3Forms…). Vide,
 // le formulaire retombe sur le logiciel de mail du visiteur — ce qui échoue
 // chez beaucoup de monde. Dès qu'elle est remplie, le message part vraiment.
@@ -185,86 +185,71 @@ const ENDPOINT = 'https://formspree.io/f/xgaaydkk';
 function initAsk() {
   const form = $('askForm'), hint = $('askHint');
   if (!form || !hint) return;
-  // Un champ absent ne doit plus faire tomber la fonction : le formulaire a
-  // déjà maigri une fois, il maigrira peut-être encore.
   const v = (id) => { const e = $(id); return e ? e.value.trim() : ''; };
-  const say = (msg) => { hint.textContent = msg; };
-
-  // L'offre cliquée n'est plus un champ du formulaire — c'était une question de
-  // plus à répondre pour une information qu'on a déjà. On la retient ici et
-  // elle part dans le message sans que le coureur ait rien à faire.
-  let offre = '';
-
-  const subject = () => `Réservation d'appel — ${v('f-name') || 'nouveau coureur'}`;
-  const body = () => {
-    const l = ['Bonjour Lilian,', '', "Je voudrais réserver un appel.", '',
-      `Nom   : ${v('f-name')}`,
-      `Email : ${v('f-mail')}`];
-    if (offre) l.push(`Offre : ${offre}`);
-    l.push('', 'Mon objectif :', v('f-goal') || '(on en parle à l\'appel)');
-    l.push('', 'Mes disponibilités :', v('f-slots') || '(à convenir)');
-    l.push('', 'À bientôt,', v('f-name'));
-    return l.join('\n');
+  const say = (msg, erreur) => {
+    hint.textContent = msg;
+    hint.classList.toggle('hint-err', !!erreur);
   };
+
+  // L'offre vient soit du menu, soit d'un bouton de carte tarifaire : on
+  // n'oblige personne à la retaper.
+  const offre = () => v('f-offre');
+
+  const sujet = () => `Réservation d'appel — ${v('f-name') || 'nouveau coureur'}`;
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const miss = ['f-name', 'f-mail'].filter((id) => !v(id));
-    if (miss.length) {
-      const el = $(miss[0]);
+    const manque = ['f-name', 'f-mail'].filter((id) => !v(id));
+    if (manque.length) {
+      const el = $(manque[0]);
       if (el) el.focus();
-      say('Il me faut juste ton nom et ton email.');
+      say('Il me faut juste ton nom et ton email.', true);
       return;
     }
-    // Avec un service de formulaire configuré, le message part vraiment : rien
-    // ne dépend du logiciel de mail du coureur, qui chez beaucoup n'existe pas.
-    if (ENDPOINT) {
-      const btn = form.querySelector('button[type="submit"]');
-      if (btn) btn.disabled = true;
-      say('Envoi…');
-      try {
-        const r = await fetch(ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({
-            nom: v('f-name'), email: v('f-mail'), objectif: v('f-goal'),
-            disponibilites: v('f-slots'), offre: offre || 'non précisée',
-            _subject: subject(), _replyto: v('f-mail'),
-          }),
-        });
-        if (!r.ok) throw new Error(`réponse ${r.status}`);
-        form.reset();
-        say('Message envoyé. Je te réponds avec un créneau sous 24 h.');
-      } catch {
-        // L'envoi a échoué : on ne laisse pas le coureur sans recours.
-        say("L'envoi a échoué. Copie le message avec le bouton à côté et envoie-le moi par mail.");
-      } finally {
-        if (btn) btn.disabled = false;
-      }
+    const rgpd = $('f-rgpd');
+    if (rgpd && !rgpd.checked) {
+      rgpd.focus();
+      say('Il me faut ton accord pour te recontacter.', true);
       return;
     }
-    location.href = `mailto:${MAIL}?subject=${encodeURIComponent(subject())}&body=${encodeURIComponent(body())}`;
-    say("Ton logiciel de mail devrait s'ouvrir. Sinon, copie le message avec le bouton à côté.");
+    if (!ENDPOINT) {                       // garde-fou : rien ne part à l'aveugle
+      say(`Le formulaire n'est pas encore branché. Écris-moi à ${MAIL}.`, true);
+      return;
+    }
+
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
+    say('Envoi…');
+    try {
+      const r = await fetch(ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          nom: v('f-name'), email: v('f-mail'), objectif: v('f-goal'),
+          disponibilites: v('f-slots'), offre: offre() || 'non précisée',
+          _subject: sujet(), _replyto: v('f-mail'),
+        }),
+      });
+      if (!r.ok) throw new Error(`réponse ${r.status}`);
+      form.reset();
+      say("C'est reçu. Je te réponds sous 24 h avec un créneau. — Lilian");
+      if (typeof window.plausible === 'function') window.plausible('Formulaire envoyé');
+    } catch {
+      say(`L'envoi a échoué. Écris-moi directement à ${MAIL}, je te réponds pareil.`, true);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   });
 
-  // Le mailto échoue en silence chez qui n'a pas de client mail configuré : on offre toujours la copie.
-  const copie = $('askCopy');
-  if (copie) {
-    copie.addEventListener('click', async () => {
-      try {
-        if (!navigator.clipboard) throw new Error('presse-papiers indisponible');
-        await navigator.clipboard.writeText(`À : ${MAIL}\nObjet : ${subject()}\n\n${body()}`);
-        say(`Message copié. Colle-le dans un mail à ${MAIL}.`);
-      } catch {
-        say(`Copie impossible ici. Envoie tes infos à ${MAIL}.`);
-      }
+  // Un bouton de carte tarifaire choisit l'offre et descend au formulaire.
+  for (const b of document.querySelectorAll('[data-offer]')) {
+    b.addEventListener('click', () => {
+      const sel = $('f-offre');
+      if (!sel) return;
+      const cherche = (b.dataset.offreValeur || '').trim();
+      const opt = [...sel.options].find((o) => o.text === cherche);
+      if (opt) sel.value = opt.value;
     });
-  }
-
-  // Le bouton d'offre n'a plus de menu à cocher : il retient le choix et
-  // descend au formulaire.
-  for (const btn of document.querySelectorAll('[data-offer]')) {
-    btn.addEventListener('click', () => { offre = btn.dataset.offer || ''; });
   }
 }
 

@@ -35,7 +35,7 @@
   "description": "Coaching running et trail. Plan d'entraînement individualisé et stratégie de course construite sur le parcours, le dénivelé, les conditions et le profil du coureur.",
   "url": "https://holdrunning.fr/",
   "image": "https://holdrunning.fr/media/hold-film-poster.jpg",
-  "email": "lilian.mathien49@gmail.com",
+  "email": "contact.holdrunning@gmail.com",
   "priceRange": "49,99 € – 119,99 €",
   "address": {
     "@type": "PostalAddress",
@@ -139,13 +139,13 @@
     <a href="#entrainement" class="link-btn">Entraînement</a>
     <a href="#livrable" class="link-btn">Pacing</a>
     <a href="#offres" class="link-btn">Nos offres</a>
-    <a href="paiement/" class="link-btn">Paiement</a>
     <a href="revue/" class="link-btn">La revue</a>
     <button type="button" class="link-btn" id="openFilmNav">Le film</button>
     <button type="button" class="link-btn" id="openEssaiNav">Essayer</button>
   </nav>
   <div class="nav-r">
-    <a href="plan/" class="btn btn-sm nav-espace">Mon espace</a>
+    <a href="plan/" class="link-btn">Mon espace</a>
+    <a href="#contact" class="btn btn-sm nav-appel">Réserver un appel</a>
     <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
       <span></span><span></span>
     </button>
@@ -488,6 +488,42 @@
   </div>
 </section>
 
+<!-- QUI EST DERRIÈRE HOLD -->
+<section class="qui" id="qui" aria-labelledby="qui-t">
+  <div class="qui-in reveal">
+    <figure class="qui-photo">
+      <img src="media/lilian.jpg" width="825" height="1100" loading="lazy"
+           alt="Lilian Mathien, debout devant une piste d'athlétisme en fin de journée.">
+    </figure>
+    <div class="qui-texte">
+      <h2 class="title" id="qui-t">Lilian Mathien</h2>
+      <p class="amorce">Entraîneur et data scientist.</p>
+
+      <!-- À COMPLÉTER par Lilian : trois à quatre phrases à la première
+           personne — son parcours en course, sa formation en données, et
+           pourquoi il a créé Hold. Je ne l'écris pas à sa place : c'est le
+           texte sur lequel repose sa crédibilité, il doit être de lui. -->
+      <p class="qui-bio"><!-- À COMPLÉTER : biographie, trois à quatre phrases --></p>
+
+      <dl class="qui-faits">
+        <div>
+          <dt>Diplômes</dt>
+          <dd>BPJEPS · Licence STAPS · Master Entraînement et optimisation de la performance</dd>
+        </div>
+        <div>
+          <dt>Ses chronos</dt>
+          <dd><span class="mono">4'04</span> au 1500 m · <span class="mono">15'36</span> au 5 km ·
+            <span class="mono">32'28</span> au 10 km</dd>
+        </div>
+        <!-- À CONFIRMER : la carte professionnelle d'éducateur sportif
+             (article L212-1 du Code du sport) est obligatoire pour encadrer
+             contre rémunération. Si Lilian l'a, l'afficher est un argument
+             fort ; sinon il faut régulariser avant d'encaisser. -->
+      </dl>
+    </div>
+  </div>
+</section>
+
 <!-- OFFRES -->
 <section class="offers" id="offres" aria-labelledby="offres-t">
   <div class="offers-head reveal">
@@ -511,7 +547,7 @@
         <li>Allure portion par portion</li>
         <li>Appel de 20 min</li>
       </ul>
-      <a href="#contact" class="btn" data-offer="La stratégie seule · 49,99 €">Je veux ma stratégie</a>
+      <a href="#contact" class="btn" data-offer="La stratégie seule · 49,99 €" data-offre-valeur="Stratégie seule">Je veux ma stratégie</a>
     </div>
   </div>
 
@@ -529,7 +565,7 @@
         <li>Échanges par message entre deux appels</li>
       </ul>
       <p class="offer-delay mono">Résiliable à tout moment</p>
-      <a href="#contact" class="btn btn-ghost" data-offer="Plan découverte · 69,99 €/mois">Choisir Découverte</a>
+      <a href="#contact" class="btn btn-ghost" data-offer="Plan découverte · 69,99 €/mois" data-offre-valeur="Découverte">Choisir Découverte</a>
     </div>
     <div class="offer reveal">
       <p class="eyebrow">Plan confirmé</p>
@@ -542,7 +578,7 @@
         <li><b>Séances de renforcement incluses</b></li>
       </ul>
       <p class="offer-delay mono">Résiliable à tout moment</p>
-      <a href="#contact" class="btn btn-ghost" data-offer="Plan confirmé · 99,99 €/mois">Choisir Confirmé</a>
+      <a href="#contact" class="btn btn-ghost" data-offer="Plan confirmé · 99,99 €/mois" data-offre-valeur="Confirmé">Choisir Confirmé</a>
     </div>
     <div class="offer offer-pop reveal">
       <p class="eyebrow">Plan pro</p>
@@ -556,7 +592,7 @@
         <li>Plan mis à jour jusqu'à la veille, selon les conditions</li>
       </ul>
       <p class="offer-delay mono">Jusqu'à la ligne d'arrivée</p>
-      <a href="#contact" class="btn" data-offer="Plan pro · 119,99 €/mois">Choisir Pro</a>
+      <a href="#contact" class="btn" data-offer="Plan pro · 119,99 €/mois" data-offre-valeur="Pro">Choisir Pro</a>
     </div>
   </div>
   <p class="hint lab-note">Pas sûr de ton choix&nbsp;? Remplis quand même le formulaire, on en parle à l'appel.</p>
@@ -570,20 +606,35 @@
       <p class="sub" style="margin-top:20px">Quatre champs, trente secondes. Dis-moi ton objectif et quand tu peux parler : je te confirme un créneau. Le reste — ton niveau, ta montre, tes records — on en parle de vive voix, c'est plus rapide que de le taper.</p>
     </div>
     <form class="form reveal" id="askForm" novalidate>
-      <div class="f-row">
-        <label class="f"><span>Prénom et nom</span><input id="f-name" type="text" autocomplete="name" required></label>
-        <label class="f"><span>Ton email</span><input id="f-mail" type="email" autocomplete="email" required></label>
-      </div>
-      <label class="f"><span>Ton objectif</span><textarea id="f-goal" rows="4"
-        placeholder="Quelle course, quand, et ce que tu veux y faire. Trois lignes suffisent."></textarea></label>
-      <label class="f"><span>Tes disponibilités pour l'appel</span><textarea id="f-slots" rows="3"
-        placeholder="Donne-moi deux ou trois créneaux. Par exemple : mardi après 18 h, jeudi midi, samedi matin."></textarea></label>
-      <div class="f-actions">
-        <button type="submit" class="btn">Demander un appel</button>
-        <button type="button" class="btn btn-ghost" id="askCopy">Copier le message</button>
-      </div>
-      <p class="hint" id="askHint">Le bouton ouvre ton logiciel de mail, déjà rempli. Si rien ne s'ouvre, copie le message et envoie-le à <a href="mailto:lilian.mathien49@gmail.com" style="text-decoration:underline">lilian.mathien49@gmail.com</a>.</p>
-    </form>
+        <div class="f-row">
+          <label class="f"><span>Prénom et nom</span><input id="f-name" type="text" autocomplete="name" required></label>
+          <label class="f"><span>Ton email</span><input id="f-mail" type="email" autocomplete="email" required></label>
+        </div>
+        <label class="f"><span>Ton objectif</span><textarea id="f-goal" rows="4"
+          placeholder="Quelle course, quand, et ce que tu veux y faire. Trois lignes suffisent."></textarea></label>
+        <label class="f"><span>Tes disponibilités pour l'appel</span><textarea id="f-slots" rows="3"
+          placeholder="Donne-moi deux ou trois créneaux. Par exemple : mardi après 18 h, jeudi midi, samedi matin."></textarea></label>
+        <label class="f"><span>L'offre qui t'intéresse <em>(facultatif)</em></span><select id="f-offre">
+          <option value="">Je ne sais pas encore</option>
+          <option>Stratégie seule</option>
+          <option>Découverte</option>
+          <option>Confirmé</option>
+          <option>Pro</option>
+        </select></label>
+        <label class="consent">
+          <input type="checkbox" id="f-rgpd" required>
+          <span>J'accepte que mes données soient utilisées pour me recontacter.
+            <a href="#legal">Voir la politique de confidentialité</a>.</span>
+        </label>
+        <div class="f-actions">
+          <button type="submit" class="btn">Demander un appel</button>
+        </div>
+        <p class="hint" id="askHint" role="status" aria-live="polite"></p>
+        <p class="f-alt">Tu préfères choisir ton créneau directement&nbsp;?
+          <a href="https://calendly.com/" target="_blank" rel="noopener">Réserve ici</a>
+          <!-- À COMPLÉTER : adresse Calendly ou Cal.com de Lilian, créneau de 20 min -->
+        </p>
+      </form>
   </div>
 </section>
 
@@ -593,8 +644,8 @@
   <div class="foot-top">
     <div><span class="logo">Hold<span class="logo-dot" aria-hidden="true"></span></span><p class="sub">Un coach, tes données.<br>Lilian Mathien — entraîneur &amp; data scientist.</p></div>
     <nav class="foot-links" aria-label="Pied de page">
-      <a href="mailto:lilian.mathien49@gmail.com">lilian.mathien49@gmail.com</a>
-      <a href="mailto:lilian.mathien49@gmail.com?subject=Rendez-vous%20Hold">Prendre rendez-vous</a>
+      <a href="mailto:contact.holdrunning@gmail.com">contact.holdrunning@gmail.com</a>
+      <a href="mailto:contact.holdrunning@gmail.com?subject=Rendez-vous%20Hold">Prendre rendez-vous</a>
       <a href="plan/">Mon espace</a>
       <a href="https://billing.stripe.com/p/login/00weV61jj27L5X47B67Zu00"
          target="_blank" rel="noopener">Gérer mon abonnement</a>
@@ -603,9 +654,9 @@
   <details class="legal" id="legal">
       <summary>Mentions légales · CGV · Confidentialité</summary>
       <div class="legal-grid">
-        <div><h4>Mentions légales</h4><p>Hold est édité par Lilian Mathien, entrepreneur individuel, 6 impasse des Vieilles Vignes, 49750 Beaulieu-sur-Layon, SIRET 130 424 500 00010, TVA non applicable, art. 293 B du CGI. Contact : lilian.mathien49@gmail.com. Hébergement : GitHub Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis. Directeur de la publication : Lilian Mathien.</p></div>
+        <div><h4>Mentions légales</h4><p>Hold est édité par Lilian Mathien, entrepreneur individuel, 6 impasse des Vieilles Vignes, 49750 Beaulieu-sur-Layon, SIRET 130 424 500 00010, TVA non applicable, art. 293 B du CGI. Contact : contact.holdrunning@gmail.com. Hébergement : GitHub Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis. Directeur de la publication : Lilian Mathien.</p></div>
         <div><h4>Conditions générales de vente</h4><p>La stratégie de course seule (49,99 € TTC) est un service numérique personnalisé, livré par email sous 72 h ouvrées après réception des fichiers de montre. Les formules de coaching (69,99 €, 99,99 € et 119,99 € TTC par mois) sont mensuelles, sans engagement, résiliables à tout moment pour le mois suivant. Conformément à l'article L221-28 du Code de la consommation, le client accepte expressément que l'exécution de la prestation commence avant la fin du délai de rétractation de 14 jours et renonce à ce droit une fois la prestation livrée. Paiement sécurisé par Stripe Payments Europe, Ltd.</p></div>
-        <div><h4>Confidentialité</h4><p>Les fichiers de montre, les données de santé associées (fréquence cardiaque, sommeil, HRV) et les coordonnées sont utilisés uniquement pour produire les analyses et le coaching. Ils ne sont ni vendus ni partagés. Ils sont conservés douze mois puis supprimés, ou plus tôt sur simple demande à lilian.mathien49@gmail.com. Les cas publiés sur ce site le sont avec l'accord écrit du coureur. Pas de cookie de suivi.</p></div>
+        <div><h4>Confidentialité</h4><p>Les fichiers de montre, les données de santé associées (fréquence cardiaque, sommeil, HRV) et les coordonnées sont utilisés uniquement pour produire les analyses et le coaching. Ils ne sont ni vendus ni partagés. Ils sont conservés douze mois puis supprimés, ou plus tôt sur simple demande à contact.holdrunning@gmail.com. Les cas publiés sur ce site le sont avec l'accord écrit du coureur. Pas de cookie de suivi.</p></div>
       </div>
     </details>
   <p class="credits mono">© 2026 Hold · Lilian Mathien · SIRET 130 424 500 00010 · Cartes © OpenStreetMap, OpenFreeMap, Esri, Mapzen · MapLibre</p>
@@ -633,7 +684,7 @@
     </div>
     <div class="cta-row">
       <a href="#offres" class="btn">Voir les offres</a>
-      <a href="mailto:lilian.mathien49@gmail.com?subject=Rendez-vous%20Hold&amp;body=Bonjour%20Lilian%2C%0A%0AMa%20course%20%3A%20%0ADate%20%3A%20%0AMon%20objectif%20%3A%20%0A%0AQuand%20seriez-vous%20disponible%20pour%20en%20parler%20%3F" class="btn btn-ghost">En parler · 20 min</a>
+      <a href="mailto:contact.holdrunning@gmail.com?subject=Rendez-vous%20Hold&amp;body=Bonjour%20Lilian%2C%0A%0AMa%20course%20%3A%20%0ADate%20%3A%20%0AMon%20objectif%20%3A%20%0A%0AQuand%20seriez-vous%20disponible%20pour%20en%20parler%20%3F" class="btn btn-ghost">En parler · 20 min</a>
     </div>
     <p class="proof mono">Prédit 3:01:45 · couru 2:59:42 · Marathon de Paris 2025</p>
   </div>

@@ -145,6 +145,48 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
 .display { font-size: clamp(52px, 8.4vw, 118px); line-height: .92; letter-spacing: -.025em; }
 .title { font-size: clamp(30px, 3.8vw, 54px); line-height: 1.04; letter-spacing: -.015em; }
 .sub { font-size: clamp(16px, 1.3vw, 19px); line-height: 1.55; color: var(--sub-text); max-width: 460px; }
+/* ── Qui est derrière Hold ───────────────────────────────────────────────────
+   Avant de confier sa préparation, on veut voir à qui. La photo porte la
+   moitié du travail : elle est donc grande, et à gauche, là où l'œil part. */
+.qui { max-width: 1200px; margin: 0 auto; padding: 96px 28px 20px; }
+.qui-in { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: 48px; align-items: start; }
+.qui-photo { margin: 0; }
+.qui-photo img { width: 100%; height: auto; display: block; border-radius: 14px;
+  filter: grayscale(.15); }
+.qui-texte { min-width: 0; }
+.qui-bio { font-size: 16.5px; line-height: 1.62; color: var(--sub-text);
+  margin: 26px 0 0; max-width: 58ch; }
+.qui-bio:empty { display: none; }
+
+.qui-faits { margin: 34px 0 0; border-top: 1px solid var(--line); }
+.qui-faits > div { display: grid; grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
+  gap: 6px 22px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.qui-faits dt { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--dim); padding-top: 3px; }
+.qui-faits dd { margin: 0; font-size: 15.5px; line-height: 1.5; color: var(--sub-text); }
+.qui-faits .mono { color: var(--text); }
+
+@media (max-width: 760px) {
+  .qui { padding: 72px 16px 10px; }
+  .qui-in { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .qui-photo { max-width: 260px; }
+  .qui-faits > div { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Le consentement : une case qu'on coche, pas une phrase qu'on subit. */
+.consent { display: flex; align-items: flex-start; gap: 11px; margin-top: 22px;
+  font-size: 14px; line-height: 1.55; color: var(--sub-text); cursor: pointer; }
+.consent input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--mark); }
+.consent a { color: var(--red); text-decoration: underline; text-underline-offset: 2px; }
+
+.f-alt { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
+.f-alt a { color: var(--red); text-decoration: underline; text-underline-offset: 2px; }
+.hint-err { color: var(--red); }
+
+/* L'appel à l'action du coin droit : c'est ce qu'on veut qu'il fasse. */
+.nav-appel { pointer-events: auto; }
+
 .amorce { font-family: var(--serif); font-weight: 400;
   font-size: clamp(19px, 1.9vw, 25px); line-height: 1.24; color: var(--muted);
   margin: 12px 0 0; max-width: 34ch; text-wrap: balance; }
