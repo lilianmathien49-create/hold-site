@@ -136,6 +136,8 @@
   <a href="#top" class="logo" aria-label="Hold, retour en haut">Hold<span class="logo-dot" aria-hidden="true"></span></a>
   <nav class="nav-links" id="navLinks">
     <a href="#objectif" class="link-btn">La méthode</a>
+    <button type="button" class="link-btn" id="openFilmNav">Le film</button>
+    <button type="button" class="link-btn" id="openEssaiNav">Essayer</button>
     <a href="#offres" class="link-btn">Nos offres</a>
     <a href="paiement/" class="link-btn">Paiement</a>
     <a href="plan/" class="link-btn link-espace">Mon espace</a>
@@ -214,31 +216,13 @@
     </div>
   </div>
   <ol class="how-steps reveal">
-    <li data-voie="general coaching pacing"><span class="n mono">01</span><h3>Ton objectif</h3><p>Une course, une date. C'est elle qui fixe le reste. Tu connectes Garmin, Coros, Suunto ou Strava.</p><span class="when mono">Jour 0</span></li>
-    <li data-voie="general coaching pacing"><span class="n mono">02</span><h3>Ton historique</h3><p>Chaque séance analysée : allures, seuils, durabilité, réponse à la chaleur et à la pente.</p><span class="when mono">Sous 72 h</span></li>
-    <li data-voie="general coaching"><span class="n mono">03</span><h3>Ton entraînement</h3><p>Un plan tourné vers ta course, réajusté chaque semaine. Chaque séance affine le modèle.</p><span class="when mono">Jusqu'au jour J</span></li>
-    <li data-voie="general pacing"><span class="n mono">04</span><h3>Ta stratégie</h3><p>Une allure par portion, confrontée au parcours et aux conditions. Dernier point avant le départ.</p><span class="when mono">Avant le départ</span></li>
-  </ol>
+      <li data-voie="general coaching pacing"><span class="n mono">01</span><h3>Ton objectif</h3><p>Une course, une date, son parcours. C'est elle qui fixe tout le reste — rien ne se décide avant.</p><span class="when mono">Jour 0</span></li>
+      <li data-voie="general coaching pacing"><span class="n mono">02</span><h3>Ton historique</h3><p>On récupère ce qui existe déjà : Strava, Garmin, Coros, Polar, Suunto, Intervals. Puis on en tire tes allures, tes zones, tes vitesses ascensionnelles, ta réponse à chaque pourcentage de pente et au temps passé dedans, ce que les descentes te coûtent, ton seuil de marche, ta durabilité, ta réaction au froid et à la chaleur.</p><span class="when mono">Sous 72 h</span></li>
+      <li data-voie="general coaching"><span class="n mono">03</span><h3>Ton entraînement</h3><p>Construit pour ton objectif d'abord, affiné par ce qu'on a mesuré. Et orienté selon que tu prends la stratégie de course ou non : certaines séances servent autant à t'entraîner qu'à préciser le modèle.</p><span class="when mono">Jusqu'au jour J</span></li>
+      <li data-voie="general pacing"><span class="n mono">04</span><h3>Ta stratégie</h3><p>Une allure par portion, confrontée au parcours, au dénivelé et aux conditions annoncées. Revue jusqu'à la veille.</p><span class="when mono">Avant le départ</span></li>
+    </ol>
 
-    <div class="reel" id="film-section">
-  <div class="reel-in">
-    <div class="reel-text reveal">
-      <p class="eyebrow">Le film · 49 secondes</p>
-      <h2 class="title" id="reel-t">Hold,<br><span class="soft">en quarante-neuf secondes.</span></h2>
-      <p class="sub" style="margin-top:20px">Un aperçu de la démarche, sans jargon.</p>
-    </div>
-    <button type="button" class="reel-play" id="openFilm" aria-label="Lancer le film, 49 secondes">
-      <video id="reelVideo" src="media/hold-film.mp4" poster="media/hold-film-poster.jpg"
-             muted loop playsinline preload="none" width="340" height="604" aria-hidden="true"></video>
-      <span class="reel-badge" aria-hidden="true">
-        <span class="reel-circle">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M7 4.5v15l13-7.5z"/></svg>
-        </span>
-        <span class="reel-dur mono">0:49</span>
-      </span>
-    </button>
-  </div>
-</div>
+    
 </section>
 
 
@@ -248,16 +232,17 @@
   <div class="proof-in reveal">
     <p class="eyebrow">L'entraînement</p>
     <h2 class="title" id="proof-t">Quarante-huit minutes.</h2>
-    <p class="proof-sub">Marathon de Paris. Même coureur, même corps, une préparation
-      construite sur ses données et une stratégie écrite avant le départ.</p>
+    <p class="proof-sub">Clément, d'août 2025 à avril 2026. Même coureur, même corps —
+      une préparation construite sur ses données, et une stratégie écrite avant le départ
+      du Marathon de Paris.</p>
     <div class="proof-arc">
-      <span class="pf-from"><small>avant</small>3h47</span>
+      <span class="pf-from"><small>août 2025</small>3h47</span>
       <span class="pf-arrow" aria-hidden="true">
         <svg width="58" height="12" viewBox="0 0 58 12" fill="none" aria-hidden="true">
           <path d="M0 6h50M44 1l6 5-6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </span>
-      <span class="pf-to"><small>après</small>2h59</span>
+      <span class="pf-to"><small>avril 2026 · Paris</small>2h59</span>
     </div>
   </div>
 
@@ -323,31 +308,7 @@
   <p class="hint lab-note"><b>Seuil de marche</b> et <b>effet de la fatigue</b> : résultats réels, mesurés sur un coureur suivi pendant 150 sorties. Les deux autres sont illustrés avec des données d'exemple. On refait ces calculs sur tes séances, pour ta course.</p>
 </div>
 
-    <div class="try" id="essai">
-  <div class="try-in reveal">
-    <p class="eyebrow eyebrow-sub">Essaie toi-même</p>
-    <h2 class="title">Ton dernier chrono,<br><span class="soft">notre première estimation.</span></h2>
-    <form class="try-form" id="tryForm" onsubmit="return false">
-      <label class="sr" for="t-dist">Distance</label>
-      <select id="t-dist" class="field">
-        <option value="5">5 km</option><option value="10" selected>10 km</option><option value="21.0975">Semi</option><option value="42.195">Marathon</option>
-      </select>
-      <label class="sr" for="t-time">Chrono</label>
-      <input id="t-time" class="field mono" type="text" inputmode="numeric" placeholder="45:30" autocomplete="off" aria-describedby="t-help">
-    </form>
-    <p class="hint" id="t-help">Format mm:ss ou h:mm:ss</p>
-    <div class="try-out" id="tryOut" aria-live="polite" hidden>
-      <p class="eyebrow">Tes équivalents sur les autres distances</p>
-      <div class="try-grid" id="tryGrid"></div>
-      <p class="sub">Ça vient d'une table générique, la même pour tout le monde. <b>Notre modèle part de tes vraies séances</b> et tient compte du parcours et des conditions.</p>
-    </div>
-    <div class="cta-row">
-      <a href="#offres" class="btn">Voir les offres</a>
-      <a href="mailto:lilian.mathien49@gmail.com?subject=Rendez-vous%20Hold&amp;body=Bonjour%20Lilian%2C%0A%0AMa%20course%20%3A%20%0ADate%20%3A%20%0AMon%20objectif%20%3A%20%0A%0AQuand%20seriez-vous%20disponible%20pour%20en%20parler%20%3F" class="btn btn-ghost">En parler · 20 min</a>
-    </div>
-    <p class="proof mono">Prédit 3:01:45 · couru 2:59:42 · Marathon de Paris 2025</p>
-  </div>
-</div>
+    
 
     <div class="pont reveal">
       <p class="pont-t">Ces chiffres ne servent à rien tant qu'ils restent des chiffres.</p>
@@ -644,7 +605,36 @@
   <p class="credits mono">© 2026 Hold · Lilian Mathien · SIRET 130 424 500 00010 · Cartes © OpenStreetMap, OpenFreeMap, Esri, Mapzen · MapLibre</p>
 </footer>
 
-<dialog class="film dark" id="film" aria-label="Le film Hold, 49 secondes">
+<dialog class="modale" id="essaiDlg" aria-label="Estimer tes équivalents">
+    <button type="button" class="modale-x" id="closeEssai" aria-label="Fermer l'estimateur">&times;</button>
+    <div class="try" id="essai">
+  <div class="try-in reveal">
+    <p class="eyebrow eyebrow-sub">Essaie toi-même</p>
+    <h2 class="title">Ton dernier chrono,<br><span class="soft">notre première estimation.</span></h2>
+    <form class="try-form" id="tryForm" onsubmit="return false">
+      <label class="sr" for="t-dist">Distance</label>
+      <select id="t-dist" class="field">
+        <option value="5">5 km</option><option value="10" selected>10 km</option><option value="21.0975">Semi</option><option value="42.195">Marathon</option>
+      </select>
+      <label class="sr" for="t-time">Chrono</label>
+      <input id="t-time" class="field mono" type="text" inputmode="numeric" placeholder="45:30" autocomplete="off" aria-describedby="t-help">
+    </form>
+    <p class="hint" id="t-help">Format mm:ss ou h:mm:ss</p>
+    <div class="try-out" id="tryOut" aria-live="polite" hidden>
+      <p class="eyebrow">Tes équivalents sur les autres distances</p>
+      <div class="try-grid" id="tryGrid"></div>
+      <p class="sub">Ça vient d'une table générique, la même pour tout le monde. <b>Notre modèle part de tes vraies séances</b> et tient compte du parcours et des conditions.</p>
+    </div>
+    <div class="cta-row">
+      <a href="#offres" class="btn">Voir les offres</a>
+      <a href="mailto:lilian.mathien49@gmail.com?subject=Rendez-vous%20Hold&amp;body=Bonjour%20Lilian%2C%0A%0AMa%20course%20%3A%20%0ADate%20%3A%20%0AMon%20objectif%20%3A%20%0A%0AQuand%20seriez-vous%20disponible%20pour%20en%20parler%20%3F" class="btn btn-ghost">En parler · 20 min</a>
+    </div>
+    <p class="proof mono">Prédit 3:01:45 · couru 2:59:42 · Marathon de Paris 2025</p>
+  </div>
+</div>
+  </dialog>
+
+  <dialog class="film dark" id="film" aria-label="Le film Hold, 49 secondes">
   <div class="film-wrap">
     <video id="filmVideo" src="media/hold-film.mp4" poster="media/hold-film-poster.jpg" playsinline preload="none"></video>
     <div class="film-overlay" id="filmOverlay">

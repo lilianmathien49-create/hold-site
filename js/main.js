@@ -134,37 +134,6 @@ function initTry() {
 }
 
 /* ---------- Le film, à la demande ---------- */
-function initReel() {
-  // La vignette du film se lance toute seule, en silence, quand elle arrive à
-  // l'écran — et s'arrête quand elle en sort. Un film muet qui tourne dans le
-  // vide consomme de la batterie pour personne.
-  //
-  // Le son reste sur le clic, qui ouvre le film en grand : un navigateur
-  // refuse de lancer une vidéo sonore sans geste de l'utilisateur, et il a
-  // raison de le refuser.
-  const v = $('reelVideo');
-  if (!v) return;
-  if (reduce) return;        // on respecte qui demande moins d'animation : le poster suffit
-
-  const io = new IntersectionObserver((entrees) => {
-    for (const e of entrees) {
-      if (e.isIntersecting) {
-        // play() rend une promesse qui peut être refusée (onglet en veille,
-        // économiseur de données) : ce n'est pas une erreur, on laisse le poster.
-        v.play().catch(() => {});
-      } else {
-        v.pause();
-      }
-    }
-  }, { threshold: 0.4 });
-  io.observe(v);
-
-  // Quand le film s'ouvre en grand avec le son, la vignette se tait.
-  const grand = $('filmVideo');
-  if (grand) grand.addEventListener('play', () => v.pause());
-}
-
-
 function initFilm() {
   const dlg = $('film'), v = $('filmVideo'), overlay = $('filmOverlay'), playBtn = $('filmPlay');
   const bar = $('filmBar'), prog = $('filmProgress'), timeEl = $('filmTime');
@@ -198,7 +167,10 @@ function initFilm() {
     v.currentTime = (e.clientX - r.left) / r.width * (v.duration || 49);
   });
 
-  $('openFilm').addEventListener('click', () => { dlg.showModal(); v.currentTime = 0; overlay.classList.remove('hidden'); });
+  const ouvrir = $('openFilmNav');
+  if (ouvrir) ouvrir.addEventListener('click', () => {
+    dlg.showModal(); v.currentTime = 0; overlay.classList.remove('hidden');
+  });
   $('closeFilm').addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
   dlg.addEventListener('close', () => { v.pause(); overlay.classList.remove('hidden'); });
@@ -470,6 +442,17 @@ function initMesure() {
 }
 
 
+function initEssai() {
+  // L'estimateur a quitté le défilement : il vit dans une fenêtre, ouverte
+  // depuis le menu. Le calcul lui-même n'a pas bougé.
+  const dlg = $('essaiDlg'), ouvrir = $('openEssaiNav'), fermer = $('closeEssai');
+  if (!dlg || !ouvrir) return;
+  ouvrir.addEventListener('click', () => dlg.showModal());
+  if (fermer) fermer.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+}
+
+
 function initReveal() {
   const els = document.querySelectorAll('.reveal');
   if (reduce) { els.forEach((e) => e.classList.add('in')); return; }
@@ -487,8 +470,8 @@ run(initAnalyses);
 run(initTry);
 run(initAsk);
 run(initFilm);
-run(initReel);
 run(initApercu);
 run(initVoie);
+run(initEssai);
 run(initMesure);
 run(initReveal);
