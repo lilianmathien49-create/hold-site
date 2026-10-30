@@ -158,40 +158,14 @@ function fatigue() {
 }
 
 /* ---------- 4. Durabilité ---------- */
-function dur() {
-  const host = $('durChart'), slider = $('durP');
-  function draw() {
-    const p = +slider.value, k0 = onsetKm(p);
-    const fc = (k) => 0.12 * k + (k > k0 ? Math.pow(k - k0, 1.5) * 0.2 : 0);       // dérive de la FC, %
-    const cad = (k) => -0.03 * k - (k > k0 ? (k - k0) * 0.45 : 0);                    // cadence, %
-    const y0 = Math.min(-8, Math.floor(cad(42.2) - 2)), y1 = Math.max(12, Math.ceil(fc(42.2) + 2));
-    const f = frame(host, { x0: 0, x1: 42.2, y0, y1, xt: [0, 10, 20, 30, 40], xf: (v) => `${v}`, yt: Array.from({ length: Math.floor(y1 / 5) - Math.ceil(y0 / 5) + 1 }, (_, i) => (Math.ceil(y0 / 5) + i) * 5), yf: (v) => `${v > 0 ? '+' : ''}${v} %`, yl: 'écart au début de course', xl: 'km' });
-    if (k0 < 42.2) f.svg.append(mk('rect', { x: f.x(k0), y: f.L.t, width: f.x(42.2) - f.x(k0), height: f.H - f.L.t - f.L.b, fill: RED, opacity: 0.08 }));
-    f.svg.append(mk('path', { d: curve(fc, 0, 42.2, f), fill: 'none', stroke: INK, 'stroke-width': 2.5 }));
-    f.svg.append(mk('path', { d: curve(cad, 0, 42.2, f), fill: 'none', stroke: SOFT, 'stroke-width': 2, 'stroke-dasharray': '6 4' }));
-    const a = mk('text', { ...TXT, x: f.x(3), y: f.y(fc(3)) - 10, fill: INK }); a.textContent = 'fréquence cardiaque'; f.svg.append(a);
-    const c = mk('text', { ...TXT, x: f.x(3), y: f.y(cad(3)) + 18 }); c.textContent = 'cadence'; f.svg.append(c);
-    if (k0 < 42.2) {
-      f.svg.append(mk('line', { x1: f.x(k0), x2: f.x(k0), y1: f.L.t, y2: f.H - f.L.b, stroke: RED, 'stroke-width': 1.5 }));
-      annotate(f, k0, f.L.t + 14, `ta foulée lâche · km ${Math.round(k0)}`, RED);
-    }
-    $('durPv').textContent = `${pace(p)} /km`;
-    const big = $('durBig'); big.textContent = k0 >= 42.2 ? 'Jusqu’au bout' : `km ${Math.round(k0)}`; big.classList.toggle('red', k0 < 35);
-    $('durRead').textContent = k0 >= 42.2
-      ? `À ${pace(p)} /km, ta foulée tient jusqu'à l'arrivée.`
-      : `À ${pace(p)} /km, ta foulée tient jusqu'au km ${Math.round(k0)}. À l'arrivée : cadence ${fr(cad(42.2))} %, FC +${fr(fc(42.2))} %.`;
-  }
-  slider.addEventListener('input', draw);
-  return draw;
-}
 
 /* ---------- Onglets : on ne dessine que l'analyse visible ---------- */
 export function initAnalyses() {
   // Chaque analyse est montée séparément : si le HTML et ce fichier se retrouvent
   // désynchronisés (un cache qui mélange deux versions), seule l'analyse concernée
-  // tombe, les quatre autres restent affichables.
+  // tombe, les deux autres restent affichables.
   const build = (k, fn) => { try { return fn(); } catch (e) { console.error(`Hold : analyse « ${k} » indisponible`, e); return null; } };
-  const draws = { heat: build('heat', heat), walk: build('walk', walk), fat: build('fat', fatigue), dur: build('dur', dur) };
+  const draws = { heat: build('heat', heat), walk: build('walk', walk), fat: build('fat', fatigue) };
   const tabs = Array.from(document.querySelectorAll('.lab-tabs [role="tab"]'));
   // L'onglet de départ est celui que le HTML déclare ouvert : réordonner les
   // onglets ne doit pas obliger à retoucher ce fichier.

@@ -456,6 +456,22 @@ select.field option { background: var(--surface); color: var(--text); }
 .how-steps p { color: var(--sub-text); font-size: 15px; }
 .how-steps .when { margin-top: auto; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--text); }
 
+/* D'où vient la stratégie : deux sources, deux pictogrammes. */
+.src { margin-top: 56px; }
+.src-l { list-style: none; margin: 26px 0 0; padding: 0; display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 56px; }
+.src-i { width: 42px; height: 42px; fill: none; stroke: var(--mark);
+  stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.src-pt { stroke: var(--dim); stroke-dasharray: 2.5 3.5; }
+.src-l h3 { margin: 18px 0 10px; font-family: var(--serif); font-weight: 400;
+  font-size: clamp(21px, 2vw, 26px); line-height: 1.15; }
+.src-l p { margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--sub-text);
+  max-width: 42ch; }
+.src-n { margin: 32px 0 0; padding-top: 20px; border-top: 1px solid var(--line);
+  font-size: 14px; color: var(--dim); }
+
+.demo-tete { margin-bottom: 36px; }
+
 /* Sous le capot — sous-bloc de Pacing, au même rang que « Pour aller plus loin » */
 .lab { margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--line); }
 .lab-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 36px 0; }
@@ -683,15 +699,24 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 /* La vignette s'étire en largeur : il n'y a aucun libellé dedans à déformer,
    et le trait garde son épaisseur. */
 .ad-p { display: block; width: 100%; height: 46px; }
-.ad-p-aire { fill: var(--mark); opacity: .1; }
+.ad-p-aire { fill: var(--mark); stroke: none; }
+.ad-p-aire.ad-p-course { opacity: .08; }
+.ad-p-aire.ad-p-marche { opacity: .22; }
 .ad-p-trait { fill: none; stroke: var(--mark); stroke-width: 1.4;
   vector-effect: non-scaling-stroke; }
+.ad-p-trait.ad-p-marche { stroke-width: 1.9; stroke-dasharray: 3 3; }
+.ad-leg { display: flex; gap: 18px; margin: -6px 0 0; font-size: 10px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+.ad-leg span { display: flex; align-items: center; gap: 7px; }
+.ad-leg span::before { content: ""; width: 16px; height: 0;
+  border-top: 2px solid var(--mark); }
+.ad-leg-m::before { border-top-style: dashed; }
 .ad-s { display: grid; grid-template-columns: repeat(auto-fit, minmax(102px, 1fr));
   gap: 14px 20px; margin: 0; }
 .ad-s dt { font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
   text-transform: uppercase; color: var(--dim); }
 .ad-s dd { margin: 5px 0 0; font-size: 15.5px; color: var(--text);
-  font-variant-numeric: tabular-nums; }
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ad-c { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .ad-c li { position: relative; padding-left: 17px; font-size: 14px;
   line-height: 1.55; color: var(--sub-text); }
@@ -929,5 +954,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .pv-n { font-size: 19px; }
   .recette { margin-top: 64px; }
   .rc { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .src-l { grid-template-columns: minmax(0, 1fr); gap: 34px; }
+  .src { margin-top: 40px; }
+  .demo-tete { margin-bottom: 26px; }
 }
 

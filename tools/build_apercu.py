@@ -255,10 +255,17 @@ def consignes(seg, fin, dplus, dmoins, km, part_marche) -> list[str]:
 
 
 def profil_portion(seg) -> str:
-    """Le relief de la seule portion, en vignette."""
-    pts = [(s["km0"], s["alt"]) for s in seg] + [(seg[-1]["km1"], seg[-1]["alt"])]
-    xs = [k for k, _ in pts]
-    ys = [a for _, a in pts]
+    """Le relief de la seule portion, marche et course distinguées.
+
+    Une portion peut annoncer « 39 % marché » sans qu'on voie où : le dessin
+    le montre. Les parties marchées sont tracées en pointillé sur une aire
+    plus franche, les parties courues en trait plein. C'est la même grammaire
+    que partout ailleurs sur la page.
+    """
+    pts = [(s["km0"], s["alt"], s.get("mode")) for s in seg]
+    pts.append((seg[-1]["km1"], seg[-1]["alt"], seg[-1].get("mode")))
+    xs = [k for k, _, _ in pts]
+    ys = [a for _, a, _ in pts]
     x0, x1 = min(xs), max(xs)
     lo, hi = min(ys), max(ys)
     if x1 == x0 or hi == lo:
@@ -271,13 +278,33 @@ def profil_portion(seg) -> str:
     def Y(a):
         return h - m - (a - lo) / (hi - lo) * (h - 2 * m)
 
-    trace = " ".join(f"{'M' if i == 0 else 'L'}{X(k):.1f} {Y(a):.1f}"
-                     for i, (k, a) in enumerate(pts))
-    aire = f"M{X(x0):.1f} {h:.1f} " + trace[1:] + f" L{X(x1):.1f} {h:.1f} Z"
+    # Un tracé par suite de blocs du même mode. Les suites se recouvrent d'un
+    # point pour que le dessin ne montre pas de trous aux changements.
+    suites, cour = [], [pts[0]]
+    for i in range(1, len(pts)):
+        if pts[i][2] != pts[i - 1][2]:
+            suites.append((pts[i - 1][2], cour + [pts[i]]))
+            cour = [pts[i]]
+        else:
+            cour.append(pts[i])
+    suites.append((pts[-1][2], cour))
+
+    out = []
+    for mode, bout in suites:
+        if len(bout) < 2:
+            continue
+        marche = mode != "course"
+        trace = " ".join(f"{'M' if i == 0 else 'L'}{X(k):.1f} {Y(a):.1f}"
+                         for i, (k, a, _) in enumerate(bout))
+        aire = (f"M{X(bout[0][0]):.1f} {h:.1f} " + trace[1:]
+                + f" L{X(bout[-1][0]):.1f} {h:.1f} Z")
+        c = "marche" if marche else "course"
+        out.append(f'<path class="ad-p-aire ad-p-{c}" d="{aire}"/>'
+                   f'<path class="ad-p-trait ad-p-{c}" d="{trace}"/>')
     return (f'<svg class="ad-p" viewBox="0 0 {w:.0f} {h:.0f}" preserveAspectRatio="none" '
             f'role="img" aria-label="Relief de la portion, de {milliers(int(ys[0]))} '
-            f'à {milliers(int(ys[-1]))} mètres">'
-            f'<path class="ad-p-aire" d="{aire}"/><path class="ad-p-trait" d="{trace}"/></svg>')
+            f'à {milliers(int(ys[-1]))} mètres, parties marchées en pointillé">'
+            + "".join(out) + "</svg>")
 
 
 def detail(plan: dict, fin: dict, debut: dict, ident: str) -> str:
@@ -297,7 +324,7 @@ def detail(plan: dict, fin: dict, debut: dict, ident: str) -> str:
     montee = [s for s in seg if (s.get("vam") or 0) > 0 and (s.get("slope") or 0) > 4]
 
     faits = [("Distance", f"{fr(km)} km"),
-             ("Dénivelé", f"+{milliers(int(dplus))} m / −{milliers(int(dmoins))} m"),
+             ("Dénivelé", f"+{milliers(int(dplus))} / −{milliers(int(dmoins))} m"),
              ("Temps", hms(duree))]
     if part > 0.01:
         faits.append(("Marché", f"{round(part * 100)} % · {fr(km_marche)} km"))
@@ -319,6 +346,8 @@ def detail(plan: dict, fin: dict, debut: dict, ident: str) -> str:
               <p class="ad-h">De {html.escape(debut["name"])} à {html.escape(fin["name"])}
                 <span class="mono">km {fr(debut["km"])} → {fr(fin["km"])}</span></p>
               {profil_portion(seg)}
+              <p class="ad-leg mono"><span class="ad-leg-c">course</span>
+                <span class="ad-leg-m">marche</span></p>
               <dl class="ad-s">{grille}</dl>
               <ul class="ad-c">{notes}</ul>
             </div>
