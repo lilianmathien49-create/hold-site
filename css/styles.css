@@ -818,6 +818,70 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 .rc p { font-size: 15.5px; line-height: 1.6; color: var(--muted);
   margin: 0 auto; max-width: 28ch; }
 
+
+/* LES AVIS — un carrousel en profondeur : la carte du milieu est en avant,
+   les suivantes reculent dans la scène et pivotent. Sans JavaScript la liste
+   reste une grille de cartes, lisible et complète ; c'est le script qui ajoute
+   .av-3d et prend la main sur les positions. */
+.avis { max-width: 1200px; margin: 0 auto; padding: 104px 28px 30px; }
+.avis-in { max-width: 760px; }
+.av-scene { max-width: 1120px; margin: 40px auto 0; perspective: 1500px; }
+.av-scene.av-3d { overflow: hidden; padding: 44px 0 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
+
+.av-l { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+.av-c { position: relative; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 32px 32px 26px; display: flex; flex-direction: column; }
+.av-g { position: absolute; top: 10px; right: 22px; font-family: var(--serif);
+  font-size: 56px; line-height: 1; color: var(--mark); opacity: .18; }
+.av-q { margin: 0 0 22px; flex: 1; }
+.av-q p { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 1.45;
+  color: var(--text); }
+.av-vide { font-style: italic; color: var(--dim) !important; font-size: 16px !important;
+  border-left: 2px dashed var(--line); padding-left: 14px; }
+.av-f { display: flex; flex-direction: column; gap: 6px;
+  padding-top: 18px; border-top: 1px solid var(--line); }
+.av-n { font-size: 15px; color: var(--sub-text); }
+.av-d { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+
+/* En mode 3D les cartes quittent le flux : la liste porte alors la hauteur de
+   la plus haute, mesurée par le script. */
+.av-3d .av-l { display: block; position: relative; height: var(--h, 320px);
+  margin-bottom: 44px;
+  transform-style: preserve-3d; }
+.av-3d .av-c { position: absolute; left: 50%; top: 50%; width: min(430px, 78%);
+  margin: 0; backface-visibility: hidden;
+  transition: transform .58s var(--ease), opacity .58s var(--ease);
+  box-shadow: 0 10px 26px rgba(21, 23, 26, .07); cursor: pointer; }
+.av-3d .av-c.av-on { cursor: default; box-shadow: 0 26px 60px rgba(21, 23, 26, .14); }
+.av-3d .av-c.av-loin { visibility: hidden; }
+.dark .av-3d .av-c { box-shadow: 0 10px 26px rgba(0, 0, 0, .5); }
+.dark .av-3d .av-c.av-on { box-shadow: 0 26px 60px rgba(0, 0, 0, .66); }
+
+.av-ctl { display: flex; align-items: center; justify-content: center;
+  gap: 18px; margin-top: 34px; }
+.av-b { display: grid; place-items: center; width: 40px; height: 40px; padding: 0;
+  border: 1px solid var(--ghost-line); border-radius: 50%; background: none;
+  color: var(--sub-text); cursor: pointer; transition: background .2s, border-color .2s; }
+.av-b:hover { background: var(--ghost-hover); border-color: var(--focus); }
+.av-b svg { width: 17px; height: 17px; fill: none; stroke: currentColor;
+  stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.av-pts { display: flex; gap: 9px; }
+.av-pt { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%;
+  background: var(--ghost-line); cursor: pointer; transition: background .25s, transform .25s; }
+.av-pt[aria-current="true"] { background: var(--mark); transform: scale(1.5); }
+
+@media (max-width: 760px) {
+  .avis { padding: 80px 16px 16px; }
+  .av-scene { margin-top: 34px; perspective: 900px; }
+  .av-scene.av-3d { padding-top: 30px; }
+  .av-3d .av-c { width: 84%; padding: 26px 24px 22px; }
+  .av-q p { font-size: 17px; }
+  .av-ctl { margin-top: 26px; }
+}
+
 @media (max-width: 760px) {
   .proof { padding: 76px 16px 16px; }
   .preuve { margin-top: 36px; }

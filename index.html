@@ -287,6 +287,63 @@
     </ul>
   </div>
 
+  <!-- LES AVIS
+       Les cinq cartes attendent les textes de Corentin, Clément, Jules et
+       Sacha. Pour chacune : remplace le contenu du <p> par ce qu'il t'a
+       écrit et retire la classe « av-vide », puis mets sa course dans le
+       <span class="av-d">. N'écris rien à leur place — un avis inventé se
+       repère, et il coûte plus cher que pas d'avis du tout. Pour retirer une
+       carte, supprime son <li> entier : le carrousel se recompte seul. -->
+  <div class="avis" id="avis" aria-labelledby="avis-t">
+    <div class="avis-in reveal">
+      <p class="eyebrow">Ce qu'ils en disent</p>
+      <h2 class="title" id="avis-t">Leurs mots.</h2>
+    </div>
+
+    <div class="av-scene reveal" id="avisScene">
+      <ul class="av-l">
+      <li class="av-c">
+        <span class="av-g" aria-hidden="true">&rdquo;</span>
+        <blockquote class="av-q"><p class="av-vide">À compléter — colle ici l'avis
+          que Corentin t'a écrit, mot pour mot.</p></blockquote>
+        <footer class="av-f"><span class="av-n">Corentin</span><span class="av-d mono">sa course · son objectif</span></footer>
+      </li>
+      <li class="av-c">
+        <span class="av-g" aria-hidden="true">&rdquo;</span>
+        <blockquote class="av-q"><p class="av-vide">À compléter — colle ici l'avis
+          que Clément t'a écrit, mot pour mot.</p></blockquote>
+        <footer class="av-f"><span class="av-n">Clément</span><span class="av-d mono">Marathon de Paris 2026 · 2 h 59</span></footer>
+      </li>
+      <li class="av-c">
+        <span class="av-g" aria-hidden="true">&rdquo;</span>
+        <blockquote class="av-q"><p class="av-vide">À compléter — colle ici l'avis
+          que Jules t'a écrit, mot pour mot.</p></blockquote>
+        <footer class="av-f"><span class="av-n">Jules</span><span class="av-d mono">sa course · son objectif</span></footer>
+      </li>
+      <li class="av-c">
+        <span class="av-g" aria-hidden="true">&rdquo;</span>
+        <blockquote class="av-q"><p class="av-vide">À compléter — colle ici l'avis
+          que Sacha t'a écrit, mot pour mot.</p></blockquote>
+        <footer class="av-f"><span class="av-n">Sacha</span><span class="av-d mono">sa course · son objectif</span></footer>
+      </li>
+      <li class="av-c">
+        <span class="av-g" aria-hidden="true">&rdquo;</span>
+        <blockquote class="av-q"><p class="av-vide">À compléter — colle ici l'avis
+          que Prénom t'a écrit, mot pour mot.</p></blockquote>
+        <footer class="av-f"><span class="av-n">Prénom</span><span class="av-d mono">sa course · son objectif</span></footer>
+      </li>
+      </ul>
+      <div class="av-ctl">
+        <button type="button" class="av-b" data-pas="-1" aria-label="Avis précédent">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+        </button>
+        <div class="av-pts" id="avisPts"></div>
+        <button type="button" class="av-b" data-pas="1" aria-label="Avis suivant">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
     <div class="lab" id="lab">
   <div class="reveal">

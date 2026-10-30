@@ -1,6 +1,7 @@
 import { loadGpx, pointAt } from './gpx.js';
 import { createNightMap } from './nightmap.js';
 import { initAnalyses } from './analyses.js';
+import { initAvis } from './avis.js';
 import * as audio from './audio.js';
 
 document.documentElement.classList.add('ready');
@@ -459,4 +460,5 @@ run(initApercu);
 run(initVoie);
 run(initEssai);
 run(initMesure);
+run(initAvis);
 run(initReveal);

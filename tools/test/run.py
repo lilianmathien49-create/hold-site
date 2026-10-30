@@ -43,10 +43,21 @@ def main(argv):
         (HERE / "dom.js").read_text(encoding="utf-8"),
         (ROOT / "plan" / "plan.js").read_text(encoding="utf-8"),
     ] + [f"(function () {{\n{p.read_text(encoding='utf-8')}\n}})();\n" for p in suites]
+    print(f"  profil : {profile.name} · plan : {plan.name if plan.exists() else 'aucun'}")
+    code = lancer(parts)
+
+    # Le carrousel des avis tourne dans son propre bac : il installe son faux
+    # DOM, et celui de dom.js ne doit pas s'y mélanger.
+    module = (ROOT / "js" / "avis.js").read_text(encoding="utf-8")
+    code |= lancer([module.replace("export function", "function"),
+                    (HERE / "avis.js").read_text(encoding="utf-8")])
+    return code
+
+
+def lancer(parts):
     with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False, encoding="utf-8") as f:
         f.write("\n".join(parts))
         tmp = f.name
-    print(f"  profil : {profile.name} · plan : {plan.name if plan.exists() else 'aucun'}")
     r = subprocess.run([str(JSC), tmp], capture_output=True, text=True)
     sys.stdout.write(r.stdout)
     if r.stderr.strip():
