@@ -18,7 +18,7 @@ export function initAvis() {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   scene.classList.add('av-3d');
 
-  let actif = Math.floor(cartes.length / 2), minuteur = null, x0 = null;
+  let actif = 0, minuteur = null, x0 = null;
 
   // Distance circulaire à la carte active : la dernière est voisine de la
   // première, sinon le carrousel se bloquerait aux extrémités.
