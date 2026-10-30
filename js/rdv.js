@@ -44,6 +44,18 @@ export function initRdv() {
     a.addEventListener('click', (e) => {
       // Un clic qui demande explicitement un onglet reste un clic normal.
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+      // Sur un téléphone, la fenêtre de Calendly ouvre un défilement dans le
+      // défilement de la page, et le doigt se bat avec les deux. Leur page à
+      // eux, ouverte en plein écran, est faite pour ça : on la laisse ouvrir.
+      if (matchMedia('(max-width: 760px)').matches) {
+        if (offre) {
+          const u = new URL(a.href);
+          u.searchParams.set('utm_content', offre);
+          a.href = u.href;
+        }
+        if (typeof window.plausible === 'function') window.plausible('Prise de rendez-vous');
+        return;
+      }
       e.preventDefault();
       a.setAttribute('aria-busy', 'true');
       if (typeof window.plausible === 'function') window.plausible('Prise de rendez-vous');

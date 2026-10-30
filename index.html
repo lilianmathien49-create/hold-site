@@ -142,11 +142,16 @@
     <a href="revue/" class="link-btn">La revue</a>
     <button type="button" class="link-btn" id="openFilmNav">Le film</button>
     <button type="button" class="link-btn" id="openEssaiNav">Essayer</button>
+    <div class="nav-pied">
+      <a href="#contact" class="btn nav-pied-appel">Réserver un appel</a>
+      <a href="plan/" class="nav-pied-espace">Mon espace</a>
+    </div>
   </nav>
   <div class="nav-r">
-    <a href="plan/" class="link-btn">Mon espace</a>
+    <a href="plan/" class="link-btn nav-espace-barre">Mon espace</a>
     <a href="#contact" class="btn btn-sm nav-appel">Réserver un appel</a>
-    <button type="button" class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+    <button type="button" class="nav-burger" id="navBurger" aria-label="Ouvrir le menu"
+            aria-expanded="false" aria-controls="navLinks">
       <span></span><span></span>
     </button>
   </div>
@@ -977,14 +982,17 @@
   var burger=document.getElementById('navBurger');
   var links=document.getElementById('navLinks');
   if(!burger||!links)return;
-  burger.addEventListener('click',function(){
-    var open=links.classList.toggle('open');
-    burger.setAttribute('aria-expanded',String(open));
-    burger.classList.toggle('open',open);
-  });
-  links.addEventListener('click',function(e){
-    if(e.target.closest('a')){links.classList.remove('open');burger.classList.remove('open');burger.setAttribute('aria-expanded','false');}
-  });
+  function regle(ouvert){
+    links.classList.toggle('open',ouvert);
+    burger.classList.toggle('open',ouvert);
+    burger.setAttribute('aria-expanded',String(ouvert));
+    burger.setAttribute('aria-label',ouvert?'Fermer le menu':'Ouvrir le menu');
+    document.documentElement.classList.toggle('menu-ouvert',ouvert);
+  }
+  burger.addEventListener('click',function(){regle(!links.classList.contains('open'));});
+  links.addEventListener('click',function(e){if(e.target.closest('a,button'))regle(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&links.classList.contains('open')){regle(false);burger.focus();}});
+  matchMedia('(min-width: 1081px)').addEventListener('change',function(m){if(m.matches)regle(false);});
 })();
 </script>
 <script type="module" src="js/main.js"></script>

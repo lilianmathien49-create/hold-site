@@ -245,7 +245,9 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
 /* Nav : sombre tant qu'elle survole les actes, claire ensuite (classe posée en JS) */
 .nav { position: fixed; inset: 0 0 auto 0; z-index: 50; height: 72px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; pointer-events: none; transition: background-color .4s var(--ease), border-color .4s var(--ease); }
 .nav.dark { background: linear-gradient(var(--nav-fade) 0%, transparent 100%); border-bottom: 1px solid transparent; }
-.nav:not(.dark) { background: var(--nav-fade); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+.nav:not(.dark) { border-bottom: 1px solid var(--line); }
+.nav::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.nav:not(.dark)::before { background: var(--nav-fade); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .nav > * { pointer-events: auto; }
 .logo { font-family: var(--serif); font-size: 27px; letter-spacing: -.02em; display: inline-flex; align-items: flex-end; gap: 3px; }
 .logo-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mark); margin-bottom: 9px; }
@@ -261,6 +263,9 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
 .nav-sound .ico-on { display: none; }
 .nav-sound[aria-pressed="true"] .ico-off { display: none; }
 .nav-sound[aria-pressed="true"] .ico-on { display: block; }
+/* Le pied du menu n'existe que sur téléphone : sur grand écran, la barre
+   porte déjà la réservation et l'espace coureur. */
+.nav-pied { display: none; }
 .nav-burger { display: none; width: 44px; height: 44px; border: 0; background: none; cursor: pointer; position: relative; padding: 0; }
 .nav-burger span { display: block; width: 20px; height: 1.5px; background: var(--text); position: absolute; left: 12px; transition: transform .3s var(--ease), opacity .2s; }
 .nav-burger span:first-child { top: 17px; }
@@ -577,7 +582,27 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .nav-burger { display: block; }
   .nav-links { position: fixed; inset: 64px 0 0 0; background: var(--bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); flex-direction: column; align-items: stretch; padding: 20px 24px; gap: 0; opacity: 0; pointer-events: none; transform: translateY(-12px); transition: opacity .3s var(--ease), transform .3s var(--ease); }
   .nav-links.open { opacity: 1; pointer-events: auto; transform: none; }
-  .nav-links .link-btn { justify-content: flex-start; min-height: 52px; font-size: 13px; letter-spacing: .1em; padding: 0 12px; border-bottom: 1px solid var(--line); border-radius: 0; }
+  /* La barre d'un téléphone ne tient que trois choses : le nom, la
+     réservation, le menu. « Mon espace » descend dans le menu. */
+  .nav-espace-barre { display: none; }
+  .nav-r { gap: 6px; }
+  .nav-appel { min-height: 38px; padding: 0 14px; font-size: 13px; border-radius: 9px; }
+  .nav-links { overflow-y: auto; overscroll-behavior: contain;
+    padding: 6px 24px calc(24px + env(safe-area-inset-bottom, 0px)); }
+  .nav-links .link-btn { justify-content: flex-start; min-height: 58px; padding: 0;
+    font-family: var(--serif); font-size: 25px; letter-spacing: -.01em;
+    text-transform: none; color: var(--text); border-bottom: 1px solid var(--line);
+    border-radius: 0; flex: none; }
+  .nav-links .link-btn:hover { background: none; color: var(--mark); }
+  .nav-pied { display: flex; flex-direction: column; align-items: stretch; gap: 16px;
+    margin-top: auto; padding-top: 32px; flex: none; }
+  .nav-pied-appel { min-height: 54px; font-size: 16px; }
+  .nav-pied-espace { align-self: center; min-height: 44px; display: inline-flex;
+    align-items: center; font-family: var(--mono); font-size: 12px;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  html.menu-ouvert { overflow: hidden; }
+  /* Menu ouvert, la réservation est en bas du menu : pas deux fois. */
+  .nav-links.open ~ .nav-r .nav-appel { visibility: hidden; }
   .shade { background: linear-gradient(0deg, rgba(0, 0, 0, .92) 0%, rgba(0, 0, 0, .55) 45%, rgba(0, 0, 0, .1) 75%), linear-gradient(180deg, rgba(0, 0, 0, .6) 0%, rgba(0, 0, 0, 0) 14%); }
   .cap { top: auto; bottom: 92px; transform: translateY(24px); }
   .cap.on { transform: none; }
@@ -1014,6 +1039,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .pv-n { font-size: 19px; }
   .recette { margin-top: 64px; }
   .rc { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .rdv { align-items: stretch; }
+  .rdv .btn-lg { width: 100%; }
   .src-l { grid-template-columns: minmax(0, 1fr); gap: 34px; }
   .src { margin-top: 40px; }
   .demo-tete { margin-bottom: 26px; }
