@@ -57,12 +57,53 @@ def parse_time(t: str):
     return None
 
 
+def cadence_fit(p: dict):
+    """Pas par minute, d'où qu'ils viennent.
+
+    Le champ cadence compte une jambe : on le double. Beaucoup de montres ne
+    l'écrivent pas mais écrivent la longueur de foulée ; la cadence s'en
+    déduit, vitesse divisée par foulée. Sans cette déduction, ces séances
+    passaient pour dépourvues de cadence, et la marche se devinait à la vitesse
+    seule — ce qui échoue justement en montée.
+    """
+    if p.get("cad"):
+        return p["cad"] * 2 if p["cad"] < 120 else p["cad"]
+    if p.get("foulee") and p["foulee"] > 0.2 and p.get("speed"):
+        return p["speed"] / p["foulee"] * 60
+    return None
+
+
+# Un dossier exporté contient tous les sports. Le nom de la séance le dit
+# souvent ; quand il ne dit rien, l'allure tranche.
+AUTRES_SPORTS = ("natation", "piscine", "swim", "cyclisme", "velo", "vélo", "gravel", "bike",
+                 "ride", "vtt", "musculation", "renforcement", "padel", "tennis", "yoga", "ski",
+                 "rameur", "elliptique", "marche_nordique", "randonnee", "kayak", "aviron")
+V_PIED = (4.0, 22.0)            # km/h médians plausibles pour de la course ou du trail
+
+
+def autre_sport(path: Path) -> bool:
+    nom = path.name.lower()
+    return any(m in nom for m in AUTRES_SPORTS)
+
+
+def vitesse_mediane(pts) -> float:
+    vs = []
+    for a, b in zip(pts, pts[1:]):
+        dt = (b[0] - a[0]).total_seconds()
+        if dt <= 0:
+            continue
+        la1, lo1, la2, lo2 = map(math.radians, (a[1], a[2], b[1], b[2]))
+        d = 2 * 6371000 * math.asin(math.sqrt(math.sin((la2 - la1) / 2) ** 2
+                                              + math.cos(la1) * math.cos(la2) * math.sin((lo2 - lo1) / 2) ** 2))
+        if d > 0.5:                     # à l'arrêt, la vitesse ne dit rien du sport
+            vs.append(d / dt * 3.6)
+    return st.median(vs) if vs else 0.0
+
+
 def read_points(path: Path):
     """Renvoie [(instant, lat, lon, altitude, fc, cadence, température)]."""
     if path.name.lower().endswith((".fit", ".fit.gz")):
-        # La cadence FIT compte une jambe : on la double pour parler en pas par minute.
-        return [(p["t"], p["lat"], p["lon"], p.get("alt", 0.0), p.get("hr"),
-                 (p["cad"] * 2 if p["cad"] < 120 else p["cad"]) if p.get("cad") else None,
+        return [(p["t"], p["lat"], p["lon"], p.get("alt", 0.0), p.get("hr"), cadence_fit(p),
                  p.get("temp"))
                 for p in read_fit(path) if "t" in p and "lat" in p and "lon" in p]
     try:
@@ -196,12 +237,15 @@ def main() -> int:
         return 1
 
     print(f"  {len(files)} fichiers trouvés")
-    sid = total = with_temp = skipped = with_hr = with_cad = 0
+    sid = total = with_temp = skipped = with_hr = with_cad = sports = 0
     with open(a.out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["session", "date", "type", "t_s", "slope", "mode", "kmh", "hr", "temp"])
         no_time = []
         for path in files:
+            if autre_sport(path):
+                sports += 1
+                continue
             pts = read_points(path)
             if not pts:
                 # Un fichier de parcours n'a pas d'horodatage : il décrit un
@@ -217,6 +261,9 @@ def main() -> int:
             if mins < a.min_minutes:
                 skipped += 1
                 continue
+            if not V_PIED[0] <= vitesse_mediane(pts) <= V_PIED[1]:
+                sports += 1
+                continue
             sid += 1
             n, t = to_blocks(pts, sid, "sortie", w)
             total += n
@@ -227,6 +274,8 @@ def main() -> int:
                 with_cad += 1
 
     print(f"  {sid} séances retenues · {skipped} écartées")
+    if sports:
+        print(f"  dont {sports} d'un autre sport que la course à pied (vélo, natation…), mises de côté")
     if no_time:
         print(f"  dont {len(no_time)} sans horodatage : ce sont des tracés de parcours, "
               f"pas des enregistrements de sortie")

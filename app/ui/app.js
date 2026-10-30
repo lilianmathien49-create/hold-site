@@ -33,7 +33,7 @@
   let calcul = { gpx: '', dossier: '' };
 
   function vierge() {
-    return { slug: null, coureur: '', titre: '', plan: null, resume: null, fichiers: [], code: '', lien: '' };
+    return { slug: null, coureur: '', titre: '', plan: null, resume: null, fichiers: [], code: '', lien: '', dossier: '' };
   }
 
   function marque() {
@@ -108,6 +108,8 @@
     dessinePlan();
     dessineDocs();
     dessineListe();
+    dossierChoisi(brouillon.dossier || '');
+    dernierRapport();
   }
 
   async function nouveau() {
@@ -258,15 +260,11 @@
   $('choixDossier').addEventListener('click', async () => {
     const { chemins } = await api('/api/choisir', { genre: 'dossier' });
     if (!chemins.length) return;
-    calcul.dossier = chemins[0];
-    $('nomDossier').textContent = nomDe(calcul.dossier);
-    $('sansDossier').hidden = false;
+    dossierChoisi(chemins[0]);
+    if (brouillon.slug) api('/api/dossier', { slug: brouillon.slug, dossier: chemins[0] });
+    dernierRapport();
   });
-  $('sansDossier').addEventListener('click', () => {
-    calcul.dossier = '';
-    $('nomDossier').textContent = 'Aucun : réglages de référence';
-    $('sansDossier').hidden = true;
-  });
+  $('sansDossier').addEventListener('click', () => { dossierChoisi(''); dernierRapport(); });
 
   $('atelier').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -318,6 +316,117 @@
     dessinePlan();
     marque();
   });
+
+  /* ---------- Analyses ----------
+     Le même dossier sert à l'analyse et à la fabrication de la stratégie :
+     le choisir ici le choisit là-bas. */
+  const ETAPES = 8;
+  let travail = null;
+
+  function dossierChoisi(chemin) {
+    brouillon.dossier = chemin;
+    calcul.dossier = chemin;
+    $('nomDossier').textContent = chemin ? nomDe(chemin) : 'Aucun : réglages de référence';
+    $('sansDossier').hidden = !chemin;
+    $('dossierAnalyse').textContent = chemin
+      ? `Dossier : ${chemin}`
+      : 'Le dossier des fichiers de montre du coureur : .fit, .gpx ou .tcx, tels que Strava ou Garmin les exportent. Les autres sports sont écartés tout seuls.';
+    $('analyser').disabled = !chemin;
+  }
+
+  async function dernierRapport() {
+    $('rapport').replaceChildren();
+    if (!brouillon.dossier) return;
+    try {
+      const { rapport } = await api('/api/analyse/derniere', { dossier: brouillon.dossier });
+      if (rapport) dessineRapport(rapport);
+    } catch { /* pas de rapport gardé : rien à montrer */ }
+  }
+
+  $('choixDossierAnalyse').addEventListener('click', async () => {
+    const { chemins } = await api('/api/choisir', { genre: 'dossier' });
+    if (!chemins.length) return;
+    dossierChoisi(chemins[0]);
+    if (brouillon.slug) api('/api/dossier', { slug: brouillon.slug, dossier: chemins[0] });
+    dernierRapport();
+  });
+
+  $('analyser').addEventListener('click', async () => {
+    $('analyser').disabled = true;
+    $('progres').hidden = false;
+    $('progresI').style.width = '4%';
+    $('progresT').textContent = 'Démarrage…';
+    try {
+      ({ travail } = await api('/api/analyse', { dossier: brouillon.dossier }));
+      const suivi = setInterval(async () => {
+        try {
+          const e = await api('/api/analyse/etat', { travail });
+          $('progresT').textContent = e.etape;
+          $('progresI').style.width = `${Math.min(96, 6 + (e.fait / ETAPES) * 90)}%`;
+          if (!e.fini) return;
+          clearInterval(suivi);
+          $('progres').hidden = true;
+          $('analyser').disabled = false;
+          if (e.erreur) { $('rapport').textContent = e.erreur; return; }
+          dessineRapport(e.rapport);
+        } catch (err) {
+          clearInterval(suivi);
+          $('progres').hidden = true;
+          $('analyser').disabled = false;
+          $('rapport').textContent = err.message;
+        }
+      }, 700);
+    } catch (err) {
+      $('progres').hidden = true;
+      $('analyser').disabled = false;
+      $('rapport').textContent = err.message;
+    }
+  });
+
+  const el = (tag, classe, texte) => {
+    const e = document.createElement(tag);
+    if (classe) e.className = classe;
+    if (texte != null) e.textContent = texte;
+    return e;
+  };
+  const nombre = (n) => Number(n).toLocaleString('fr-FR');
+
+  function dessineRapport(r) {
+    const a = r.apercu;
+    const zone = $('rapport');
+    const tete = el('p', 'rapport-tete', `Analyse du ${r.date || '—'}`);
+    const tuiles = el('div', 'tuiles');
+    [['Séances', nombre(a.seances)], ['Heures', nombre(Math.round(a.heures))], ['Kilomètres', nombre(a.km)],
+     ['Dénivelé', `${nombre(a.dplus)} m`], ['Période', a.debut ? `${a.debut.split('-').reverse().join('/')} → ${a.fin.split('-').reverse().join('/')}` : '—'],
+     ['Avec cadence', `${a.cadence} %`], ['Avec cardio', `${a.cardio} %`], ['Avec température', `${a.temperature} %`],
+    ].forEach(([l, v]) => {
+      const t = el('div', 'tuile');
+      t.append(el('span', 'lib', l), el('span', 'tuile-v', v));
+      tuiles.append(t);
+    });
+    const cartes = r.sections.map((s) => {
+      const c = el('article', 'analyse' + (s.mesure ? '' : ' analyse-non'));
+      const haut = el('div', 'analyse-tete');
+      haut.append(el('h3', '', s.titre), el('span', 'analyse-chiffre', s.mesure ? s.chiffre : 'Non mesurable'));
+      c.append(haut);
+      if (s.mesure) {
+        c.append(el('p', 'analyse-phrase', s.phrase));
+        // Le dessin vient du serveur local, fabriqué à partir de nombres : pas
+        // de texte saisi par quelqu'un d'autre dedans.
+        const g = el('div', 'analyse-graphe'); g.innerHTML = s.svg;
+        c.append(g, el('p', 'analyse-source', s.source));
+      } else {
+        c.append(el('p', 'analyse-phrase', s.raison));
+      }
+      return c;
+    });
+    const profil = el('details', 'journal');
+    profil.append(el('summary', '', 'Ce que le calcul du plan retiendra de ce coureur'),
+      el('p', 'aide', 'Le calcul du plan déduit la marche de la vitesse sur les séances sans cadence. '
+        + 'Quand son seuil s’écarte de la transition mesurée ci-dessus sur la cadence, c’est la transition qui est la plus fiable.'),
+      el('pre', '', r.profil || '—'));
+    zone.replaceChildren(tete, tuiles, ...cartes, profil);
+  }
 
   /* ---------- Documents ---------- */
   const poids = () => brouillon.fichiers.reduce((t, f) => t + (f.taille || 0), 0);
@@ -384,6 +493,7 @@
         slug: brouillon.slug, coureur: brouillon.coureur, titre: brouillon.titre,
         plan: brouillon.plan, fichiers: brouillon.fichiers,
         code: brouillon.slug ? undefined : $('codeSaisie').value,
+        dossier: brouillon.dossier || '',
       });
       const premier = !brouillon.slug;
       Object.assign(brouillon, r);

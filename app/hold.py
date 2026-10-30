@@ -337,7 +337,7 @@ def ouvrir(slug: str) -> dict:
     e = entree(reg, slug)
     es = lis_espace(slug, e["mdp"])
     return {**es, "slug": slug, "code": e["code"], "lien": lien_de(e["code"]),
-            "resume": resume_plan(es["plan"])}
+            "resume": resume_plan(es["plan"]), "dossier": e.get("dossier", "")}
 
 
 def importer(code: str) -> dict:
@@ -399,7 +399,7 @@ def publier(p: dict) -> dict:
             raise Erreur("Ce code est déjà pris. Propose-en un autre.")
     contenu = contenu_de(p, coureur)
     envoie(ident, mdp, contenu, sha)
-    note(ident, code, mdp, contenu)
+    note(ident, code, mdp, contenu, p.get("dossier") or reg.get(ident, {}).get("dossier", ""))
     return {"slug": ident, "code": code, "lien": lien_de(code)}
 
 
@@ -422,11 +422,12 @@ def envoie(ident: str, mdp: str, contenu: dict, sha: str | None) -> None:
         raise Erreur(raison(statut))
 
 
-def note(ident: str, code: str, mdp: str, contenu: dict) -> None:
+def note(ident: str, code: str, mdp: str, contenu: dict, dossier: str = "") -> None:
     with _verrou:
         reg = registre_lire()
         reg[ident] = {"code": code, "mdp": mdp, "coureur": contenu["coureur"], "titre": contenu["titre"],
                       "plan": bool(contenu["plan"]), "docs": len(contenu["fichiers"]),
+                      "dossier": dossier,
                       "modifie_iso": datetime.now().isoformat(timespec="seconds")}
         registre_ecrire(reg)
 
@@ -450,7 +451,7 @@ def renommer(p: dict) -> dict:
     envoie(neuf, code, contenu, None)
     # Le nouveau code est noté avant que l'ancien fichier ne disparaisse : si
     # la suppression échoue, on garde au moins l'accès au nouveau.
-    note(neuf, code, code, contenu)
+    note(neuf, code, code, contenu, e.get("dossier", ""))
     supprimer(ident)
     return {"slug": neuf, "code": code, "lien": lien_de(code)}
 
@@ -511,6 +512,68 @@ def ouvre_lien(url: str) -> dict:
     return {}
 
 
+# ---------- Analyses ----------
+# Une analyse complète prend d'une à deux minutes la première fois (la météo
+# surtout) : elle tourne dans un fil à part, et la page vient demander où elle
+# en est. Le dernier rapport de chaque dossier est gardé sur le Mac.
+
+ANALYSES = DONNEES / "analyses"
+_travaux: dict[str, dict] = {}
+
+
+def rapport_de(dossier: str) -> Path:
+    return ANALYSES / f"{hashlib.sha1(dossier.encode()).hexdigest()[:16]}.json"
+
+
+def analyse_lancer(p: dict) -> dict:
+    dossier = Path(p.get("dossier") or "")
+    if not dossier.is_dir():
+        raise Erreur("Choisis le dossier des fichiers de montre du coureur.")
+    ident = secrets.token_hex(6)
+    travail = {"etapes": [], "fini": False, "rapport": None, "erreur": ""}
+    _travaux[ident] = travail
+
+    def tourne():
+        import analyses
+        try:
+            r = analyses.rapport(dossier, DONNEES / "cache", lambda m: travail["etapes"].append(m))
+            r["dossier"] = str(dossier)
+            r["date"] = datetime.now().strftime("%d/%m/%Y à %H:%M")
+            ANALYSES.mkdir(parents=True, exist_ok=True)
+            rapport_de(str(dossier)).write_text(json.dumps(r, ensure_ascii=False), encoding="utf-8")
+            travail["rapport"] = r
+        except Exception as e:                  # noqa: BLE001 — montré tel quel
+            traceback.print_exc()
+            travail["erreur"] = str(e) or "L'analyse a échoué."
+        travail["fini"] = True
+
+    threading.Thread(target=tourne, daemon=True).start()
+    return {"travail": ident}
+
+
+def analyse_etat(p: dict) -> dict:
+    t = _travaux.get(p.get("travail") or "")
+    if not t:
+        raise Erreur("Cette analyse n'existe plus.")
+    return {"etape": t["etapes"][-1] if t["etapes"] else "Démarrage…", "fait": len(t["etapes"]),
+            "fini": t["fini"], "rapport": t["rapport"], "erreur": t["erreur"]}
+
+
+def analyse_derniere(p: dict) -> dict:
+    f = rapport_de(p.get("dossier") or "")
+    return {"rapport": json.loads(f.read_text(encoding="utf-8")) if f.is_file() else None}
+
+
+def dossier_noter(p: dict) -> dict:
+    """Retient le dossier de montre d'un coureur déjà publié."""
+    with _verrou:
+        reg = registre_lire()
+        if p.get("slug") in reg:
+            reg[p["slug"]]["dossier"] = p.get("dossier") or ""
+            registre_ecrire(reg)
+    return {}
+
+
 MOIS = ("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août",
         "septembre", "octobre", "novembre", "décembre")
 
@@ -528,6 +591,10 @@ ROUTES = {
     ("POST", "/api/renommer"): renommer,
     ("POST", "/api/proposer"): proposer,
     ("POST", "/api/verifier"): verifier,
+    ("POST", "/api/analyse"): analyse_lancer,
+    ("POST", "/api/analyse/etat"): analyse_etat,
+    ("POST", "/api/analyse/derniere"): analyse_derniere,
+    ("POST", "/api/dossier"): dossier_noter,
     ("POST", "/api/strategie"): strategie,
     ("POST", "/api/choisir"): lambda p: {"chemins": choisir(p.get("genre"))},
     ("POST", "/api/documents"): lambda p: {"fichiers": [lis_document(c) for c in choisir("documents")]},

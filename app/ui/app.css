@@ -171,6 +171,82 @@ dialog::backdrop { background: rgba(0, 0, 0, .35); }
 .dlg-pied { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
 .espace { flex: 1; }
 
+/* ---------- Le rapport d'analyse ---------- */
+/* Les graphiques sont ceux du site : leurs règles s'écrivent avec les noms de
+   couleurs du site, qu'on fait pointer ici vers ceux de l'application. */
+.rapport { --mark: var(--marque); --text: var(--texte); --sub-text: var(--doux); --muted: var(--doux);
+  --dim: var(--pale); --line: var(--trait); --grid: var(--trait); --p-mur: var(--marque);
+  --pt-mur: var(--rouge-texte); --bg: var(--surface); display: grid; gap: 14px; }
+.rapport:empty { display: none; }
+.rapport-tete { margin: 4px 0 0; color: var(--pale); font-size: 12.5px; }
+.tuiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.tuile { padding: 10px 12px; border-radius: 9px; background: var(--fond); display: grid; gap: 2px; }
+.tuile-v { font-size: 16px; font-variant-numeric: tabular-nums; }
+.analyse { padding: 16px 18px; border: 1px solid var(--trait); border-radius: 11px; display: grid; gap: 10px; }
+.analyse-tete { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.analyse-tete h3 { margin: 0; font-size: 14.5px; font-weight: 600; }
+.analyse-chiffre { font-family: var(--serif); font-size: 26px; color: var(--marque); white-space: nowrap;
+  font-variant-numeric: tabular-nums; }
+.analyse-phrase { margin: 0; color: var(--doux); max-width: 70ch; }
+.analyse-graphe { max-width: 640px; }
+.analyse-source { margin: 0; font-family: var(--mono); font-size: 11.5px; color: var(--pale); }
+.analyse-non { background: var(--fond); border-style: dashed; }
+.analyse-non .analyse-chiffre { font-family: var(--sans); font-size: 13px; color: var(--pale); }
+.progres { display: flex; align-items: center; gap: 12px; }
+.progres-barre { flex: 0 0 180px; height: 6px; border-radius: 3px; background: var(--fond); overflow: hidden; }
+.progres-barre i { display: block; height: 100%; width: 0; background: var(--marque); transition: width .5s; }
+.progres-t { color: var(--doux); font-size: 13px; }
+
+/* Les graphiques, repris tels quels de la feuille du site. */
+.lb { display: block; width: 100%; height: auto; overflow: visible; }
+.lb-gr { stroke: var(--grid); stroke-width: 1; }
+.lb-base { stroke: var(--line); stroke-width: 1.5; }
+.lb-zero { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+.lb-bande { fill: var(--muted); opacity: .09; }
+.lb-ax { font-family: var(--mono); font-size: 12px; fill: var(--dim); }
+.lb-t { font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; fill: var(--dim); }
+.lb-val { font-family: var(--serif); font-size: 21px;
+  font-variant-numeric: tabular-nums; }
+.lb-fit-t { font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
+  fill: var(--sub-text); }
+.lb-l { fill: none !important; stroke-width: 2.6;
+  stroke-linecap: round; stroke-linejoin: round; }
+.lb-a { stroke: none; }
+.lb-fit { stroke: var(--mark); stroke-width: 1.8; stroke-dasharray: 6 5; }
+.lb-fit.lb-plein { stroke-dasharray: none; stroke-width: 2.4; }
+.lb-cone { fill: var(--mark); opacity: .1; stroke: none; }
+.lb-nuage { fill: var(--mark); opacity: .55; stroke: none; }
+.lb-marche { fill: var(--p-mur); opacity: .08; }
+.lb-seuil { stroke: var(--text); stroke-width: 1.4; stroke-dasharray: 7 5; }
+.lb-croise { stroke: var(--mark); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.lb-pivot { fill: var(--mark); stroke: var(--bg); stroke-width: 2.5; }
+.lb-cle { font-family: var(--serif); font-size: 23px; fill: var(--mark);
+  font-variant-numeric: tabular-nums; }
+.lb-td { fill: var(--pt-mur); }
+.lb-ic { fill: var(--mark); opacity: .08; }
+.lb-obs { fill: var(--mark); opacity: .5; stroke: none; }
+.lb-barre { stroke: var(--mark); stroke-width: 1.2; opacity: .45; }
+.lb-pt-hors { stroke-dasharray: 5 5; opacity: .55; }
+.lb-hach { stroke: var(--line); stroke-width: 1.2; }
+.lb-hors-t { fill: var(--dim); }
+.lb-v { stroke: var(--mark); }
+.lb-v.lb-a { fill: var(--mark); opacity: .13; }
+text.lb-v { fill: var(--mark); stroke: none; }
+circle.lb-v { fill: var(--mark); stroke: none; }
+.lb-c { stroke: var(--muted); }
+.lb-c.lb-a { fill: var(--muted); opacity: .1; }
+text.lb-c { fill: var(--muted); stroke: none; }
+circle.lb-c { fill: var(--muted); stroke: none; }
+@media (max-width: 400px) {
+  .lb-ax { font-size: 18px; }
+  .lb-t { font-size: 16px; }
+  .lb-val { font-size: 30px; }
+  .lb-cle { font-size: 32px; }
+  .lb-fit-t { font-size: 17px; }
+}
+
 @media (max-width: 1100px) {
   .grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tuiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

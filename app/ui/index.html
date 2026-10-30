@@ -96,6 +96,24 @@
       </form>
     </section>
 
+    <!-- LES ANALYSES -->
+    <section class="bloc" id="blocAnalyses">
+      <div class="bloc-tete">
+        <h2>Analyses</h2>
+        <div class="bloc-actions">
+          <button type="button" class="b" id="choixDossierAnalyse">Choisir le dossier…</button>
+          <button type="button" class="b b-plein" id="analyser" disabled>Analyser</button>
+        </div>
+      </div>
+      <p class="aide" id="dossierAnalyse">Le dossier des fichiers de montre du coureur : .fit, .gpx ou .tcx,
+        tels que Strava ou Garmin les exportent. Les autres sports sont écartés tout seuls.</p>
+      <div class="progres" id="progres" hidden>
+        <span class="progres-barre"><i id="progresI"></i></span>
+        <span class="progres-t" id="progresT"></span>
+      </div>
+      <div class="rapport" id="rapport"></div>
+    </section>
+
     <!-- LES DOCUMENTS -->
     <section class="bloc" id="blocDocs">
       <div class="bloc-tete">

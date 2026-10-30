@@ -78,13 +78,23 @@ def blocs(src: Path) -> list[dict]:
             if d[j] - d[i] >= 20 and a[i] is not None and a[j] is not None:
                 pente[k] = (a[j] - a[i]) / (d[j] - d[i]) * 100
 
-        for s in range(0, len(pts) - PAS, PAS):
-            b = pts[s:s + PAS]
+        # Des blocs de PAS secondes, et non de PAS points : en enregistrement
+        # intelligent, une montre n'écrit qu'un point toutes les quelques
+        # secondes, et quinze points faisaient alors une minute ou davantage.
+        bornes, debut = [], 0
+        for k in range(1, len(pts)):
+            if (pts[k]["t"] - pts[debut]["t"]).total_seconds() >= PAS:
+                bornes.append((debut, k))
+                debut = k
+        for s, e in bornes:
+            b = pts[s:e + 1]
             dt = (b[-1]["t"] - b[0]["t"]).total_seconds()
             dd = b[-1]["dist"] - b[0]["dist"]
-            if dt <= 0 or dd < 3:                 # à l'arrêt, rien à mesurer
+            # À l'arrêt, rien à mesurer ; un trou d'enregistrement de plus de
+            # deux minutes n'est pas un bloc non plus.
+            if dt <= 0 or dt > 120 or dd < 3:
                 continue
-            pp = sorted(x for x in pente[s:s + PAS] if x is not None)
+            pp = sorted(x for x in pente[s:e + 1] if x is not None)
             fo = sorted(p["foulee"] for p in b if p.get("foulee"))
             hr = sorted(p["hr"] for p in b if p.get("hr"))
             tp = sorted(p["temp"] for p in b if p.get("temp") is not None)
@@ -96,6 +106,7 @@ def blocs(src: Path) -> list[dict]:
             out.append({"pente": pp[len(pp) // 2], "v": v, "cad": cad,
                         "hr": hr[len(hr) // 2] if hr else None,
                         "temp": tp[len(tp) // 2] if tp else None,
+                        "dt": dt,
                         "ecoule": (b[0]["t"] - t0).total_seconds() / 60,
                         "lat": b[0].get("lat"), "lon": b[0].get("lon"),
                         "heure": b[0]["t"].strftime("%Y-%m-%dT%H:00"),
