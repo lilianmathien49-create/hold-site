@@ -378,3 +378,26 @@
 .gate-demo a:hover { color: var(--text); }
 .gate-help a { text-decoration: underline; }
 .f[hidden] { display: none; }
+
+/* Les documents déposés par le coach, au-dessus de la stratégie quand il y en
+   a une : c'est ce qu'on vient chercher en premier. */
+.docs { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+.docs-l { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.docs-l li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center;
+  gap: 8px 18px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; }
+.docs-n { font-size: 15.5px; color: var(--text); overflow-wrap: anywhere; }
+.docs-t { font-size: 11.5px; color: var(--dim); }
+.docs-vide { margin-top: 28px; }
+/* Juste sous le titre, le filet de l'en-tête suffit : deux traits d'affilée
+   se lisent comme une erreur. */
+.pl-head + .docs { border-top: 0; padding-top: 0; }
+/* Au téléphone, le nom du coureur et sa course débordaient sur deux lignes
+   et venaient toucher le logo : ils tiennent sur une, coupés proprement. */
+@media (max-width: 560px) {
+  #navWho { max-width: 62vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (max-width: 560px) {
+  .docs-l li { grid-template-columns: minmax(0, 1fr) auto; }
+  .docs-l .btn { grid-column: 1 / -1; width: 100%; }
+}

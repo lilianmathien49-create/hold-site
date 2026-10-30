@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hold — Espaces coureurs</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<!-- Cette page tient la clé qui écrit sur le site : aucun script tiers n'y
+     entre, et elle ne parle qu'à GitHub. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://api.github.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400..700&family=Fraunces:opsz,wght@9..144,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/styles.css">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a href="../" class="logo" aria-label="Hold, retour au site">Hold<span class="logo-dot" aria-hidden="true"></span></a>
+  <div class="nav-r"><p class="eyebrow">Espaces coureurs</p></div>
+</header>
+
+<main class="adm">
+
+  <!-- 1. LA CLÉ -->
+  <section class="adm-bloc" id="blocCle">
+    <p class="eyebrow">Étape préalable</p>
+    <h1 class="adm-t">Ta clé GitHub</h1>
+    <p class="adm-sub">C'est elle qui autorise cette page à publier sur le site. Elle reste dans
+      ce navigateur, sur cet appareil, et nulle part ailleurs.</p>
+
+    <div id="cleAbsente">
+      <ol class="adm-etapes">
+        <li>Ouvre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com → créer une clé « fine-grained »</a>.</li>
+        <li>Nom : <span class="mono">Hold admin</span>. Expiration : un an.</li>
+        <li>Accès : <b>Only select repositories</b>, puis <span class="mono">hold-site</span>.</li>
+        <li>Permissions → Repository → <b>Contents : Read and write</b>. Rien d'autre.</li>
+        <li>Génère, copie la clé, colle-la ici.</li>
+      </ol>
+      <form class="adm-ligne" id="formCle">
+        <label class="f adm-grand"><span>Clé</span>
+          <input id="cle" type="password" autocomplete="off" spellcheck="false" placeholder="github_pat_…"></label>
+        <button type="submit" class="btn">Vérifier et garder</button>
+      </form>
+    </div>
+    <div id="clePresente" hidden>
+      <p class="adm-ok" id="cleEtat">Clé enregistrée.</p>
+      <button type="button" class="link-btn" id="oublierCle">Oublier la clé sur cet appareil</button>
+    </div>
+    <p class="hint" id="msgCle" role="status" aria-live="polite"></p>
+  </section>
+
+  <!-- 2. L'ESPACE -->
+  <section class="adm-bloc" id="blocEspace" hidden>
+    <div class="adm-onglets" role="tablist">
+      <button type="button" role="tab" id="ongletNouveau" aria-selected="true">Nouvel espace</button>
+      <button type="button" role="tab" id="ongletModifier" aria-selected="false">Modifier un espace</button>
+    </div>
+
+    <form class="adm-ligne" id="formOuvrir" hidden>
+      <label class="f adm-grand"><span>Code du coureur</span>
+        <input id="codeOuvrir" type="text" autocomplete="off" spellcheck="false" autocapitalize="off"
+               placeholder="a3f9c2e1b7-col-ravito-seuil-482"></label>
+      <button type="submit" class="btn">Ouvrir</button>
+    </form>
+    <p class="hint" id="msgOuvrir" role="status" aria-live="polite"></p>
+
+    <form id="formEspace">
+      <div class="adm-deux">
+        <label class="f"><span>Prénom du coureur</span><input id="coureur" type="text" autocomplete="off"></label>
+        <label class="f"><span>Titre de l'espace</span><input id="titre" type="text" autocomplete="off"
+               placeholder="UTMB 2026, Marathon de Paris…"></label>
+      </div>
+
+      <fieldset class="adm-champ">
+        <legend>Stratégie de course</legend>
+        <p class="adm-etat" id="etatPlan">Aucune.</p>
+        <div class="adm-ligne">
+          <label class="btn btn-ghost btn-sm adm-fichier">Choisir le fichier .json
+            <input id="fichierPlan" type="file" accept=".json,application/json" hidden></label>
+          <button type="button" class="link-btn" id="retirerPlan" hidden>Retirer la stratégie</button>
+        </div>
+        <p class="hint">Le fichier que produit l'outil de plan. Facultatif : un espace peut ne contenir que des documents.</p>
+      </fieldset>
+
+      <fieldset class="adm-champ">
+        <legend>Documents à télécharger</legend>
+        <ul class="adm-docs" id="listeDocs"></ul>
+        <label class="btn btn-ghost btn-sm adm-fichier">Ajouter des fichiers
+          <input id="fichiersDocs" type="file" multiple hidden></label>
+        <p class="hint" id="poids"></p>
+      </fieldset>
+
+      <div class="adm-actions">
+        <button type="submit" class="btn" id="publier">Générer le code et publier</button>
+      </div>
+      <p class="hint" id="msgEspace" role="status" aria-live="polite"></p>
+    </form>
+
+    <div class="adm-resultat" id="resultat" hidden>
+      <p class="eyebrow">À transmettre au coureur</p>
+      <p class="adm-avert">Note-le maintenant : le code n'est enregistré nulle part, pas même ici.</p>
+      <div class="adm-copie"><span class="adm-lib mono">Son code</span>
+        <code id="resCode"></code><button type="button" class="link-btn" data-copie="resCode">Copier</button></div>
+      <div class="adm-copie"><span class="adm-lib mono">Son lien direct</span>
+        <code id="resLien"></code><button type="button" class="link-btn" data-copie="resLien">Copier</button></div>
+      <p class="hint">Le site met une à deux minutes à republier. Le lien marche ensuite.</p>
+    </div>
+
+    <div class="adm-danger" id="zoneSuppr" hidden>
+      <p class="eyebrow">Supprimer cet espace</p>
+      <p class="adm-sub">Le coureur n'y aura plus accès. Pour confirmer, tape <b>SUPPRIMER</b>.</p>
+      <form class="adm-ligne" id="formSuppr">
+        <label class="f"><span>Confirmation</span><input id="confSuppr" type="text" autocomplete="off"></label>
+        <button type="submit" class="btn btn-ghost">Supprimer définitivement</button>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+/* Page admin : un outil, pas une vitrine. Sobre, lisible, au gabarit du site. */
+.adm { max-width: 760px; margin: 0 auto; padding: 120px 28px 80px; display: grid; gap: 36px; }
+.adm-bloc { padding: 32px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  display: grid; gap: 18px; }
+.adm [hidden] { display: none !important; }
+#formEspace { display: grid; gap: 26px; }
+.adm-t { font-family: var(--serif); font-weight: 400; font-size: clamp(30px, 4vw, 40px); line-height: 1.05; margin: 0; }
+.adm-sub { margin: 0; color: var(--sub-text); font-size: 15.5px; line-height: 1.6; max-width: 58ch; }
+.adm-etapes { margin: 0 0 20px; padding-left: 22px; display: grid; gap: 8px; color: var(--sub-text); font-size: 15px; line-height: 1.55; }
+.adm-etapes a { color: var(--red); text-decoration: underline; text-underline-offset: 2px; }
+.adm-ok { margin: 0; color: var(--pt-descente); font-size: 15px; }
+
+.adm-ligne { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
+.adm-grand { flex: 1 1 260px; }
+.adm-deux { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+/* Les champs reprennent la forme des formulaires du site, supprimés de la page d'accueil. */
+.f { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.f > span { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.f input { min-height: 48px; padding: 0 14px; border: 1px solid var(--ghost-line); border-radius: 8px;
+  background: var(--field-bg); color: var(--text); font: inherit; font-size: 15px; }
+.f input:focus { outline: none; border-color: var(--text); }
+
+.adm-champ { margin: 0; padding: 18px 0 0; border: 0; border-top: 1px solid var(--line); display: grid; gap: 12px; }
+.adm-champ legend { padding: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); }
+.adm-etat { margin: 0; font-size: 15px; color: var(--text); }
+.adm-fichier { cursor: pointer; justify-self: start; }
+
+.adm-docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.adm-docs:empty { display: none; }
+.adm-docs li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px;
+  padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; }
+.adm-doc-n { font-size: 14.5px; overflow-wrap: anywhere; }
+.adm-doc-t { font-size: 11.5px; color: var(--dim); }
+
+.adm-onglets { display: flex; gap: 8px; flex-wrap: wrap; }
+.adm-onglets button { min-height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--ghost-line);
+  background: transparent; color: var(--muted); font-family: var(--mono); font-size: 12.5px; cursor: pointer; }
+.adm-onglets button[aria-selected="true"] { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
+
+.adm-actions { padding-top: 6px; }
+.adm-resultat { padding: 22px; border: 1px solid var(--mark); border-radius: 10px; display: grid; gap: 12px; }
+.adm-resultat[hidden] { display: none; }
+.adm-avert { margin: 0; color: var(--red); font-size: 14.5px; }
+.adm-copie { display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.adm-lib { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); }
+.adm-copie code { font-family: var(--mono); font-size: 14px; overflow-wrap: anywhere; color: var(--text); }
+
+.adm-danger { padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+.adm-danger[hidden] { display: none; }
+
+@media (max-width: 640px) {
+  .adm { padding: 96px 16px 60px; }
+  .adm-bloc { padding: 22px 18px; }
+  .adm-deux { grid-template-columns: minmax(0, 1fr); }
+  .adm-copie { grid-template-columns: minmax(0, 1fr) auto; }
+  .adm-lib { grid-column: 1 / -1; }
+}

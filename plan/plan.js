@@ -1556,6 +1556,72 @@ function render(plan) {
   document.title = `Hold — ${plan.race || 'Plan'} · ${plan.runner || ''}`;
 }
 
+/* ---------- L'espace : une stratégie, des documents, ou les deux ----------
+   Les premiers plans publiés ne contiennent qu'une stratégie de course, à nu.
+   Ceux que fabrique la page admin l'enveloppent avec les documents du coach.
+   On ramène les deux formes à la même, pour que l'affichage n'ait qu'un cas. */
+function espaceDe(contenu) {
+  if (contenu && contenu.hold === 2) {
+    return { coureur: contenu.coureur || '', titre: contenu.titre || '',
+      plan: contenu.plan || null, fichiers: Array.isArray(contenu.fichiers) ? contenu.fichiers : [],
+      modifie: contenu.modifie || '' };
+  }
+  return { coureur: contenu?.runner || '', titre: contenu?.race || '', plan: contenu,
+    fichiers: [], modifie: '' };
+}
+
+const taille = (n) => n >= 1048576 ? `${(n / 1048576).toFixed(1).replace('.', ',')} Mo`
+  : `${Math.max(1, Math.round(n / 1024))} Ko`;
+
+function documents(fichiers) {
+  if (!fichiers.length) return '';
+  return `<section class="docs" aria-labelledby="docsT">
+    <p class="eyebrow" id="docsT">Tes documents</p>
+    <ul class="docs-l">${fichiers.map((f, i) => `<li>
+      <span class="docs-n">${esc(f.nom)}</span>
+      <span class="docs-t mono">${esc(taille(f.taille || 0))}</span>
+      <button type="button" class="btn btn-sm btn-ghost" data-doc="${i}">Télécharger</button>
+    </li>`).join('')}</ul>
+  </section>`;
+}
+
+// Le fichier est déjà là, déchiffré en mémoire : on le rend au coureur sans
+// rien redemander au réseau.
+function brancheDocuments(fichiers) {
+  for (const b of document.querySelectorAll('[data-doc]')) {
+    b.addEventListener('click', () => {
+      const f = fichiers[Number(b.dataset.doc)];
+      if (!f) return;
+      const octets = b64(f.data);
+      const url = URL.createObjectURL(new Blob([octets], { type: f.type || 'application/octet-stream' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = f.nom; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    });
+  }
+}
+
+function afficher(espace) {
+  if (espace.plan) {
+    render(espace.plan);
+    const ancre = document.querySelector('.hkpis') || document.querySelector('.pl-head');
+    if (ancre && espace.fichiers.length) ancre.insertAdjacentHTML('afterend', documents(espace.fichiers));
+  } else {
+    $('planRoot').innerHTML = `
+      <header class="pl-head">
+        <p class="eyebrow">${esc(espace.coureur)} · ton espace</p>
+        <h1 class="title">${esc(espace.titre || 'Ton espace')}</h1>
+      </header>
+      ${documents(espace.fichiers) || '<p class="sub docs-vide">Ton coach n\'a encore rien déposé ici.</p>'}
+      <p class="hint pl-foot">Espace préparé par Hold · Lilian Mathien${espace.modifie ? `, mis à jour le ${esc(espace.modifie)}` : ''}.</p>`;
+    $('planRoot').hidden = false;
+    $('gate').hidden = true;
+    $('navWho').textContent = [espace.coureur, espace.titre].filter(Boolean).join(' · ');
+    document.title = `Hold — ${espace.titre || 'Ton espace'}`;
+  }
+  brancheDocuments(espace.fichiers);
+}
+
 /* ---------- La porte ----------
    Deux chemins d'entrée. Par le lien direct, l'identifiant est dans l'adresse
    et seul le mot de passe manque. Sans lien, le coureur tape un code unique
@@ -1607,7 +1673,7 @@ async function unlock(s, pw, remember) {
   // Le déchiffrement a réussi : une erreur d'affichage ne doit pas se faire
   // passer pour un mauvais code, sinon le coureur cherche au mauvais endroit.
   try {
-    render(plan);
+    afficher(espaceDe(plan));
   } catch (e) {
     console.error('Hold : affichage du plan', e);
     msg("Le plan s'est ouvert mais n'a pas pu s'afficher. Préviens ton coach.");

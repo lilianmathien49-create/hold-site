@@ -1,10 +1,8 @@
-# Ce fichier n'est lu qu'à la racine d'un domaine. Tant que le site est
-# servi depuis github.io/hold-site/, il reste décoratif : la vraie
-# protection de /plan/ et /paiement/ est leur balise noindex. Il prendra
-# effet le jour d'un nom de domaine propre.
-# L'espace du coureur et la page de paiement portent déjà une balise noindex.
-# On les écarte aussi ici : un plan de course n'a rien à faire dans un index.
+# L'espace du coureur, la page de paiement et la page admin portent déjà une
+# balise noindex. On les écarte aussi ici : rien de tout ça n'a à figurer
+# dans un moteur de recherche.
 User-agent: *
+Disallow: /admin/
 Allow: /
 Disallow: /plan/
 Disallow: /paiement/
