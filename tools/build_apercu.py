@@ -209,6 +209,123 @@ def dessin(plan: dict, pt: dict) -> str:
 </svg>'''
 
 
+def hms(secondes: float) -> str:
+    h, m = divmod(int(round(secondes / 60)), 60)
+    return f"{h} h {m:02d}" if h else f"{m} min"
+
+
+def consignes(seg, fin, dplus, dmoins, km, part_marche) -> list[str]:
+    """Ce qu'on dit au coureur sur cette portion, et uniquement d'après elle.
+
+    Chaque consigne est adossée à un nombre qui figure juste au-dessus : une
+    phrase de coaching qu'aucun chiffre de la portion ne soutient n'a rien à
+    faire dans une table de marche.
+    """
+    out = []
+    if dplus >= 350:
+        out.append(
+            f"{milliers(dplus)} m de montée en {fr(km)} km. {round(part_marche * 100)} % "
+            "de la portion se marche — c'est le seuil de pente mesuré sur tes sorties "
+            "qui le décide, pas une règle générale. Les replats d'une montée pareille "
+            "coûtent plus qu'ils ne rapportent.")
+    if dmoins >= 300:
+        out.append(
+            f"{milliers(dmoins)} m de descente. N'y cherche pas à reprendre du temps : "
+            "une descente est un travail excentrique, et les secondes gagnées ici se "
+            "repaient plus loin, quand les cuisses ne répondent plus. Tu descends à "
+            "l'économie.")
+    ou = (f"{html.escape(fin['name'])}, {milliers(int(fin.get('alt') or 0))} m"
+          if fin.get("alt") else html.escape(fin.get("name") or ""))
+    heure = html.escape((fin.get("eta") or "").split(" ")[-1])
+    if fin.get("gear"):
+        quoi = ", ".join(html.escape(g) for g in fin["gear"])
+        out.append(f"Ravitaillement à {ou}, prévu à {heure} : {quoi} à sortir du sac. "
+                   "Tu t'équipes là, à l'arrêt, pas trois kilomètres plus loin en marchant.")
+    elif ou:
+        out.append(f"Ravitaillement à {ou}, prévu à {heure}.")
+    froid = min((s.get("temp") for s in seg if s.get("temp") is not None), default=None)
+    if froid is not None and froid < 5:
+        out.append(f"Il descend à {fr(froid)} °C sur la portion. Couvre-toi au "
+                   "ravitaillement d'avant : une fois que le froid est entré, courir "
+                   "ne le fait plus sortir.")
+    elif any(s.get("light") == "nuit" for s in seg):
+        out.append("Portion de nuit. Le terrain se lit moins bien, l'allure baisse "
+                   "d'elle-même : c'est prévu dans les temps ci-dessus.")
+    return out[:3]
+
+
+def profil_portion(seg) -> str:
+    """Le relief de la seule portion, en vignette."""
+    pts = [(s["km0"], s["alt"]) for s in seg] + [(seg[-1]["km1"], seg[-1]["alt"])]
+    xs = [k for k, _ in pts]
+    ys = [a for _, a in pts]
+    x0, x1 = min(xs), max(xs)
+    lo, hi = min(ys), max(ys)
+    if x1 == x0 or hi == lo:
+        return ""
+    w, h, m = 300.0, 46.0, 4.0
+
+    def X(k):
+        return (k - x0) / (x1 - x0) * w
+
+    def Y(a):
+        return h - m - (a - lo) / (hi - lo) * (h - 2 * m)
+
+    trace = " ".join(f"{'M' if i == 0 else 'L'}{X(k):.1f} {Y(a):.1f}"
+                     for i, (k, a) in enumerate(pts))
+    aire = f"M{X(x0):.1f} {h:.1f} " + trace[1:] + f" L{X(x1):.1f} {h:.1f} Z"
+    return (f'<svg class="ad-p" viewBox="0 0 {w:.0f} {h:.0f}" preserveAspectRatio="none" '
+            f'role="img" aria-label="Relief de la portion, de {milliers(int(ys[0]))} '
+            f'à {milliers(int(ys[-1]))} mètres">'
+            f'<path class="ad-p-aire" d="{aire}"/><path class="ad-p-trait" d="{trace}"/></svg>')
+
+
+def detail(plan: dict, fin: dict, debut: dict, ident: str) -> str:
+    """La portion qui mène à ce ravitaillement, dépliée."""
+    seg = [s for s in plan.get("segments", [])
+           if s["km0"] >= debut["km"] - 0.01 and s["km1"] <= fin["km"] + 0.01]
+    if len(seg) < 2:
+        return ""
+    km = seg[-1]["km1"] - seg[0]["km0"]
+    dplus = sum(s.get("up") or 0 for s in seg)
+    dmoins = sum(s.get("down") or 0 for s in seg)
+    duree = sum(s.get("split") or 0 for s in seg)
+    km_marche = sum(s["km1"] - s["km0"] for s in seg if s.get("mode") != "course")
+    part = km_marche / km if km else 0
+    pentes = [s.get("slope") or 0 for s in seg]
+    course = [s for s in seg if s.get("mode") == "course" and s.get("kmh")]
+    montee = [s for s in seg if (s.get("vam") or 0) > 0 and (s.get("slope") or 0) > 4]
+
+    faits = [("Distance", f"{fr(km)} km"),
+             ("Dénivelé", f"+{milliers(int(dplus))} m / −{milliers(int(dmoins))} m"),
+             ("Temps", hms(duree))]
+    if part > 0.01:
+        faits.append(("Marché", f"{round(part * 100)} % · {fr(km_marche)} km"))
+    if course:
+        kmh = sum(s["kmh"] * (s["km1"] - s["km0"]) for s in course) \
+            / sum(s["km1"] - s["km0"] for s in course)
+        faits.append(("En course", f"{int(3600 / kmh) // 60}:{int(3600 / kmh) % 60:02d} /km"))
+    if montee:
+        faits.append(("En montée", f"{int(sum(s['vam'] for s in montee) / len(montee))} m/h"))
+    faits.append(("Pente max", f"{fr(max(pentes))} %"))
+
+    grille = "".join(f"<div><dt>{d}</dt><dd>{v}</dd></div>" for d, v in faits)
+    notes = "".join(f"<li>{c}</li>"
+                    for c in consignes(seg, fin, dplus, dmoins, km, part))
+    return f'''
+        <tr class="ap-det" id="{ident}">
+          <td colspan="5">
+            <div class="ad">
+              <p class="ad-h">De {html.escape(debut["name"])} à {html.escape(fin["name"])}
+                <span class="mono">km {fr(debut["km"])} → {fr(fin["km"])}</span></p>
+              {profil_portion(seg)}
+              <dl class="ad-s">{grille}</dl>
+              <ul class="ad-c">{notes}</ul>
+            </div>
+          </td>
+        </tr>'''
+
+
 def table(plan: dict) -> str:
     """La table de marche : ce qu'un coureur épingle sur son frigo."""
     aid = [a for a in plan.get("aid", []) if 0.5 < a["km"] < plan["distanceKm"] - 0.5]
@@ -217,23 +334,31 @@ def table(plan: dict) -> str:
     choix = {id(a) for a in aid[::pas][:6]}
     if froid:
         choix.add(id(froid))
+    tous = plan.get("aid", [])
     lignes = []
     for a in [x for x in aid if id(x) in choix]:
         gear = "".join(f'<span class="ap-g">{html.escape(g)}</span>'
                        for g in (a.get("gear") or []))
         pente = pente_au_km(plan, a["km"])
+        avant = [x for x in tous if x["km"] < a["km"] - 0.01]
+        debut = avant[-1] if avant else {"km": 0.0, "name": plan.get("start") or "Départ"}
+        ident = f"ap-det-{int(a['km'] * 10)}"
         lignes.append(f'''
         <tr class="ap-r{' ap-l-nuit' if a.get("light") == "nuit" else ''}">
-          <th scope="row"><span class="ap-nom-r">{html.escape(a["name"])}</span>
-            <span class="ap-km-r mono">km {fr(a["km"])}</span></th>
+          <th scope="row"><button type="button" class="ap-ouvre" aria-expanded="true"
+              aria-controls="{ident}"><span class="ap-nom-r">{html.escape(a["name"])}</span>
+            <span class="ap-km-r mono">km {fr(a["km"])}</span>
+            <svg class="ap-chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+            </button></th>
           <td><span class="ap-cum">{html.escape(a.get("cumul") or "")}</span>
             <span class="ap-horloge mono">{html.escape((a.get("eta") or "").split(" ")[-1])}</span></td>
           <td><span class="ap-p ap-p-{classe_pente(pente)}">{fr(pente)} %</span></td>
           <td class="ap-t{' ap-t-froid' if (a.get("temp") or 0) < 0 else ''} mono">{fr(a.get("temp", 0))} °C</td>
           <td class="ap-gear">{gear or '<span class="ap-g-none">—</span>'}</td>
-        </tr>''')
+        </tr>''' + detail(plan, a, debut, ident))
     return f'''<table class="ap-table">
-      <caption class="ap-table-cap">Ta table de marche, ravitaillement par ravitaillement</caption>
+      <caption class="ap-table-cap">Ta table de marche, ravitaillement par
+        ravitaillement. Ouvre une ligne pour la portion qui y mène.</caption>
       <thead><tr><th scope="col">Ravitaillement</th><th scope="col">Passage</th>
         <th scope="col">Pente avant</th><th scope="col">Température</th>
         <th scope="col">À sortir du sac</th></tr></thead>

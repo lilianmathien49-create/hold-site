@@ -447,6 +447,24 @@ function initReveal() {
   els.forEach((e) => io.observe(e));
 }
 
+// Les portions de la table de marche. Chaque ligne de ravitaillement cache le
+// détail de la portion qui y mène. Le repli est posé ici et non dans la
+// feuille de style : si ce script ne part pas, les détails restent dépliés.
+function initPortions() {
+  const boutons = document.querySelectorAll('.ap-ouvre');
+  boutons.forEach((b) => {
+    const det = $(b.getAttribute('aria-controls'));
+    if (!det) return;
+    det.classList.add('ap-det-js');
+    b.setAttribute('aria-expanded', 'false');
+    b.addEventListener('click', () => {
+      const ouvert = b.getAttribute('aria-expanded') === 'true';
+      b.setAttribute('aria-expanded', String(!ouvert));
+      det.classList.toggle('ap-det-on', !ouvert);
+    });
+  });
+}
+
 const run = (fn) => { try { fn(); } catch (e) { console.error(e); } };
 ACTS.forEach((a) => run(() => setupAct(a)));
 measure();
@@ -458,6 +476,7 @@ run(initTry);
 run(initAsk);
 run(initFilm);
 run(initApercu);
+run(initPortions);
 run(initVoie);
 run(initEssai);
 run(initMesure);

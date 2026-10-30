@@ -666,6 +666,42 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 /* La table de marche. */
 .ap-tw { margin-top: 44px; overflow-x: auto; }
 .ap-table { width: 100%; border-collapse: collapse; min-width: 580px; }
+/* Le détail d'une portion, sous la ligne du ravitaillement qui la ferme.
+   Replié par le script et non par la feuille de style : sans JavaScript tout
+   reste déplié, donc lisible — le repliement est l'amélioration, pas l'inverse. */
+.ap-ouvre { display: flex; align-items: baseline; gap: 10px; width: 100%;
+  padding: 0; border: 0; background: none; color: inherit; font: inherit;
+  text-align: left; cursor: pointer; }
+.ap-chev { width: 14px; height: 14px; margin-left: auto; align-self: center;
+  flex: none; fill: none; stroke: var(--dim); stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round; transition: transform .25s var(--ease); }
+.ap-ouvre[aria-expanded="true"] .ap-chev { transform: rotate(180deg); }
+.ap-det-js { display: none; }
+.ap-det-js.ap-det-on { display: table-row; }
+.ap-det > td { padding: 2px 0 20px; }
+.ad { display: grid; gap: 16px; padding: 20px 22px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.ad-h { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 12px;
+  align-items: baseline; font-size: 15px; color: var(--text); }
+.ad-h .mono { font-size: 11px; letter-spacing: .06em; color: var(--dim); }
+/* La vignette s'étire en largeur : il n'y a aucun libellé dedans à déformer,
+   et le trait garde son épaisseur. */
+.ad-p { display: block; width: 100%; height: 46px; }
+.ad-p-aire { fill: var(--mark); opacity: .1; }
+.ad-p-trait { fill: none; stroke: var(--mark); stroke-width: 1.4;
+  vector-effect: non-scaling-stroke; }
+.ad-s { display: grid; grid-template-columns: repeat(auto-fit, minmax(102px, 1fr));
+  gap: 14px 20px; margin: 0; }
+.ad-s dt { font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--dim); }
+.ad-s dd { margin: 5px 0 0; font-size: 15.5px; color: var(--text);
+  font-variant-numeric: tabular-nums; }
+.ad-c { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ad-c li { position: relative; padding-left: 17px; font-size: 14px;
+  line-height: 1.55; color: var(--sub-text); }
+.ad-c li::before { content: ""; position: absolute; left: 0; top: .66em;
+  width: 7px; height: 1px; background: var(--mark); }
+
 .ap-table-cap { text-align: left; font-family: var(--mono); font-size: 11px;
   letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding-bottom: 14px; }
 .ap-table thead th { text-align: left; font-family: var(--mono); font-weight: 400;
