@@ -185,10 +185,39 @@ def a_pente(b):
     return out
 
 
+REGULIER = 0.15          # dispersion d'allure au-delà de laquelle c'est du fractionné
+ECHAUFFEMENT = 10.0      # minutes écartées en début de séance
+
+
+def regulieres(b):
+    """Les séances courues à allure tenue, et elles seules.
+
+    Un fractionné part vite et finit au calme : à vitesse égale, ses blocs
+    tardifs sont des blocs de récupération, et la dérive cardiaque y ressort
+    négative. Mesurée sur les seules séances régulières, elle retrouve son
+    signe. Le seuil de dispersion ne change pas le résultat : de 0,12 à 0,20,
+    la dérive reste entre +4,9 et +6,1 battements par heure.
+    """
+    garde = set()
+    for s in {x["seance"] for x in b}:
+        v = [x["v"] for x in b if x["seance"] == s and x["v"]]
+        if len(v) >= 40 and st.fmean(v) > 0 and st.pstdev(v) / st.fmean(v) <= REGULIER:
+            garde.add(s)
+    return [x for x in b if x["seance"] in garde]
+
+
 def a_fatigue(b, tirages=400):
-    """Dérive cardiaque à vitesse égale, à l'intérieur de chaque séance."""
-    plat = [x for x in propres(b) if -3 <= x["pente"] <= 3 and x["hr"]]
-    ch = ["v", "ecoule"]
+    """Dérive cardiaque à vitesse égale, à l'intérieur de chaque séance.
+
+    Mesurée à l'intérieur d'une séance, elle est insensible à la montre : deux
+    appareils qui ne s'accordent pas sur la fréquence cardiaque s'accordent
+    quand même sur sa variation, et l'écart constant disparaît au centrage.
+    """
+    plat = [x for x in regulieres(propres(b))
+            if -3 <= x["pente"] <= 3 and x["hr"] and x["ecoule"] >= ECHAUFFEMENT]
+    ch = ["v", "v2", "pente", "ecoule"]
+    for x in plat:
+        x["v2"] = x["v"] ** 2
     c = centre(plat, ch + ["hr"])
     r = mco([[x[k] for k in ch] for x in c], [x["hr"] for x in c])
     if not r:
@@ -204,7 +233,7 @@ def a_fatigue(b, tirages=400):
         cc = centre(ech, ch + ["hr"])
         rr = mco([[x[k] for k in ch] for x in cc], [x["hr"] for x in cc]) if len(cc) > 200 else None
         if rr:
-            coefs.append(rr[1] * 60)
+            coefs.append(rr[-1] * 60)
     lo, hi = intervalle(coefs)
 
     # Pour le dessin : l'écart de FC à la moyenne de sa séance, la vitesse
@@ -215,16 +244,17 @@ def a_fatigue(b, tirages=400):
         g = [x for x in plat if x["seance"] == s]
         if len(g) < 40:
             continue
-        mh = st.fmean(x["hr"] for x in g)
-        mv = st.fmean(x["v"] for x in g)
-        res += [{"t": x["ecoule"], "e": x["hr"] - mh - r[0] * (x["v"] - mv)} for x in g]
+        m = {c: st.fmean(x[c] for x in g) for c in ch[:-1] + ["hr"]}
+        res += [{"t": x["ecoule"],
+                 "e": x["hr"] - m["hr"] - sum(r[i] * (x[c] - m[c])
+                                              for i, c in enumerate(ch[:-1]))} for x in g]
     pts = []
-    for a, z in [(0, 15), (15, 30), (30, 45), (45, 60), (60, 80), (80, 100),
-                 (100, 130), (130, 185)]:
+    for a, z in [(10, 20), (20, 30), (30, 40), (40, 55), (55, 70), (70, 90),
+                 (90, 120), (120, 185)]:
         g = [x["e"] for x in res if a <= x["t"] < z]
         if len(g) >= 40:
             pts.append({"x": (a + z) / 2, "y": st.fmean(g), "n": len(g)})
-    return {"bpm_h": r[1] * 60, "lo": lo, "hi": hi, "pts": pts,
+    return {"bpm_h": r[-1] * 60, "lo": lo, "hi": hi, "pts": pts,
             "n": len(c), "seances": len(seances), "par_kmh": r[0],
             # La droite est ajustée sur des écarts : elle passe par le temps
             # moyen des blocs, et nulle part ailleurs.
@@ -280,3 +310,88 @@ def a_chaleur(b, tirages=600):
             "pts": [{"x": l["temp"], "y": l["hr"] - r[2] * (l["i"] - moy_i),
                      "n": l["n"]} for l in lignes],
             "droite": (r[0] + r[2] * moy_i, r[1])}
+
+
+def a_seuil(b):
+    """Le seuil de marche, et la part marchée par tranche de pente.
+
+    Le mélange ne s'ajuste pas sur l'ensemble des blocs : six mille blocs de
+    plat à 155 pas/min y noient les quelques centaines de blocs marchés, et
+    les deux composantes se confondent. Il s'ajuste donc là où la marche est
+    possible — au-dessus d'une pente plancher, choisie comme la plus basse qui
+    passe les cinq contrôles de tools/seuil_marche.py.
+
+    Une fois le mélange tenu, chaque bloc reçoit sa probabilité de marche, et
+    la part marchée par tranche de pente en découle sans qu'on ait jamais eu à
+    trancher bloc par bloc.
+    """
+    import seuil_marche as S
+
+    cad = [x for x in propres(b) if x.get("cad")]
+    cad = S.nettoie(cad)
+    for plancher in (0, 2, 3, 4, 5, 6, 8):
+        g = [x for x in cad if x["pente"] > plancher]
+        if len(g) < 200:
+            break
+        r = S.mesure([x["cad"] for x in g])
+        if not r["ok"]:
+            continue
+        p, s = r["p"], r["seuil"]
+        bandes = []
+        for lo, hi in [(-3, 0), (0, 3), (3, 6), (6, 10), (10, 14), (14, 20), (20, 32)]:
+            q = [x for x in cad if lo <= x["pente"] < hi]
+            if len(q) < 40:
+                continue
+            bandes.append({"x": (lo + hi) / 2, "lo": lo, "hi": hi, "n": len(q),
+                           "part": st.fmean(S.proba(x["cad"], p) for x in q),
+                           "cad": st.median([x["cad"] for x in q])})
+        return {"seuil": s, "plancher": plancher, "p": p, "bandes": bandes,
+                "n": len(g), "sep": r["sep"], "ambigus": r["ambigus"],
+                "seances": len({x["seance"] for x in cad})}
+    return None
+
+
+def a_derive_cadence(b, tirages=300):
+    """Ce que les heures prennent à la cadence, à pente égale.
+
+    Mesurée à l'intérieur de chaque séance, et sur les seules séances courues
+    à allure tenue : un fractionné finit au calme, et sa fin de séance se
+    lirait comme de la fatigue.
+    """
+    g = regulieres([x for x in propres(b)
+                    if x.get("cad") and 60 <= x["cad"] <= 220
+                    and x["ecoule"] >= ECHAUFFEMENT])
+    ch = ["pente", "ecoule"]
+    c = centre(g, ch + ["cad"])
+    r = mco([[x[k] for k in ch] for x in c], [x["cad"] for x in c])
+    if not r:
+        return None
+    random.seed(9)
+    seances = sorted({x["seance"] for x in g})
+    coefs = []
+    for _ in range(tirages):
+        e = []
+        for i, s in enumerate(random.choice(seances) for _ in seances):
+            e += [x | {"seance": f"{s}#{i}"} for x in g if x["seance"] == s]
+        cc = centre(e, ch + ["cad"])
+        rr = mco([[x[k] for k in ch] for x in cc], [x["cad"] for x in cc]) \
+            if len(cc) > 200 else None
+        if rr:
+            coefs.append(rr[1] * 60)
+    lo, hi = intervalle(coefs)
+    return {"par_h": r[1] * 60, "lo": lo, "hi": hi,
+            "n": len(c), "seances": len(seances)}
+
+
+def croisement_pente(bandes, seuil):
+    """La pente où la cadence passe sous le seuil, par interpolation.
+
+    Entre deux tranches la cadence est supposée descendre en ligne droite :
+    c'est la seule hypothèse que les données permettent, et elle ne porte que
+    sur quelques points de pourcentage.
+    """
+    pts = [(q["x"], q["cad"]) for q in bandes if q.get("cad")]
+    for (a, ca), (z, cz) in zip(pts, pts[1:]):
+        if ca >= seuil > cz:
+            return a + (ca - seuil) / (ca - cz) * (z - a), (ca - cz) / (z - a)
+    return None, None

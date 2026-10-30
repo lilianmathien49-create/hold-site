@@ -519,6 +519,20 @@ select.field option { background: var(--surface); color: var(--text); }
 .lb-fit.lb-plein { stroke-dasharray: none; stroke-width: 2.4; }
 .lb-cone { fill: var(--mark); opacity: .1; stroke: none; }
 .lb-nuage { fill: var(--mark); opacity: .55; stroke: none; }
+/* Au-dessous du seuil, on ne court plus : la zone le dit sans légende. */
+.lb-marche { fill: var(--p-mur); opacity: .08; }
+.lb-seuil { stroke: var(--text); stroke-width: 1.4; stroke-dasharray: 7 5; }
+.lb-croise { stroke: var(--mark); stroke-width: 1.2; stroke-dasharray: 3 4; }
+.lb-pivot { fill: var(--mark); stroke: var(--bg); stroke-width: 2.5; }
+.lb-cle { font-family: var(--serif); font-size: 23px; fill: var(--mark);
+  font-variant-numeric: tabular-nums; }
+.lb-td { fill: var(--pt-mur); }
+.lb-ic { fill: var(--mark); opacity: .08; }
+.lb-obs { fill: var(--mark); opacity: .5; stroke: none; }
+.lb-barre { stroke: var(--mark); stroke-width: 1.2; opacity: .45; }
+.lb-pt-hors { stroke-dasharray: 5 5; opacity: .55; }
+.lb-hach { stroke: var(--line); stroke-width: 1.2; }
+.lb-hors-t { fill: var(--dim); }
 .lb-v { stroke: var(--mark); }
 .lb-v.lb-a { fill: var(--mark); opacity: .13; }
 text.lb-v { fill: var(--mark); stroke: none; }
@@ -605,6 +619,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .lb-ax { font-size: 18px; }
   .lb-t { font-size: 16px; }
   .lb-val { font-size: 30px; }
+  .lb-cle { font-size: 32px; }
   .lb-fit-t { font-size: 17px; }
   .lab-big { font-size: 44px; }
   .price { font-size: 38px; }

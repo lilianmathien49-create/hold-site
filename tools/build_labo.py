@@ -20,6 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import labo_calc as L
+import transition as T
 
 RACINE = Path(__file__).resolve().parent.parent
 PAGE = RACINE / "index.html"
@@ -97,59 +98,100 @@ def etiquette(xv, yv, texte, classe="", ancre="start", dx=10, dy=5):
             f'text-anchor="{ancre}">{texte}</text>')
 
 
-def foulee(p):
-    """La longueur de foulée au plat : vitesse divisée par cadence."""
-    q = next((x for x in p if x["lo"] == 0), p[len(p) // 2])
-    return q["v"] / 3.6 / q["cad"] * 60
+def svg_transition(r):
+    """La part marchée selon la pente, et la courbe qui la résume.
 
-
-def svg_pente(courbes):
-    """Deux coureurs, deux pistes, le même axe de pente.
-
-    Une seule courbe disait que la cadence ne bouge pas. Deux courbes disent
-    la même chose et une autre en plus : à cadence presque identique, les deux
-    coureurs n'avancent pas à la même vitesse, parce que leur foulée n'a pas
-    la même longueur. C'est l'argument du site en un dessin — une table
-    générique donne un chiffre, la mesure donne le tien.
+    Chaque point est une tranche d'un point de pente ; sa taille dit combien de
+    blocs elle contient, son trait vertical l'intervalle de sa proportion. Un
+    point posé sur sept blocs ne pèse pas comme un point posé sur deux mille,
+    et le dessin doit le montrer au lieu de les aligner à égalité.
     """
-    h1, h2, ecart = 132, 104, 50
-    H = HAUT + h1 + ecart + h2 + 34
-    tout = [q for _, p in courbes for q in p]
-    x0 = min(q["lo"] for q in tout)
-    x1 = max(q["hi"] for q in tout)
+    h = 186
+    H = HAUT + h + 34
+    x0, x1 = 0.0, 16.0
 
     def x(v):
         return G + (v - x0) / (x1 - x0) * (W - G - DR)
 
-    vlo, vhi, tv = echelle([q["v"] for q in tout], 6)
-    clo, chi, tc = echelle([q["cad"] for q in tout], 25)
+    def y(p):
+        return HAUT + h - p * h
 
-    def y1(v):
-        return HAUT + h1 - (v - vlo) / (vhi - vlo) * h1
-
-    def y2(v):
-        return HAUT + h1 + ecart + h2 - (v - clo) / (chi - clo) * h2
-
-    vit, cad, noms = [], [], []
-    for i, (nom, p) in enumerate(courbes):
-        cl = f"lb-r{i}"
-        vit.append(courbe([(q["x"], q["v"]) for q in p], x, y1, HAUT + h1, cl, aire=i == 0))
-        cad.append(courbe([(q["x"], q["cad"]) for q in p], x, y2, None, cl))
-        dernier = p[-1]
-        vit.append(etiquette(x(dernier["x"]), y1(dernier["v"]), fr(dernier["v"]), cl))
-        cad.append(etiquette(x(dernier["x"]), y2(dernier["cad"]), fr(dernier["cad"], 0), cl))
-        noms.append(f'<text class="lb-nom {cl}" x="{G + i * 108}" y="{H - 10}">'
-                    f'{html.escape(nom)}</text>')
+    bande = (f'<rect class="lb-ic" x="{x(r["lo"]):.1f}" y="{HAUT}" '
+             f'width="{x(r["hi"]) - x(r["lo"]):.1f}" height="{h}"/>')
+    trace = " ".join(f"{'M' if i == 0 else 'L'}{x(v):.1f} {y(T.courbe(r['p'], v)):.1f}"
+                     for i, v in enumerate([k / 5 for k in range(int(x1 * 5) + 1)]))
+    points = []
+    for v, n, w in r["tranches"]:
+        if v > x1 or n < 5:
+            continue
+        lo, hi = T.wilson(n, w)
+        rayon = min(9.0, 2.6 + n ** .5 / 6)
+        points.append(f'<line class="lb-barre" x1="{x(v):.1f}" x2="{x(v):.1f}" '
+                      f'y1="{y(lo):.1f}" y2="{y(hi):.1f}"/>'
+                      f'<circle class="lb-obs" cx="{x(v):.1f}" cy="{y(w / n):.1f}" r="{rayon:.1f}"/>')
+    pct = "".join(f'<text class="lb-ax" x="{G - 8}" y="{y(p) + 4:.1f}" text-anchor="end">'
+                  f'{int(p * 100)} %</text>'
+                  f'<line class="lb-gr" x1="{G}" x2="{W - DR}" y1="{y(p):.1f}" y2="{y(p):.1f}"/>'
+                  for p in (0, .25, .5, .75, 1))
     return f'''<svg viewBox="0 0 {W} {H}" class="lb" role="img" aria-label="\
-Vitesse et cadence selon la pente, pour deux coureurs. Leurs cadences se \
-superposent, leurs vitesses non.">
-  {axe_y(y1, tv)}{"".join(vit)}
-  <text class="lb-t" x="{G}" y="{HAUT - 6}">vitesse · km/h</text>
-  {axe_y(y2, tc)}{"".join(cad)}
-  <text class="lb-t" x="{G}" y="{HAUT + h1 + ecart - 14}">cadence · pas/min</text>
-  <line class="lb-zero" x1="{x(0):.1f}" x2="{x(0):.1f}" y1="{HAUT}" y2="{HAUT + h1 + ecart + h2:.1f}"/>
-  {axe_x(x, [-8, -4, 0, 4, 8], H - 34, " %")}
-  {"".join(noms)}
+Part des blocs marchés selon la pente. La courbe franchit 50 % à {fr(r["x50"])} % \
+de pente, intervalle de {fr(r["lo"])} à {fr(r["hi"])}.">
+  {bande}{pct}
+  <line class="lb-seuil" x1="{G}" x2="{W - DR}" y1="{y(.5):.1f}" y2="{y(.5):.1f}"/>
+  {"".join(points)}
+  <path class="lb-l lb-v" d="{trace}"/>
+  <circle class="lb-pivot" cx="{x(r["x50"]):.1f}" cy="{y(.5):.1f}" r="6.5"/>
+  {etiquette(x(r["x50"]), y(.5), f"{fr(r['x50'])} %", "lb-cle", "start", 14, 30)}
+  <text class="lb-t" x="{G}" y="{HAUT - 8}">part des blocs sous {fr(T.SEUIL, 0)} pas/min</text>
+  {axe_x(x, [0, 4, 8, 12, 16], H - 10, " %")}
+</svg>'''
+
+
+def svg_duree(du, r):
+    """La transition heure après heure, et l'endroit où la mesure s'arrête.
+
+    La bande est l'intervalle de la transition elle-même, déplacé avec elle :
+    c'est lui, et non la dérive, qui borne ce qu'on sait. Au-delà de la durée
+    sur laquelle la dérive a été mesurée, le tracé passe en pointillé sur un
+    fond hachuré : on y voit ce que donnerait la règle, pas ce qu'on a mesuré.
+    """
+    h = 186
+    H = HAUT + h + 34
+    pts = du["pts"]
+    t1 = pts[-1]["h"]
+    bas = r["x50"] - r["lo"]
+    haut = r["hi"] - r["x50"]
+    lo, hi, ty = echelle([p["par_h"] - bas for p in pts] + [p["par_h"] + haut for p in pts], 3)
+
+    def x(t):
+        return G + t / t1 * (W - G - DR)
+
+    def y(v):
+        return HAUT + h - (v - lo) / (hi - lo) * h
+
+    bande = ("M" + " L".join(f"{x(p['h']):.1f} {y(p['par_h'] + haut):.1f}" for p in pts)
+             + " L" + " L".join(f"{x(p['h']):.1f} {y(p['par_h'] - bas):.1f}" for p in reversed(pts))
+             + " Z")
+    mes = [p for p in pts if p["mesure"]]
+    hors = [mes[-1]] + [p for p in pts if not p["mesure"]]
+    ligne = lambda ps: " ".join(f"{'M' if i == 0 else 'L'}{x(p['h']):.1f} {y(p['par_h']):.1f}"
+                                for i, p in enumerate(ps))
+    tm = du["tmax"]
+    return f'''<svg viewBox="0 0 {W} {H}" class="lb" role="img" aria-label="\
+La transition reste entre {fr(min(p["par_h"] for p in mes))} et \
+{fr(max(p["par_h"] for p in mes))} % de pente sur la durée mesurée.">
+  <defs><pattern id="lbHach" width="7" height="7" patternUnits="userSpaceOnUse" \
+patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" class="lb-hach"/></pattern></defs>
+  <rect x="{x(tm):.1f}" y="{HAUT}" width="{x(t1) - x(tm):.1f}" height="{h}" fill="url(#lbHach)"/>
+  {axe_y(y, ty, " %")}
+  <path class="lb-cone" d="{bande}"/>
+  <path class="lb-l lb-v" d="{ligne(mes)}"/>
+  <path class="lb-l lb-v lb-pt-hors" d="{ligne(hors)}"/>
+  <circle class="lb-pivot" cx="{x(0):.1f}" cy="{y(pts[0]["par_h"]):.1f}" r="6.5"/>
+  {etiquette(x(0), y(pts[0]["par_h"]), f"{fr(pts[0]['par_h'])} %", "lb-cle", "start", 14, -14)}
+  <text class="lb-t lb-hors-t" x="{x(tm) + 10:.1f}" y="{HAUT + 16}">au-delà, pas de mesure</text>
+  <text class="lb-t" x="{G}" y="{HAUT - 8}">pente de la transition · %</text>
+  {axe_x(x, [0, 1, 2, 3], H - 10, " h")}
 </svg>'''
 
 
@@ -236,66 +278,57 @@ def panneau(ident, onglet, titre, gros, lecture, svg, source, premier=False):
 
 
 def main() -> int:
-    # Un dossier par coureur. Le premier porte toutes les analyses ; les
-    # suivants ne servent qu'à la comparaison des pentes.
-    args = [Path(a).expanduser() for a in sys.argv[1:]]
-    b = L.charger(args[0] if args else None)
-    p, f, c = L.a_pente(b), L.a_fatigue(b), L.a_chaleur(b)
-    courbes = [(args[0].name.split("_")[0].title() if args else "Toi", p)]
-    for autre in args[1:]:
-        courbes.append((autre.name.title(), L.a_pente(L.charger(autre))))
-    if not (p and f and c):
-        print("Analyse impossible sur ces fichiers.", file=sys.stderr)
+    src = Path(sys.argv[1]).expanduser() if len(sys.argv) > 1 else None
+    b = L.charger(src)
+    r, du, f = T.a_transition(b), T.a_duree(b, 3.0), L.a_fatigue(b)
+    if not (r and du and f):
+        print("Analyse impossible sur ces séances.", file=sys.stderr)
         return 1
-    heures = len(b) * L.PAS / 3600
+    mes = [p for p in du["pts"] if p["mesure"]]
+    dv = du["derive"]
+    tm = du["tmax"]
+    tm_txt = f"{int(tm)} h {round((tm % 1) * 60):02d}" if tm >= 1 else f"{round(tm * 60)} min"
     seances = len({x["seance"] for x in b})
 
-    vmax = max(q["v"] for q in p)
-    perte = (1 - p[-1]["v"] / vmax) * 100
-    cmin, cmax = min(q["cad"] for q in p), max(q["cad"] for q in p)
-    foulees = [(nom, foulee(q)) for nom, q in courbes]
-
     blocs = [
-      panneau("p-pente", "tab-pente",
-              "Deux coureurs, la même pente" if len(courbes) > 1 else "Ce que la pente prend",
-              " contre ".join(f"{fr(fo, 2)} m" for _, fo in foulees),
-              ("Leurs cadences se superposent, à un ou deux pas par minute près, et "
-               "ne bougent presque pas avec la pente. Leurs vitesses, elles, ne se "
-               "touchent jamais : "
-               + ", ".join(f"{html.escape(nom)} avance de {fr(fo, 2)} m à chaque pas"
-                           for nom, fo in foulees)
-               + ". Une table d'allures ne peut pas répondre à leur place : la pente "
-                 "ne se paie pas en fréquence de pas, elle se paie en longueur de "
-                 "foulée, et celle-là n'appartient qu'à soi."
-               if len(foulees) > 1 else
-               f"De plat à {fr(p[-1]['lo'], 0)} %, ta vitesse perd {fr(perte, 0)} %. "
-               f"Ta cadence, elle, ne bouge pas : elle reste entre {fr(cmin, 0)} et "
-               f"{fr(cmax, 0)} pas par minute sur toute la plage."),
-              svg_pente(courbes),
-              " · ".join(f"{html.escape(nom)} {milliers(sum(q['n'] for q in pts))} blocs"
-                          for nom, pts in courbes)
-              + f" de {L.PAS} s · pente lissée sur 50 m",
+      panneau("p-trans", "tab-trans", "La transition course-marche",
+              f"{fr(r['x50'])} %",
+              f"Sous {fr(T.SEUIL, 0)} pas par minute, un bloc de 15 secondes compte "
+              f"comme marché. Rangée par point de pente, la part marchée suit une "
+              f"courbe en S, et une régression logistique la place à {fr(r['x50'])} % : "
+              f"au-dessus, il marche plus souvent qu'il ne court. L'intervalle va de "
+              f"{fr(r['lo'])} à {fr(r['hi'])} %.",
+              svg_transition(r),
+              f"{milliers(r['n'])} blocs sur {r['seances']} séances · la montée vient "
+              f"de {r['seances_raides']} sorties de trail : avec davantage de terrain, "
+              f"l'intervalle se resserrera · logistique à "
+              f"quatre paramètres, écart au plus de {fr(r['ecart_max'] * 100, 0)} points "
+              f"aux tranches garnies · intervalle à 95 % par rééchantillonnage de "
+              f"blocs de cinq minutes",
               premier=True),
-      panneau("p-fatigue", "tab-fatigue", "Ce que les heures prennent",
+      panneau("p-duree", "tab-duree", "Ce que la durée fait à la transition",
+              f"{fr(mes[0]['par_h'])} → {fr(mes[-1]['par_h'])} %",
+              f"Sa cadence perd {fr(-dv['par_h'], 1)} pas par minute chaque heure, à "
+              f"pente égale. Reportée sur la courbe, cette perte déplace la transition "
+              f"de moins d'un dixième de point en {tm_txt} : c'est sous la précision "
+              f"de la mesure. Les séances courues à allure tenue s'arrêtent là, et "
+              f"au-delà on ne donne pas de chiffre.",
+              svg_duree(du, r),
+              f"dérive de cadence {fr(dv['par_h'], 2)} pas/min par heure "
+              f"[{fr(dv['lo'], 2)} ; {fr(dv['hi'], 2)}] sur {dv['seances']} séances "
+              f"à allure tenue, la plus longue de {tm_txt} · la bande est "
+              f"l'intervalle de la transition"),
+      panneau("p-coeur", "tab-coeur", "La dérive cardiaque",
               f"+{fr(f['bpm_h'])} bpm/h",
-              f"À vitesse égale, ton cœur monte de {fr(f['bpm_h'])} battements par "
-              f"heure de course. L'intervalle va de {fr(f['lo'])} à {fr(f['hi'])}. "
-              f"C'est ce qui fait qu'une allure tenue au kilomètre 10 ne l'est plus "
-              f"au kilomètre 30, sans que rien n'ait changé dehors.",
+              f"À vitesse et pente égales, son cœur monte de {fr(f['bpm_h'])} "
+              f"battements par heure, entre {fr(f['lo'])} et {fr(f['hi'])}. Mesurée "
+              f"à l'intérieur de chaque séance, elle ne dépend pas de la montre : "
+              f"deux appareils qui ne s'accordent pas sur la fréquence s'accordent "
+              f"sur sa variation.",
               svg_fatigue(f),
-              f"{milliers(f['n'])} blocs sur {f['seances']} séances, pente entre "
-              f"−3 et 3 % · mesuré à l'intérieur de chaque séance · intervalle à "
-              f"95 % par rééchantillonnage des séances"),
-      panneau("p-chaleur", "tab-chaleur", "Ce que la chaleur prend",
-              f"+{fr(c['bpm_c'], 2)} bpm/°C",
-              f"Chaque degré de plus coûte {fr(c['bpm_c'], 2)} battement à allure "
-              f"égale, soit {fr(c['bpm_c'] * 10)} battements pour dix degrés. "
-              f"L'intervalle va de {fr(c['lo'], 2)} à {fr(c['hi'], 2)} : l'effet est "
-              f"là, sa taille exacte reste approximative.",
-              svg_chaleur(c),
-              f"{c['seances']} séances comparées entre elles, de "
-              f"{fr(min(q['x'] for q in c['pts']))} à {fr(max(q['x'] for q in c['pts']))} °C · "
-              f"FC ramenée à {fr(L.V0)} km/h · tendance de forme retirée"),
+              f"{milliers(f['n'])} blocs sur {f['seances']} séances courues à "
+              f"allure tenue, pente entre −3 et 3 %, échauffement écarté · "
+              f"intervalle à 95 % par rééchantillonnage des séances"),
     ]
 
     bloc = DEBUT + "".join(blocs) + "\n  " + FIN
@@ -306,11 +339,10 @@ def main() -> int:
     avant, reste = page.split(DEBUT, 1)
     _, apres = reste.split(FIN, 1)
     PAGE.write_text(avant + bloc + apres, encoding="utf-8")
-    print(f"  labo écrit · {len(b)} blocs · {seances} séances · {fr(heures, 0)} h")
-    print(f"    pente    vitesse {fr(vmax)} → {fr(p[-1]['v'])} km/h, "
-          f"cadence {fr(cmin, 0)}–{fr(cmax, 0)} pas/min")
-    print(f"    fatigue  {fr(f['bpm_h'])} bpm/h [{fr(f['lo'])} ; {fr(f['hi'])}]")
-    print(f"    chaleur  {fr(c['bpm_c'], 2)} bpm/°C [{fr(c['lo'], 2)} ; {fr(c['hi'], 2)}]")
+    print(f"  labo écrit · {milliers(len(b))} blocs · {seances} séances")
+    print(f"    transition {fr(r['x50'])} % [{fr(r['lo'])} ; {fr(r['hi'])}]")
+    print(f"    durée      {fr(mes[0]['par_h'])} → {fr(mes[-1]['par_h'])} % sur {tm_txt}")
+    print(f"    coeur      {fr(f['bpm_h'])} bpm/h [{fr(f['lo'])} ; {fr(f['hi'])}]")
     return 0
 
 
