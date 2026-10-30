@@ -13,6 +13,7 @@ visiteur de chercher lui-même le résultat ; un graphique le montre.
 from __future__ import annotations
 
 import html
+import math
 import sys
 from pathlib import Path
 
@@ -34,6 +35,28 @@ def fr(v, d=1):
 
 def milliers(n: int) -> str:
     return f"{n:,}".replace(",", " ")
+
+
+def echelle(valeurs, span_min):
+    """Un domaine qui contient tout, avec des graduations rondes.
+
+    Les bornes étaient écrites en dur. Elles suffisaient aux données du jour,
+    et auraient laissé un point hors du cadre dès la première séance de trail.
+    L'amplitude minimale, elle, reste : zoomer sur une courbe plate la rendrait
+    ondulante, et c'est précisément sa platitude qu'on veut montrer.
+    """
+    lo, hi = min(valeurs), max(valeurs)
+    marge = max((hi - lo) * 0.08, span_min * 0.05)
+    for pas in (1, 2, 5, 10, 20, 50, 100):
+        a = math.floor((lo - marge) / pas) * pas
+        z = math.ceil((hi + marge) / pas) * pas
+        while z - a < span_min:          # on élargit par pas entiers, des deux côtés
+            a -= pas
+            if z - a < span_min:
+                z += pas
+        if (z - a) / pas <= 5:          # au-delà, l'axe devient une trame
+            return a, z, [a + i * pas for i in range(int(round((z - a) / pas)) + 1)]
+    return lo, hi, [lo, hi]
 
 
 def axe_x(x, valeurs, y, suffixe=""):
@@ -72,8 +95,8 @@ def svg_pente(p):
     def x(v):
         return G + (v - x0) / (x1 - x0) * (W - G - D)
 
-    vlo, vhi = 8, 14
-    clo, chi = 140, 165
+    vlo, vhi, tv = echelle([q["v"] for q in p], 6)
+    clo, chi, tc = echelle([q["cad"] for q in p], 25)
 
     def y1(v):
         return HAUT + h1 - (v - vlo) / (vhi - vlo) * h1
@@ -85,10 +108,10 @@ def svg_pente(p):
 Vitesse et cadence selon la pente : la vitesse tombe de {fr(max(q["v"] for q in p))} \
 à {fr(p[-1]["v"])} kilomètres par heure, la cadence reste entre \
 {fr(min(q["cad"] for q in p), 0)} et {fr(max(q["cad"] for q in p), 0)} pas par minute.">
-  {axe_y(y1, [8, 10, 12, 14])}
+  {axe_y(y1, tv)}
   {courbe([(q["x"], q["v"]) for q in p], x, y1, "lb-v")}
   <text class="lb-t" x="{G}" y="{HAUT - 2}">vitesse · km/h</text>
-  {axe_y(y2, [145, 155, 165])}
+  {axe_y(y2, tc)}
   {courbe([(q["x"], q["cad"]) for q in p], x, y2, "lb-c")}
   <text class="lb-t" x="{G}" y="{HAUT + h1 + ecart - 12}">cadence · pas/min</text>
   <line class="lb-zero" x1="{x(0):.1f}" x2="{x(0):.1f}" y1="{HAUT}" y2="{HAUT + h1 + ecart + h2:.1f}"/>
@@ -100,7 +123,9 @@ def svg_fatigue(f):
     h, H = 128, 14 + 128 + 30
     pts = f["pts"]
     x0, x1 = 0, max(q["x"] for q in pts) + 12
-    lo, hi = -8, 8
+    bornes = [q["y"] for q in pts] + [f["bpm_h"] / 60 * (t - f["t_moy"])
+                                      for t in (0, f["t_dense"])]
+    lo, hi, ty = echelle(bornes, 12)
 
     def x(v):
         return G + (v - x0) / (x1 - x0) * (W - G - D)
@@ -118,7 +143,7 @@ def svg_fatigue(f):
     return f'''<svg viewBox="0 0 {W} {H}" class="lb" role="img" aria-label="\
 Écart de fréquence cardiaque à vitesse égale selon le temps écoulé : la dérive \
 vaut {fr(f["bpm_h"])} battement par heure.">
-  {axe_y(y, [-5, 0, 5], "")}
+  {axe_y(y, ty)}
   {droite}
   {courbe([(q["x"], q["y"]) for q in pts], x, y, "lb-v")}
   <text class="lb-t" x="{G}" y="{HAUT - 2}">écart de FC · battements</text>
@@ -131,8 +156,8 @@ def svg_chaleur(c):
     pts = c["pts"]
     x0 = min(q["x"] for q in pts) - 1
     x1 = max(q["x"] for q in pts) + 1
-    ys = [q["y"] for q in pts]
-    lo, hi = min(ys) - 3, max(ys) + 3
+    a, pente = c["droite"]
+    lo, hi, ty = echelle([q["y"] for q in pts] + [a + pente * x0, a + pente * x1], 20)
 
     def x(v):
         return G + (v - x0) / (x1 - x0) * (W - G - D)
@@ -140,17 +165,15 @@ def svg_chaleur(c):
     def y(v):
         return HAUT + h - (v - lo) / (hi - lo) * h
 
-    a, pente = c["droite"]
     droite = (f'<line class="lb-fit" x1="{x(x0):.1f}" y1="{y(a + pente * x0):.1f}" '
               f'x2="{x(x1):.1f}" y2="{y(a + pente * x1):.1f}"/>')
     ronds = "".join(f'<circle class="lb-pt lb-v" cx="{x(q["x"]):.1f}" '
                     f'cy="{y(q["y"]):.1f}" r="4"/>' for q in pts)
-    pas = 10 if hi - lo > 40 else 5
-    gradu = [v for v in range(int(lo) - int(lo) % pas, int(hi) + pas, pas) if lo < v < hi]
+
     return f'''<svg viewBox="0 0 {W} {H}" class="lb" role="img" aria-label="\
 Une sortie par point : la fréquence cardiaque à allure égale monte de \
 {fr(c["bpm_c"], 2)} battement par degré.">
-  {axe_y(y, gradu)}
+  {axe_y(y, ty)}
   {droite}{ronds}
   <text class="lb-t" x="{G}" y="{HAUT - 2}">FC à {fr(L.V0)} km/h · battements</text>
   {axe_x(x, [15, 20, 25], H - 8, " °C")}
