@@ -490,12 +490,28 @@ select.field option { background: var(--surface); color: var(--text); }
 .lab-panel { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 48px; align-items: center; animation: rise .5s var(--ease) both; }
 .lab-panel[hidden] { display: none; }
 .lab-text { display: flex; flex-direction: column; gap: 16px; }
-.lab-text h3 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(23px, 2.3vw, 32px); line-height: 1.14; }
+.lab-text h4 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(23px, 2.3vw, 32px); line-height: 1.14; }
 .lab-big { font-family: var(--serif); font-size: clamp(40px, 4vw, 54px); line-height: 1; margin-top: 10px; }
+.lab-sens { font-size: 15px; line-height: 1.6; color: var(--sub-text); max-width: 44ch; }
+
+/* Les trois graphiques sont figés : plus de curseur à déplacer, donc plus
+   rien à chercher. Leur texte est en unités du viewBox, qui vaut 560 : sur
+   un écran étroit il rétrécit avec le dessin, et on le remonte. */
+.lb { display: block; width: 100%; height: auto; overflow: visible; }
+.lb-gr { stroke: var(--grid); stroke-width: 1; }
+.lb-zero { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
+.lb-ax { font-family: var(--mono); font-size: 11px; fill: var(--dim); }
+.lb-t { font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; fill: var(--dim); }
+.lb-l { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.lb-fit { stroke: var(--mark); stroke-width: 1.4; stroke-dasharray: 5 4; opacity: .7; }
+.lb-v { stroke: var(--mark); }
+.lb-c { stroke: var(--muted); }
+.lb-l { fill: none !important; }
+circle.lb-v { fill: var(--mark); }
+circle.lb-c { fill: var(--muted); }
+.lb-pt { stroke: none; }
 .lab-big.red { color: var(--red); }
-.lab-read { font-size: 13px; color: var(--sub-text); min-height: 40px; }
-.lab-ctl { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
-.lab-ctl b { color: var(--text); font-weight: 500; }
 .lab-chart { height: 420px; }
 .lab-chart svg { width: 100%; height: 100%; overflow: visible; }
 .lab-pills { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -569,7 +585,9 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .display { font-size: 52px; }
   .title { font-size: 29px; }
   .mega { font-size: 68px; }
-  .lab-text h3, .how-steps h3, .solo-l h3 { font-size: 26px; }
+  .lab-text h4, .how-steps h3, .solo-l h3 { font-size: 26px; }
+  .lb-ax { font-size: 17px; }
+  .lb-t { font-size: 15px; }
   .lab-big { font-size: 44px; }
   .price { font-size: 38px; }
   .logo { font-size: 24px; }

@@ -405,52 +405,65 @@
   <div class="reveal">
     <p class="eyebrow">Exemples</p>
     <h3 class="loin-t" id="lab-t">Trois statistiques tirées de l'analyse des séances.</h3>
-    <p class="loin-sub">De quoi on parle, concrètement. Déplace les curseurs :
-      ce sont les trois paramètres qui changent le plus une stratégie de course.</p>
+    <p class="loin-sub">Trois résultats, mesurés sur 45 heures de séances réelles.
+      Ce sont les paramètres qui changent le plus une stratégie de course.</p>
   </div>
 
   <div class="lab-tabs" role="tablist" aria-label="Analyses">
-    <button type="button" role="tab" id="tab-walk" data-k="walk" aria-controls="p-walk" aria-selected="true">Seuil de marche</button>
-    <button type="button" role="tab" id="tab-fat" data-k="fat" aria-controls="p-fat" aria-selected="false" tabindex="-1">Effet de la fatigue</button>
-    <button type="button" role="tab" id="tab-heat" data-k="heat" aria-controls="p-heat" aria-selected="false" tabindex="-1">Chaleur</button>
+    <button type="button" role="tab" id="tab-pente" data-k="pente" aria-controls="p-pente" aria-selected="true">La pente</button>
+    <button type="button" role="tab" id="tab-fatigue" data-k="fatigue" aria-controls="p-fatigue" aria-selected="false" tabindex="-1">La fatigue</button>
+    <button type="button" role="tab" id="tab-chaleur" data-k="chaleur" aria-controls="p-chaleur" aria-selected="false" tabindex="-1">La chaleur</button>
   </div>
 
-  <div class="lab-panel" role="tabpanel" id="p-walk" aria-labelledby="tab-walk">
+  <!-- LABO:DEBUT (écrit par tools/build_labo.py) -->
+  <div class="lab-panel" role="tabpanel" id="p-pente" aria-labelledby="tab-pente">
     <div class="lab-text">
-      <h3>Le seuil de marche</h3>
-      <p class="sub">Chaque bloc de 15 secondes de tes sorties est classé : tu courais, ou tu marchais. On en tire la pente à laquelle tu bascules.</p>
-      <p class="lab-big" id="walkBig">—</p>
-      <p class="lab-read mono" id="walkRead" aria-live="polite"></p>
-      <label class="lab-ctl"><span class="eyebrow">Temps écoulé · <b id="walkTv">32 min</b></span><input type="range" id="walkT" min="0" max="240" step="2" value="32"></label>
-      <p class="lab-src mono">39 959 blocs de 15 s · 150 sorties · validé sur la cadence réelle : 86 % d'accord.</p>
+      <h4>Ce que la pente prend</h4>
+      <p class="lab-big">−27 %</p>
+      <p class="lab-sens">De plat à 10 %, ta vitesse perd 27 %. Ta cadence, elle, ne bouge pas : elle reste entre 149 et 156 pas par minute sur toute la plage. La pente ne se paie pas en fréquence de pas, elle se paie en longueur de foulée.</p>
+      <p class="lab-src mono">10 779 blocs de 15 s · 44 séances · 45 h · pente lissée sur 50 m</p>
     </div>
-    <div class="lab-chart" id="walkChart"></div>
+    <div class="lab-chart"><svg viewBox="0 0 560 268" class="lb" role="img" aria-label="Vitesse et cadence selon la pente : la vitesse tombe de 12,9 à 9,4 kilomètres par heure, la cadence reste entre 149 et 156 pas par minute.">
+  <text class="lb-ax" x="40" y="122.0" text-anchor="end">8</text><line class="lb-gr" x1="48" x2="548" y1="118.0" y2="118.0"/><text class="lb-ax" x="40" y="87.3" text-anchor="end">10</text><line class="lb-gr" x1="48" x2="548" y1="83.3" y2="83.3"/><text class="lb-ax" x="40" y="52.7" text-anchor="end">12</text><line class="lb-gr" x1="48" x2="548" y1="48.7" y2="48.7"/><text class="lb-ax" x="40" y="18.0" text-anchor="end">14</text><line class="lb-gr" x1="48" x2="548" y1="14.0" y2="14.0"/>
+  <path class="lb-l lb-v" d="M78.0 48.7 L138.0 47.4 L188.0 39.4 L228.0 36.4 L268.0 33.5 L308.0 33.9 L348.0 42.6 L388.0 52.3 L428.0 70.1 L468.0 83.8 L518.0 94.3"/><circle class="lb-pt lb-v" cx="78.0" cy="48.7" r="3.2"/><circle class="lb-pt lb-v" cx="138.0" cy="47.4" r="3.2"/><circle class="lb-pt lb-v" cx="188.0" cy="39.4" r="3.2"/><circle class="lb-pt lb-v" cx="228.0" cy="36.4" r="3.2"/><circle class="lb-pt lb-v" cx="268.0" cy="33.5" r="3.2"/><circle class="lb-pt lb-v" cx="308.0" cy="33.9" r="3.2"/><circle class="lb-pt lb-v" cx="348.0" cy="42.6" r="3.2"/><circle class="lb-pt lb-v" cx="388.0" cy="52.3" r="3.2"/><circle class="lb-pt lb-v" cx="428.0" cy="70.1" r="3.2"/><circle class="lb-pt lb-v" cx="468.0" cy="83.8" r="3.2"/><circle class="lb-pt lb-v" cx="518.0" cy="94.3" r="3.2"/>
+  <text class="lb-t" x="48" y="12">vitesse · km/h</text>
+  <text class="lb-ax" x="40" y="226.8" text-anchor="end">145</text><line class="lb-gr" x1="48" x2="548" y1="222.8" y2="222.8"/><text class="lb-ax" x="40" y="196.4" text-anchor="end">155</text><line class="lb-gr" x1="48" x2="548" y1="192.4" y2="192.4"/><text class="lb-ax" x="40" y="166.0" text-anchor="end">165</text><line class="lb-gr" x1="48" x2="548" y1="162.0" y2="162.0"/>
+  <path class="lb-l lb-c" d="M78.0 209.6 L138.0 202.7 L188.0 203.5 L228.0 199.1 L268.0 197.3 L308.0 194.6 L348.0 193.1 L388.0 189.0 L428.0 190.9 L468.0 196.4 L518.0 204.1"/><circle class="lb-pt lb-c" cx="78.0" cy="209.6" r="3.2"/><circle class="lb-pt lb-c" cx="138.0" cy="202.7" r="3.2"/><circle class="lb-pt lb-c" cx="188.0" cy="203.5" r="3.2"/><circle class="lb-pt lb-c" cx="228.0" cy="199.1" r="3.2"/><circle class="lb-pt lb-c" cx="268.0" cy="197.3" r="3.2"/><circle class="lb-pt lb-c" cx="308.0" cy="194.6" r="3.2"/><circle class="lb-pt lb-c" cx="348.0" cy="193.1" r="3.2"/><circle class="lb-pt lb-c" cx="388.0" cy="189.0" r="3.2"/><circle class="lb-pt lb-c" cx="428.0" cy="190.9" r="3.2"/><circle class="lb-pt lb-c" cx="468.0" cy="196.4" r="3.2"/><circle class="lb-pt lb-c" cx="518.0" cy="204.1" r="3.2"/>
+  <text class="lb-t" x="48" y="150">cadence · pas/min</text>
+  <line class="lb-zero" x1="288.0" x2="288.0" y1="14" y2="238.0"/>
+  <text class="lb-ax" x="88.0" y="260" text-anchor="middle">−10 %</text><text class="lb-ax" x="188.0" y="260" text-anchor="middle">−5 %</text><text class="lb-ax" x="288.0" y="260" text-anchor="middle">0 %</text><text class="lb-ax" x="388.0" y="260" text-anchor="middle">5 %</text><text class="lb-ax" x="488.0" y="260" text-anchor="middle">10 %</text>
+</svg></div>
   </div>
-
-  <div class="lab-panel" role="tabpanel" id="p-fat" aria-labelledby="tab-fat" hidden>
+  <div class="lab-panel" role="tabpanel" id="p-fatigue" aria-labelledby="tab-fatigue" hidden>
     <div class="lab-text">
-      <h3>La chute du seuil</h3>
-      <p class="sub">La même pente ne se court pas pareil à la première heure et à la quatrième. C'est ce qui dit où placer la marche sur un parcours long.</p>
-      <p class="lab-big" id="fatBig">—</p>
-      <p class="lab-read mono" id="fatRead" aria-live="polite"></p>
-      <label class="lab-ctl"><span class="eyebrow">Temps écoulé · <b id="fatTv">120 min</b></span><input type="range" id="fatT" min="0" max="240" step="2" value="120"></label>
-      <p class="lab-src mono">Intervalle de confiance à 95 %, bootstrap par sortie.</p>
+      <h4>Ce que les heures prennent</h4>
+      <p class="lab-big">+7,0 bpm/h</p>
+      <p class="lab-sens">À vitesse égale, ton cœur monte de 7,0 battements par heure de course. L'intervalle va de 4,9 à 10,7. C'est ce qui fait qu'une allure tenue au kilomètre 10 ne l'est plus au kilomètre 30, sans que rien n'ait changé dehors.</p>
+      <p class="lab-src mono">8 039 blocs sur 44 séances, pente entre −3 et 3 % · mesuré à l'intérieur de chaque séance · intervalle à 95 % par rééchantillonnage des séances</p>
     </div>
-    <div class="lab-chart" id="fatChart"></div>
+    <div class="lab-chart"><svg viewBox="0 0 560 172" class="lb" role="img" aria-label="Écart de fréquence cardiaque à vitesse égale selon le temps écoulé : la dérive vaut 7,0 battement par heure.">
+  <text class="lb-ax" x="40" y="122.0" text-anchor="end">−5</text><line class="lb-gr" x1="48" x2="548" y1="118.0" y2="118.0"/><text class="lb-ax" x="40" y="82.0" text-anchor="end">0</text><line class="lb-gr" x1="48" x2="548" y1="78.0" y2="78.0"/><text class="lb-ax" x="40" y="42.0" text-anchor="end">5</text><line class="lb-gr" x1="48" x2="548" y1="38.0" y2="38.0"/>
+  <line class="lb-fit" x1="48.0" y1="118.8" x2="313.5" y2="34.9"/>
+  <path class="lb-l lb-v" d="M70.1 123.7 L114.4 93.0 L158.6 62.9 L202.9 57.9 L254.5 47.4 L313.5 62.2 L387.2 80.2 L512.6 43.5"/><circle class="lb-pt lb-v" cx="70.1" cy="123.7" r="3.2"/><circle class="lb-pt lb-v" cx="114.4" cy="93.0" r="3.2"/><circle class="lb-pt lb-v" cx="158.6" cy="62.9" r="3.2"/><circle class="lb-pt lb-v" cx="202.9" cy="57.9" r="3.2"/><circle class="lb-pt lb-v" cx="254.5" cy="47.4" r="3.2"/><circle class="lb-pt lb-v" cx="313.5" cy="62.2" r="3.2"/><circle class="lb-pt lb-v" cx="387.2" cy="80.2" r="3.2"/><circle class="lb-pt lb-v" cx="512.6" cy="43.5" r="3.2"/>
+  <text class="lb-t" x="48" y="12">écart de FC · battements</text>
+  <text class="lb-ax" x="48.0" y="164" text-anchor="middle">0′</text><text class="lb-ax" x="136.5" y="164" text-anchor="middle">30′</text><text class="lb-ax" x="225.0" y="164" text-anchor="middle">60′</text><text class="lb-ax" x="313.5" y="164" text-anchor="middle">90′</text><text class="lb-ax" x="402.0" y="164" text-anchor="middle">120′</text><text class="lb-ax" x="490.5" y="164" text-anchor="middle">150′</text>
+</svg></div>
   </div>
-
-  <div class="lab-panel" role="tabpanel" id="p-heat" aria-labelledby="tab-heat" hidden>
+  <div class="lab-panel" role="tabpanel" id="p-chaleur" aria-labelledby="tab-chaleur" hidden>
     <div class="lab-text">
-      <h3>Le coût de la chaleur</h3>
-      <p class="sub">À allure égale et sur le plat, on isole l'effet de la température seule. Ça change l'allure de départ un jour de canicule.</p>
-      <p class="lab-big" id="heatBig">—</p>
-      <p class="lab-read mono" id="heatRead" aria-live="polite"></p>
-      <label class="lab-ctl"><span class="eyebrow">Température le jour J · <b id="heatTv">24 °C</b></span><input type="range" id="heatT" min="0" max="35" step="1" value="24"></label>
+      <h4>Ce que la chaleur prend</h4>
+      <p class="lab-big">+0,70 bpm/°C</p>
+      <p class="lab-sens">Chaque degré de plus coûte 0,70 battement à allure égale, soit 7,0 battements pour dix degrés. L'intervalle va de 0,16 à 1,15 : l'effet est là, sa taille exacte reste approximative.</p>
+      <p class="lab-src mono">38 séances comparées entre elles, de 14,5 à 28,4 °C · FC ramenée à 12,5 km/h · tendance de forme retirée</p>
     </div>
-    <div class="lab-chart" id="heatChart"></div>
+    <div class="lab-chart"><svg viewBox="0 0 560 172" class="lb" role="img" aria-label="Une sortie par point : la fréquence cardiaque à allure égale monte de 0,70 battement par degré.">
+  <text class="lb-ax" x="40" y="125.6" text-anchor="end">135</text><line class="lb-gr" x1="48" x2="548" y1="121.6" y2="121.6"/><text class="lb-ax" x="40" y="104.8" text-anchor="end">140</text><line class="lb-gr" x1="48" x2="548" y1="100.8" y2="100.8"/><text class="lb-ax" x="40" y="84.1" text-anchor="end">145</text><line class="lb-gr" x1="48" x2="548" y1="80.1" y2="80.1"/><text class="lb-ax" x="40" y="63.3" text-anchor="end">150</text><line class="lb-gr" x1="48" x2="548" y1="59.3" y2="59.3"/><text class="lb-ax" x="40" y="42.6" text-anchor="end">155</text><line class="lb-gr" x1="48" x2="548" y1="38.6" y2="38.6"/><text class="lb-ax" x="40" y="21.8" text-anchor="end">160</text><line class="lb-gr" x1="48" x2="548" y1="17.8" y2="17.8"/>
+  <line class="lb-fit" x1="48.0" y1="91.2" x2="548.0" y2="45.2"/><circle class="lb-pt lb-v" cx="363.7" cy="96.0" r="4"/><circle class="lb-pt lb-v" cx="330.1" cy="66.3" r="4"/><circle class="lb-pt lb-v" cx="173.8" cy="95.5" r="4"/><circle class="lb-pt lb-v" cx="186.4" cy="88.5" r="4"/><circle class="lb-pt lb-v" cx="313.9" cy="112.8" r="4"/><circle class="lb-pt lb-v" cx="473.8" cy="42.9" r="4"/><circle class="lb-pt lb-v" cx="300.7" cy="43.5" r="4"/><circle class="lb-pt lb-v" cx="516.6" cy="26.5" r="4"/><circle class="lb-pt lb-v" cx="299.3" cy="46.2" r="4"/><circle class="lb-pt lb-v" cx="139.0" cy="74.7" r="4"/><circle class="lb-pt lb-v" cx="328.3" cy="90.2" r="4"/><circle class="lb-pt lb-v" cx="303.1" cy="104.6" r="4"/><circle class="lb-pt lb-v" cx="391.4" cy="41.2" r="4"/><circle class="lb-pt lb-v" cx="121.2" cy="43.0" r="4"/><circle class="lb-pt lb-v" cx="192.3" cy="27.0" r="4"/><circle class="lb-pt lb-v" cx="205.7" cy="79.8" r="4"/><circle class="lb-pt lb-v" cx="190.8" cy="83.5" r="4"/><circle class="lb-pt lb-v" cx="313.4" cy="28.2" r="4"/><circle class="lb-pt lb-v" cx="401.2" cy="60.3" r="4"/><circle class="lb-pt lb-v" cx="493.8" cy="62.7" r="4"/><circle class="lb-pt lb-v" cx="316.2" cy="113.5" r="4"/><circle class="lb-pt lb-v" cx="337.6" cy="39.7" r="4"/><circle class="lb-pt lb-v" cx="167.4" cy="107.2" r="4"/><circle class="lb-pt lb-v" cx="172.3" cy="69.1" r="4"/><circle class="lb-pt lb-v" cx="290.0" cy="90.1" r="4"/><circle class="lb-pt lb-v" cx="79.4" cy="76.2" r="4"/><circle class="lb-pt lb-v" cx="268.2" cy="36.5" r="4"/><circle class="lb-pt lb-v" cx="159.8" cy="63.2" r="4"/><circle class="lb-pt lb-v" cx="342.1" cy="47.4" r="4"/><circle class="lb-pt lb-v" cx="395.6" cy="74.3" r="4"/><circle class="lb-pt lb-v" cx="453.3" cy="42.8" r="4"/><circle class="lb-pt lb-v" cx="216.2" cy="111.1" r="4"/><circle class="lb-pt lb-v" cx="267.7" cy="55.3" r="4"/><circle class="lb-pt lb-v" cx="135.9" cy="80.0" r="4"/><circle class="lb-pt lb-v" cx="222.8" cy="52.0" r="4"/><circle class="lb-pt lb-v" cx="132.8" cy="129.5" r="4"/><circle class="lb-pt lb-v" cx="215.0" cy="75.8" r="4"/><circle class="lb-pt lb-v" cx="167.7" cy="101.0" r="4"/>
+  <text class="lb-t" x="48" y="12">FC à 12,5 km/h · battements</text>
+  <text class="lb-ax" x="95.0" y="164" text-anchor="middle">15 °C</text><text class="lb-ax" x="252.0" y="164" text-anchor="middle">20 °C</text><text class="lb-ax" x="409.0" y="164" text-anchor="middle">25 °C</text>
+</svg></div>
   </div>
-
-  <p class="hint lab-note"><b>Seuil de marche</b> et <b>effet de la fatigue</b> : résultats réels, mesurés sur un coureur suivi pendant 150 sorties. La chaleur est illustrée avec des données d'exemple. On refait ces calculs sur tes séances, pour ta course.</p>
+  <!-- LABO:FIN -->
 </div>
 
   <div class="deliv-demo reveal">
