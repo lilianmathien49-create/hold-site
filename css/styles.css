@@ -224,8 +224,6 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
 .consent input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--mark); }
 .consent a { color: var(--red); text-decoration: underline; text-underline-offset: 2px; }
 
-.f-alt { margin: 18px 0 0; font-size: 14px; color: var(--muted); }
-.f-alt a { color: var(--red); text-decoration: underline; text-underline-offset: 2px; }
 .hint-err { color: var(--red); }
 
 /* L'appel à l'action du coin droit : c'est ce qu'on veut qu'il fasse. */
@@ -308,21 +306,19 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
 .contact { background: var(--surface); border-top: 1px solid var(--line); }
 .contact-in { max-width: 1200px; margin: 0 auto; padding: 100px 28px; display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 64px; align-items: start; }
 .contact-head { position: sticky; top: 110px; }
-.form { display: flex; flex-direction: column; gap: 18px; }
-.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.f { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
-.f > span { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-.f > span em { font-style: normal; text-transform: none; letter-spacing: .04em; color: var(--dim); }
-.f input, .f select, .f textarea {
-  min-height: 50px; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--ghost-line);
-  background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; width: 100%;
-  transition: border-color .2s;
-}
-.f textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
-.f input:focus, .f select:focus, .f textarea:focus { outline: none; border-color: var(--text); }
-.f input::placeholder, .f textarea::placeholder { color: var(--dim); }
-.f select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666B72' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; }
-.f-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+/* Une seule action : choisir un créneau. Le formulaire d'avant demandait les
+   mêmes disponibilités que l'agenda juste en dessous, et un visiteur qui a
+   deux chemins pour la même chose n'en prend aucun. */
+.rdv { display: flex; flex-direction: column; align-items: flex-start; gap: 30px; }
+.btn-lg { min-height: 60px; padding: 0 34px; font-size: 16.5px; }
+.rdv-l { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.rdv-l li { position: relative; padding-left: 20px; font-size: 15.5px;
+  line-height: 1.55; color: var(--sub-text); max-width: 46ch; }
+.rdv-l li::before { content: ""; position: absolute; left: 0; top: .66em;
+  width: 9px; height: 1px; background: var(--mark); }
+.rdv-mail { margin: 0; padding-top: 24px; border-top: 1px solid var(--line);
+  width: 100%; font-size: 14px; color: var(--muted); }
+.rdv-mail a { color: var(--red); text-decoration: underline; text-underline-offset: 2px; }
 .contact .hint { line-height: 1.6; }
 
 /* Essai */

@@ -32,6 +32,14 @@ function charger() {
 }
 
 export function initRdv() {
+  // Quelle formule l'a amené ici. Calendly renvoie les paramètres utm_ dans
+  // le mail de confirmation : c'est la seule chose que le formulaire d'avant
+  // savait et que l'agenda ne demande pas de lui-même.
+  let offre = '';
+  document.querySelectorAll('[data-offre-valeur]').forEach((b) => {
+    b.addEventListener('click', () => { offre = b.dataset.offreValeur || ''; });
+  });
+
   document.querySelectorAll('[data-rdv]').forEach((a) => {
     a.addEventListener('click', (e) => {
       // Un clic qui demande explicitement un onglet reste un clic normal.
@@ -39,9 +47,11 @@ export function initRdv() {
       e.preventDefault();
       a.setAttribute('aria-busy', 'true');
       if (typeof window.plausible === 'function') window.plausible('Prise de rendez-vous');
+      const url = new URL(a.href);
+      if (offre) url.searchParams.set('utm_content', offre);
       charger()
-        .then(() => window.Calendly.initPopupWidget({ url: a.href }))
-        .catch(() => window.open(a.href, '_blank', 'noopener'))
+        .then(() => window.Calendly.initPopupWidget({ url: url.href }))
+        .catch(() => window.open(url.href, '_blank', 'noopener'))
         .finally(() => a.removeAttribute('aria-busy'));
     });
   });

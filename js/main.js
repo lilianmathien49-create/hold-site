@@ -178,83 +178,6 @@ function initFilm() {
   dlg.addEventListener('close', () => { v.pause(); overlay.classList.remove('hidden'); });
 }
 
-/* ---------- La demande : un mail déjà rempli ---------- */
-const MAIL = 'contact.holdrunning@gmail.com';
-// Adresse du service qui reçoit le formulaire (Formspree, Web3Forms…). Vide,
-// le formulaire retombe sur le logiciel de mail du visiteur — ce qui échoue
-// chez beaucoup de monde. Dès qu'elle est remplie, le message part vraiment.
-const ENDPOINT = 'https://formspree.io/f/xgaaydkk';
-function initAsk() {
-  const form = $('askForm'), hint = $('askHint');
-  if (!form || !hint) return;
-  const v = (id) => { const e = $(id); return e ? e.value.trim() : ''; };
-  const say = (msg, erreur) => {
-    hint.textContent = msg;
-    hint.classList.toggle('hint-err', !!erreur);
-  };
-
-  // L'offre vient soit du menu, soit d'un bouton de carte tarifaire : on
-  // n'oblige personne à la retaper.
-  const offre = () => v('f-offre');
-
-  const sujet = () => `Réservation d'appel — ${v('f-name') || 'nouveau coureur'}`;
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const manque = ['f-name', 'f-mail'].filter((id) => !v(id));
-    if (manque.length) {
-      const el = $(manque[0]);
-      if (el) el.focus();
-      say('Il me faut juste ton nom et ton email.', true);
-      return;
-    }
-    const rgpd = $('f-rgpd');
-    if (rgpd && !rgpd.checked) {
-      rgpd.focus();
-      say('Il me faut ton accord pour te recontacter.', true);
-      return;
-    }
-    if (!ENDPOINT) {                       // garde-fou : rien ne part à l'aveugle
-      say(`Le formulaire n'est pas encore branché. Écris-moi à ${MAIL}.`, true);
-      return;
-    }
-
-    const btn = form.querySelector('button[type="submit"]');
-    if (btn) btn.disabled = true;
-    say('Envoi…');
-    try {
-      const r = await fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          nom: v('f-name'), email: v('f-mail'), objectif: v('f-goal'),
-          disponibilites: v('f-slots'), offre: offre() || 'non précisée',
-          _subject: sujet(), _replyto: v('f-mail'),
-        }),
-      });
-      if (!r.ok) throw new Error(`réponse ${r.status}`);
-      form.reset();
-      say("C'est reçu. Je te réponds sous 24 h avec un créneau. — Lilian");
-      if (typeof window.plausible === 'function') window.plausible('Formulaire envoyé');
-    } catch {
-      say(`L'envoi a échoué. Écris-moi directement à ${MAIL}, je te réponds pareil.`, true);
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-  });
-
-  // Un bouton de carte tarifaire choisit l'offre et descend au formulaire.
-  for (const b of document.querySelectorAll('[data-offer]')) {
-    b.addEventListener('click', () => {
-      const sel = $('f-offre');
-      if (!sel) return;
-      const cherche = (b.dataset.offreValeur || '').trim();
-      const opt = [...sel.options].find((o) => o.text === cherche);
-      if (opt) sel.value = opt.value;
-    });
-  }
-}
-
 function initApercu() {
   // Le curseur du profil, sur la page d'accueil. Amélioration progressive :
   // la barre de lecture est déjà remplie par le générateur, ce script ne fait
@@ -407,17 +330,6 @@ function initMesure() {
     requestAnimationFrame(jauger);
   }, { passive: true });
 
-  // Formulaire entamé : la première frappe suffit, et une seule fois.
-  const form = $('askForm');
-  if (form) {
-    let entame = false;
-    form.addEventListener('input', () => {
-      if (entame) return;
-      entame = true;
-      envoyer('Formulaire entamé');
-    }, { once: false });
-    form.addEventListener('submit', () => envoyer('Formulaire envoyé'));
-  }
 
   // Les offres, et les départs vers Stripe depuis n'importe quelle page.
   for (const b of document.querySelectorAll('[data-offer]')) {
@@ -473,7 +385,6 @@ window.addEventListener('resize', measure);
 requestAnimationFrame(loop);
 run(initAnalyses);
 run(initTry);
-run(initAsk);
 run(initFilm);
 run(initApercu);
 run(initPortions);
