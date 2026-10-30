@@ -803,6 +803,15 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 .pf-d { font-size: 11px; font-style: normal; letter-spacing: .04em;
   color: var(--dim); margin-top: 14px; white-space: nowrap; }
 .pf-arrow .pf-d { margin-top: 0; }
+/* Les captures sont la pièce justificative : on les montre telles qu'elles ont
+   été publiées, sans les redessiner. Le cadre reste clair dans les deux
+   thèmes — une capture d'écran n'a pas de mode sombre, et la teinter pour
+   qu'elle s'accorde à la page reviendrait à la retoucher. */
+.proof-shots { margin: 40px 0 0; display: flex; flex-direction: column;
+  gap: 14px; align-items: flex-start; }
+.proof-shots img { width: 100%; max-width: 620px; height: auto; display: block;
+  background: #fff; border: 1px solid rgba(17, 17, 17, .14); border-radius: 5px; }
+.proof-shots figcaption { font-size: 11px; letter-spacing: .04em; color: var(--dim); }
 .proof-note { font-size: 15.5px; line-height: 1.62; color: var(--muted);
   margin: 32px 0 0; max-width: 56ch; padding-top: 24px; border-top: 1px solid var(--line); }
 .proof-note b { color: var(--text); font-weight: 500; }
