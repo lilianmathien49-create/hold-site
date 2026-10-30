@@ -11,3 +11,4 @@ tools/.cache-utmb/
 tools/*.csv
 __pycache__/
 METHODE.txt
+tools/.cache-meteo.json

@@ -74,16 +74,22 @@ def axe_y(y, valeurs, suffixe=""):
         for v in valeurs)
 
 
-def courbe(pts, x, y, base, classe, points=True):
-    """L'aire puis le trait. Une aire pleine se voit de loin, un trait seul non."""
+def courbe(pts, x, y, base, classe, points=True, aire=True):
+    """L'aire puis le trait. Une aire pleine se voit de loin, un trait seul non.
+
+    Deux aires superposées se masqueraient l'une l'autre : quand il y a deux
+    courbes, seule la première en reçoit une.
+    """
     trace = " ".join(f"{'M' if i == 0 else 'L'}{x(a):.1f} {y(bb):.1f}"
                      for i, (a, bb) in enumerate(pts))
-    aire = (f"M{x(pts[0][0]):.1f} {base:.1f} " + trace[1:]
-            + f" L{x(pts[-1][0]):.1f} {base:.1f} Z")
+    fond = ""
+    if aire and base is not None:
+        d = (f"M{x(pts[0][0]):.1f} {base:.1f} " + trace[1:]
+             + f" L{x(pts[-1][0]):.1f} {base:.1f} Z")
+        fond = f'<path class="lb-a {classe}" d="{d}"/>'
     ronds = "".join(f'<circle class="lb-pt {classe}" cx="{x(a):.1f}" cy="{y(bb):.1f}" r="4"/>'
                     for a, bb in pts) if points else ""
-    return (f'<path class="lb-a {classe}" d="{aire}"/>'
-            f'<path class="lb-l {classe}" d="{trace}"/>{ronds}')
+    return f'{fond}<path class="lb-l {classe}" d="{trace}"/>{ronds}'
 
 
 def etiquette(xv, yv, texte, classe="", ancre="start", dx=10, dy=5):
@@ -91,23 +97,32 @@ def etiquette(xv, yv, texte, classe="", ancre="start", dx=10, dy=5):
             f'text-anchor="{ancre}">{texte}</text>')
 
 
-def svg_pente(p):
-    """Deux pistes sur le même axe de pente : la vitesse, puis la cadence.
+def foulee(p):
+    """La longueur de foulée au plat : vitesse divisée par cadence."""
+    q = next((x for x in p if x["lo"] == 0), p[len(p) // 2])
+    return q["v"] / 3.6 / q["cad"] * 60
 
-    Deux échelles dans un seul cadre cacheraient le résultat au lieu de le
-    montrer. Empilées, elles le disent d'un coup d'œil : l'une plonge, l'autre
-    ne bouge pas. Les deux valeurs extrêmes sont écrites sur le dessin —
-    chercher un chiffre en remontant à l'axe, personne ne le fait.
+
+def svg_pente(courbes):
+    """Deux coureurs, deux pistes, le même axe de pente.
+
+    Une seule courbe disait que la cadence ne bouge pas. Deux courbes disent
+    la même chose et une autre en plus : à cadence presque identique, les deux
+    coureurs n'avancent pas à la même vitesse, parce que leur foulée n'a pas
+    la même longueur. C'est l'argument du site en un dessin — une table
+    générique donne un chiffre, la mesure donne le tien.
     """
-    h1, h2, ecart = 132, 96, 48
+    h1, h2, ecart = 132, 104, 50
     H = HAUT + h1 + ecart + h2 + 34
-    x0, x1 = p[0]["lo"], p[-1]["hi"]
+    tout = [q for _, p in courbes for q in p]
+    x0 = min(q["lo"] for q in tout)
+    x1 = max(q["hi"] for q in tout)
 
     def x(v):
         return G + (v - x0) / (x1 - x0) * (W - G - DR)
 
-    vlo, vhi, tv = echelle([q["v"] for q in p], 6)
-    clo, chi, tc = echelle([q["cad"] for q in p], 25)
+    vlo, vhi, tv = echelle([q["v"] for q in tout], 6)
+    clo, chi, tc = echelle([q["cad"] for q in tout], 25)
 
     def y1(v):
         return HAUT + h1 - (v - vlo) / (vhi - vlo) * h1
@@ -115,25 +130,26 @@ def svg_pente(p):
     def y2(v):
         return HAUT + h1 + ecart + h2 - (v - clo) / (chi - clo) * h2
 
-    cmin, cmax = min(q["cad"] for q in p), max(q["cad"] for q in p)
-    haut = max(p, key=lambda q: q["v"])
-    bande = (f'<rect class="lb-bande" x="{G}" y="{y2(cmax):.1f}" width="{W - G - DR}" '
-             f'height="{y2(cmin) - y2(cmax):.1f}"/>')
+    vit, cad, noms = [], [], []
+    for i, (nom, p) in enumerate(courbes):
+        cl = f"lb-r{i}"
+        vit.append(courbe([(q["x"], q["v"]) for q in p], x, y1, HAUT + h1, cl, aire=i == 0))
+        cad.append(courbe([(q["x"], q["cad"]) for q in p], x, y2, None, cl))
+        dernier = p[-1]
+        vit.append(etiquette(x(dernier["x"]), y1(dernier["v"]), fr(dernier["v"]), cl))
+        cad.append(etiquette(x(dernier["x"]), y2(dernier["cad"]), fr(dernier["cad"], 0), cl))
+        noms.append(f'<text class="lb-nom {cl}" x="{G + i * 108}" y="{H - 10}">'
+                    f'{html.escape(nom)}</text>')
     return f'''<svg viewBox="0 0 {W} {H}" class="lb" role="img" aria-label="\
-Vitesse et cadence selon la pente : la vitesse tombe de {fr(max(q["v"] for q in p))} \
-à {fr(p[-1]["v"])} kilomètres par heure, la cadence reste entre {fr(cmin, 0)} et \
-{fr(cmax, 0)} pas par minute.">
-  {axe_y(y1, tv)}
-  {courbe([(q["x"], q["v"]) for q in p], x, y1, HAUT + h1, "lb-v")}
-  {etiquette(x(p[-1]["x"]), y1(p[-1]["v"]), fr(p[-1]["v"]), "lb-v")}
-  {etiquette(x(haut["x"]), y1(haut["v"]), fr(haut["v"]), "lb-v", "middle", 0, -13)}
+Vitesse et cadence selon la pente, pour deux coureurs. Leurs cadences se \
+superposent, leurs vitesses non.">
+  {axe_y(y1, tv)}{"".join(vit)}
   <text class="lb-t" x="{G}" y="{HAUT - 6}">vitesse · km/h</text>
-  {bande}{axe_y(y2, tc)}
-  {courbe([(q["x"], q["cad"]) for q in p], x, y2, HAUT + h1 + ecart + h2, "lb-c")}
-  {etiquette(x(p[-1]["x"]), y2(p[-1]["cad"]), f"{fr(cmin, 0)}–{fr(cmax, 0)}", "lb-c")}
+  {axe_y(y2, tc)}{"".join(cad)}
   <text class="lb-t" x="{G}" y="{HAUT + h1 + ecart - 14}">cadence · pas/min</text>
   <line class="lb-zero" x1="{x(0):.1f}" x2="{x(0):.1f}" y1="{HAUT}" y2="{HAUT + h1 + ecart + h2:.1f}"/>
-  {axe_x(x, [-10, -5, 0, 5, 10], H - 10, " %")}
+  {axe_x(x, [-8, -4, 0, 4, 8], H - 34, " %")}
+  {"".join(noms)}
 </svg>'''
 
 
@@ -220,9 +236,14 @@ def panneau(ident, onglet, titre, gros, lecture, svg, source, premier=False):
 
 
 def main() -> int:
-    src = Path(sys.argv[1]).expanduser() if len(sys.argv) > 1 else None
-    b = L.charger(src)
+    # Un dossier par coureur. Le premier porte toutes les analyses ; les
+    # suivants ne servent qu'à la comparaison des pentes.
+    args = [Path(a).expanduser() for a in sys.argv[1:]]
+    b = L.charger(args[0] if args else None)
     p, f, c = L.a_pente(b), L.a_fatigue(b), L.a_chaleur(b)
+    courbes = [(args[0].name.split("_")[0].title() if args else "Toi", p)]
+    for autre in args[1:]:
+        courbes.append((autre.name.title(), L.a_pente(L.charger(autre))))
     if not (p and f and c):
         print("Analyse impossible sur ces fichiers.", file=sys.stderr)
         return 1
@@ -232,17 +253,28 @@ def main() -> int:
     vmax = max(q["v"] for q in p)
     perte = (1 - p[-1]["v"] / vmax) * 100
     cmin, cmax = min(q["cad"] for q in p), max(q["cad"] for q in p)
+    foulees = [(nom, foulee(q)) for nom, q in courbes]
 
     blocs = [
-      panneau("p-pente", "tab-pente", "Ce que la pente prend",
-              f"−{fr(perte, 0)} %",
-              f"De plat à {fr(p[-1]['lo'], 0)} %, ta vitesse perd {fr(perte, 0)} %. "
-              f"Ta cadence, elle, ne bouge pas : elle reste entre {fr(cmin, 0)} et "
-              f"{fr(cmax, 0)} pas par minute sur toute la plage. La pente ne se paie "
-              f"pas en fréquence de pas, elle se paie en longueur de foulée.",
-              svg_pente(p),
-              f"{milliers(len(b))} blocs de {L.PAS} s · {seances} séances · "
-              f"{fr(heures, 0)} h · pente lissée sur 50 m",
+      panneau("p-pente", "tab-pente",
+              "Deux coureurs, la même pente" if len(courbes) > 1 else "Ce que la pente prend",
+              " contre ".join(f"{fr(fo, 2)} m" for _, fo in foulees),
+              ("Leurs cadences se superposent, à un ou deux pas par minute près, et "
+               "ne bougent presque pas avec la pente. Leurs vitesses, elles, ne se "
+               "touchent jamais : "
+               + ", ".join(f"{html.escape(nom)} avance de {fr(fo, 2)} m à chaque pas"
+                           for nom, fo in foulees)
+               + ". Une table d'allures ne peut pas répondre à leur place : la pente "
+                 "ne se paie pas en fréquence de pas, elle se paie en longueur de "
+                 "foulée, et celle-là n'appartient qu'à soi."
+               if len(foulees) > 1 else
+               f"De plat à {fr(p[-1]['lo'], 0)} %, ta vitesse perd {fr(perte, 0)} %. "
+               f"Ta cadence, elle, ne bouge pas : elle reste entre {fr(cmin, 0)} et "
+               f"{fr(cmax, 0)} pas par minute sur toute la plage."),
+              svg_pente(courbes),
+              " · ".join(f"{html.escape(nom)} {milliers(sum(q['n'] for q in pts))} blocs"
+                          for nom, pts in courbes)
+              + f" de {L.PAS} s · pente lissée sur 50 m",
               premier=True),
       panneau("p-fatigue", "tab-fatigue", "Ce que les heures prennent",
               f"+{fr(f['bpm_h'])} bpm/h",

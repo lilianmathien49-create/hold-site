@@ -35,6 +35,15 @@ import fitread
 PAS = 15                 # secondes par bloc
 FENETRE = 25.0           # demi-fenêtre de pente, en mètres parcourus
 CACHE = Path(__file__).resolve().parent / ".cache-labo.json"
+# Un dossier d'athlète mélange les sports. On ne peut pas trier sur la
+# dynamique de course : la moitié des montres ne l'écrit pas. On trie donc sur
+# le nom que l'export donne à la séance, et on vérifie derrière que l'allure
+# ressemble à de la course à pied.
+APIED = ("course__pied", "course_a_pied", "trail", "running", "run")
+V_MIN, V_MAX = 4.0, 22.0        # km/h médians plausibles à pied
+# Les montres sans baromètre tirent l'altitude du GPS, qui saute. Au-delà de
+# 45 % sur cinquante mètres on ne lit plus un terrain mais une erreur.
+PENTE_MAX = 45.0
 V0 = 12.5                # allure de référence pour ramener les FC, km/h
 
 
@@ -42,10 +51,18 @@ def blocs(src: Path) -> list[dict]:
     out = []
     for f in sorted(src.glob("*.fit")):
         try:
-            pts = [p for p in fitread.read_fit(f) if p.get("dist") is not None]
+            tous = fitread.read_fit(f)
         except Exception:
             continue
+        pts = [p for p in tous if p.get("dist") is not None]
         if len(pts) < 60:
+            continue
+        if not any(m in f.stem.lower() for m in APIED):
+            continue
+        vm = sorted((pts[i]["dist"] - pts[i - 1]["dist"])
+                    / max(0.5, (pts[i]["t"] - pts[i - 1]["t"]).total_seconds()) * 3.6
+                    for i in range(1, len(pts)))
+        if not V_MIN <= vm[len(vm) * 3 // 4] <= V_MAX:   # trop lent ou trop rapide
             continue
         t0, d = pts[0]["t"], [p["dist"] for p in pts]
         a = [p.get("alt") for p in pts]
@@ -71,25 +88,35 @@ def blocs(src: Path) -> list[dict]:
             fo = sorted(p["foulee"] for p in b if p.get("foulee"))
             hr = sorted(p["hr"] for p in b if p.get("hr"))
             tp = sorted(p["temp"] for p in b if p.get("temp") is not None)
-            if not pp or not fo or fo[len(fo) // 2] <= 0.2:
+            if not pp:
                 continue
             v = dd / dt * 3.6
-            out.append({"pente": pp[len(pp) // 2], "v": v,
-                        "cad": (v / 3.6) / fo[len(fo) // 2] * 60,
+            cad = (v / 3.6) / fo[len(fo) // 2] * 60 \
+                if fo and fo[len(fo) // 2] > 0.2 else None
+            out.append({"pente": pp[len(pp) // 2], "v": v, "cad": cad,
                         "hr": hr[len(hr) // 2] if hr else None,
                         "temp": tp[len(tp) // 2] if tp else None,
                         "ecoule": (b[0]["t"] - t0).total_seconds() / 60,
+                        "lat": b[0].get("lat"), "lon": b[0].get("lon"),
+                        "heure": b[0]["t"].strftime("%Y-%m-%dT%H:00"),
                         "seance": f.stem})
     return out
 
 
-def charger(src: Path | None) -> list[dict]:
+def cache_de(src: Path | None) -> Path:
     if src is None:
-        if not CACHE.is_file():
-            raise SystemExit("Aucun cache : passe le dossier des .fit en argument.")
-        return json.loads(CACHE.read_text(encoding="utf-8"))
+        return CACHE
+    return CACHE.with_name(f".cache-labo-{src.name.lower()[:40]}.json")
+
+
+def charger(src: Path | None, refaire=False) -> list[dict]:
+    c = cache_de(src)
+    if not refaire and c.is_file():
+        return json.loads(c.read_text(encoding="utf-8"))
+    if src is None:
+        raise SystemExit("Aucun cache : passe le dossier des .fit en argument.")
     b = blocs(src)
-    CACHE.write_text(json.dumps(b), encoding="utf-8")
+    c.write_text(json.dumps(b), encoding="utf-8")
     return b
 
 
@@ -135,27 +162,32 @@ def intervalle(valeurs, p=0.95):
     return lo, hi
 
 
+def propres(b):
+    return [x for x in b if abs(x["pente"]) <= PENTE_MAX]
+
+
 def a_pente(b):
     """Vitesse et cadence par tranche de pente.
 
     On s'attend à voir la cadence s'effondrer dans le raide. Elle ne le fait
     pas : c'est la vitesse qui encaisse, par la longueur de foulée.
     """
-    bornes = [-12, -9, -6, -4, -2, 0, 2, 4, 6, 8, 10, 13]
+    bornes = [-20, -14, -10, -6, -3, 0, 3, 6, 10, 14, 18, 24, 32, 45]
     out = []
     for lo, hi in zip(bornes, bornes[1:]):
-        g = [x for x in b if lo <= x["pente"] < hi]
-        if len(g) < 50:
+        g = [x for x in propres(b) if lo <= x["pente"] < hi]
+        if len(g) < 60:
             continue
+        c = [x["cad"] for x in g if x["cad"]]
         out.append({"x": (lo + hi) / 2, "lo": lo, "hi": hi, "n": len(g),
                     "v": st.median([x["v"] for x in g]),
-                    "cad": st.median([x["cad"] for x in g])})
+                    "nc": len(c), "cad": st.median(c) if len(c) >= 40 else None})
     return out
 
 
 def a_fatigue(b, tirages=400):
     """Dérive cardiaque à vitesse égale, à l'intérieur de chaque séance."""
-    plat = [x for x in b if -3 <= x["pente"] <= 3 and x["hr"]]
+    plat = [x for x in propres(b) if -3 <= x["pente"] <= 3 and x["hr"]]
     ch = ["v", "ecoule"]
     c = centre(plat, ch + ["hr"])
     r = mco([[x[k] for k in ch] for x in c], [x["hr"] for x in c])
@@ -209,7 +241,8 @@ def a_chaleur(b, tirages=600):
     poignet à l'arrêt puis refroidit dans le vent, et cette variation-là donne
     un effet négatif, physiologiquement absurde.
     """
-    plat = [x for x in b if -3 <= x["pente"] <= 3 and x["hr"] and x["temp"] is not None]
+    plat = [x for x in propres(b)
+            if -3 <= x["pente"] <= 3 and x["hr"] and x["temp"] is not None]
     c = centre(plat, ["v", "hr"])
     pente_v = mco([[x["v"]] for x in c], [x["hr"] for x in c])
     if not pente_v:
