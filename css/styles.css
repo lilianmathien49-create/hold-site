@@ -487,7 +487,7 @@ select.field option { background: var(--surface); color: var(--text); }
 .lab-tabs button { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--ghost-line); background: transparent; color: var(--muted); font-family: var(--mono); font-size: 13px; cursor: pointer; transition: background-color .2s, color .2s, border-color .2s; }
 .lab-tabs button:hover { color: var(--text); background: var(--ghost-hover); }
 .lab-tabs button[aria-selected="true"] { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
-.lab-panel { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 48px; align-items: center; animation: rise .5s var(--ease) both; }
+.lab-panel { display: grid; grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr); gap: 44px; align-items: center; animation: rise .5s var(--ease) both; }
 .lab-panel[hidden] { display: none; }
 .lab-text { display: flex; flex-direction: column; gap: 16px; }
 .lab-text h4 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(23px, 2.3vw, 32px); line-height: 1.14; }
@@ -495,22 +495,38 @@ select.field option { background: var(--surface); color: var(--text); }
 .lab-sens { font-size: 15px; line-height: 1.6; color: var(--sub-text); max-width: 44ch; }
 
 /* Les trois graphiques sont figés : plus de curseur à déplacer, donc plus
-   rien à chercher. Leur texte est en unités du viewBox, qui vaut 560 : sur
-   un écran étroit il rétrécit avec le dessin, et on le remonte. */
+   rien à chercher. Aire pleine sous chaque courbe, trait épais, valeurs
+   écrites sur le dessin : un trait d'un pixel sur fond gris ne se voit pas,
+   et personne ne remonte à l'axe pour lire un chiffre.
+   Leur texte est en unités du viewBox, qui vaut 560 : sur un écran étroit il
+   rétrécit avec le dessin, et on le remonte. */
 .lb { display: block; width: 100%; height: auto; overflow: visible; }
 .lb-gr { stroke: var(--grid); stroke-width: 1; }
+.lb-base { stroke: var(--line); stroke-width: 1.5; }
 .lb-zero { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
-.lb-ax { font-family: var(--mono); font-size: 11px; fill: var(--dim); }
-.lb-t { font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+.lb-bande { fill: var(--muted); opacity: .09; }
+.lb-ax { font-family: var(--mono); font-size: 12px; fill: var(--dim); }
+.lb-t { font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
   text-transform: uppercase; fill: var(--dim); }
-.lb-l { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.lb-fit { stroke: var(--mark); stroke-width: 1.4; stroke-dasharray: 5 4; opacity: .7; }
+.lb-val { font-family: var(--serif); font-size: 21px;
+  font-variant-numeric: tabular-nums; }
+.lb-fit-t { font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
+  fill: var(--sub-text); }
+.lb-l { fill: none !important; stroke-width: 2.6;
+  stroke-linecap: round; stroke-linejoin: round; }
+.lb-a { stroke: none; }
+.lb-fit { stroke: var(--mark); stroke-width: 1.8; stroke-dasharray: 6 5; }
+.lb-fit.lb-plein { stroke-dasharray: none; stroke-width: 2.4; }
+.lb-cone { fill: var(--mark); opacity: .1; stroke: none; }
+.lb-nuage { fill: var(--mark); opacity: .55; stroke: none; }
 .lb-v { stroke: var(--mark); }
+.lb-v.lb-a { fill: var(--mark); opacity: .13; }
+text.lb-v { fill: var(--mark); stroke: none; }
+circle.lb-v { fill: var(--mark); stroke: none; }
 .lb-c { stroke: var(--muted); }
-.lb-l { fill: none !important; }
-circle.lb-v { fill: var(--mark); }
-circle.lb-c { fill: var(--muted); }
-.lb-pt { stroke: none; }
+.lb-c.lb-a { fill: var(--muted); opacity: .1; }
+text.lb-c { fill: var(--muted); stroke: none; }
+circle.lb-c { fill: var(--muted); stroke: none; }
 .lab-big.red { color: var(--red); }
 .lab-chart { height: 420px; }
 .lab-chart svg { width: 100%; height: 100%; overflow: visible; }
@@ -586,8 +602,10 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .title { font-size: 29px; }
   .mega { font-size: 68px; }
   .lab-text h4, .how-steps h3, .solo-l h3 { font-size: 26px; }
-  .lb-ax { font-size: 17px; }
-  .lb-t { font-size: 15px; }
+  .lb-ax { font-size: 18px; }
+  .lb-t { font-size: 16px; }
+  .lb-val { font-size: 30px; }
+  .lb-fit-t { font-size: 17px; }
   .lab-big { font-size: 44px; }
   .price { font-size: 38px; }
   .logo { font-size: 24px; }
