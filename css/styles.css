@@ -208,6 +208,8 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
   text-transform: uppercase; color: var(--dim); padding-top: 3px; }
 .qui-faits dd { margin: 0; font-size: 15.5px; line-height: 1.5; color: var(--sub-text); }
 .qui-faits .mono { color: var(--text); }
+.qui-liste span { display: block; }
+.qui-liste span + span { margin-top: 3px; }
 
 @media (max-width: 760px) {
   .qui { padding: 72px 16px 10px; }
@@ -449,14 +451,18 @@ select.field option { background: var(--surface); color: var(--text); }
 .how-steps.in li:nth-child(2)::before { transition-delay: .9s; }
 .how-steps.in li:nth-child(3)::before { transition-delay: 1.6s; }
 .how-steps.in li:nth-child(4)::before { transition-delay: 2.3s; }
-.how-steps .n { font-size: 12px; color: var(--muted); letter-spacing: .14em; }
+.how-steps .n { display: flex; align-items: center; gap: 11px;
+  font-size: 12px; color: var(--muted); letter-spacing: .14em; }
+.hs-i { flex: none; width: 26px; height: 26px; fill: none; stroke: var(--mark);
+  stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.hs-plein { fill: var(--mark); stroke: none; }
 .how-steps h3 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(22px, 1.9vw, 28px); line-height: 1.16; }
 .how-steps p { color: var(--sub-text); font-size: 15px; }
 .how-steps .when { margin-top: auto; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--text); }
 
-/* Sous le capot */
-.lab { max-width: 1200px; margin: 0 auto; padding: 120px 28px 60px; }
-.lab-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 48px 0 36px; }
+/* Sous le capot — sous-bloc de Pacing, au même rang que « Pour aller plus loin » */
+.lab { margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--line); }
+.lab-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 36px 0; }
 .lab-tabs button { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--ghost-line); background: transparent; color: var(--muted); font-family: var(--mono); font-size: 13px; cursor: pointer; transition: background-color .2s, color .2s, border-color .2s; }
 .lab-tabs button:hover { color: var(--text); background: var(--ghost-hover); }
 .lab-tabs button[aria-selected="true"] { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }

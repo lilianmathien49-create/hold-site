@@ -218,10 +218,10 @@
     </div>
   </div>
   <ol class="how-steps reveal">
-      <li data-voie="general coaching pacing"><span class="n mono">01</span><h3>Ton objectif</h3><p>Une course, une date, son parcours. C'est elle qui fixe tout le reste — rien ne se décide avant.</p><span class="when mono">Jour 0</span></li>
-      <li data-voie="general coaching pacing"><span class="n mono">02</span><h3>Ton historique</h3><p>On récupère ce qui existe déjà : Strava, Garmin, Coros, Polar, Suunto, Intervals. Puis on en tire tes allures, tes zones, tes vitesses ascensionnelles, ta réponse à chaque pourcentage de pente et au temps passé dedans, ce que les descentes te coûtent, ton seuil de marche, ta durabilité, ta réaction au froid et à la chaleur.</p><span class="when mono">Sous 72 h</span></li>
-      <li data-voie="general coaching"><span class="n mono">03</span><h3>Ton entraînement</h3><p>Construit pour ton objectif d'abord, affiné par ce qu'on a mesuré. Et orienté selon que tu prends la stratégie de course ou non : certaines séances servent autant à t'entraîner qu'à préciser le modèle.</p><span class="when mono">Jusqu'au jour J</span></li>
-      <li data-voie="general pacing"><span class="n mono">04</span><h3>Ta stratégie</h3><p>Une allure par portion, confrontée au parcours, au dénivelé et aux conditions annoncées. Revue jusqu'à la veille.</p><span class="when mono">Avant le départ</span></li>
+      <li data-voie="general coaching pacing"><span class="n mono"><svg class="hs-i" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10"/><circle cx="13" cy="13" r="5.5"/><circle class="hs-plein" cx="13" cy="13" r="2"/></svg>01</span><h3>Ton objectif</h3><p>Une course, une date, son parcours. C'est elle qui fixe tout le reste — rien ne se décide avant.</p><span class="when mono">Jour 0</span></li>
+      <li data-voie="general coaching pacing"><span class="n mono"><svg class="hs-i" viewBox="0 0 26 26" aria-hidden="true"><path d="M3 21V13M8 21V7M13 21V17M18 21V10M23 21V4"/></svg>02</span><h3>Ton historique</h3><p>On récupère ce qui existe déjà : Strava, Garmin, Coros, Polar, Suunto, Intervals. Puis on en tire tes allures, tes zones, tes vitesses ascensionnelles, ta réponse à chaque pourcentage de pente et au temps passé dedans, ce que les descentes te coûtent, ton seuil de marche, ta durabilité, ta réaction au froid et à la chaleur.</p><span class="when mono">Sous 72 h</span></li>
+      <li data-voie="general coaching"><span class="n mono"><svg class="hs-i" viewBox="0 0 26 26" aria-hidden="true"><rect x="3" y="5" width="20" height="18" rx="2.5"/><path d="M3 10.5h20M8.5 2.5v5M17.5 2.5v5"/><rect class="hs-plein" x="7" y="14" width="3.2" height="3.2" rx=".7"/><rect class="hs-plein" x="15" y="18" width="3.2" height="3.2" rx=".7"/></svg>03</span><h3>Ton entraînement</h3><p>Construit pour ton objectif d'abord, affiné par ce qu'on a mesuré. Et orienté selon que tu prends la stratégie de course ou non : certaines séances servent autant à t'entraîner qu'à préciser le modèle.</p><span class="when mono">Jusqu'au jour J</span></li>
+      <li data-voie="general pacing"><span class="n mono"><svg class="hs-i" viewBox="0 0 26 26" aria-hidden="true"><path d="M2 21l5-7 4 4 6-12 6 10"/><circle class="hs-plein" cx="17" cy="6" r="2"/></svg>04</span><h3>Ta stratégie</h3><p>Une allure par portion, confrontée au parcours, au dénivelé et aux conditions annoncées. Revue jusqu'à la veille.</p><span class="when mono">Avant le départ</span></li>
     </ol>
 
     
@@ -344,78 +344,6 @@
       </div>
     </div>
   </div>
-
-    <div class="lab" id="lab">
-  <div class="reveal">
-    <p class="eyebrow eyebrow-sub">Ce qu'on en tire</p>
-    <h2 class="title" id="lab-t">Mesuré sur toi.</h2>
-  </div>
-
-  <div class="lab-tabs" role="tablist" aria-label="Analyses">
-    <button type="button" role="tab" id="tab-walk" data-k="walk" aria-controls="p-walk" aria-selected="true">Seuil de marche</button>
-    <button type="button" role="tab" id="tab-fat" data-k="fat" aria-controls="p-fat" aria-selected="false" tabindex="-1">Effet de la fatigue</button>
-    <button type="button" role="tab" id="tab-heat" data-k="heat" aria-controls="p-heat" aria-selected="false" tabindex="-1">Chaleur</button>
-    <button type="button" role="tab" id="tab-dur" data-k="dur" aria-controls="p-dur" aria-selected="false" tabindex="-1">Durabilité</button>
-  </div>
-
-  <div class="lab-panel" role="tabpanel" id="p-walk" aria-labelledby="tab-walk">
-    <div class="lab-text">
-      <h3>Le seuil de marche</h3>
-      <p class="sub">Chaque bloc de 15 secondes de tes sorties est classé : tu courais, ou tu marchais. On en tire la pente à laquelle tu bascules.</p>
-      <p class="lab-big" id="walkBig">—</p>
-      <p class="lab-read mono" id="walkRead" aria-live="polite"></p>
-      <label class="lab-ctl"><span class="eyebrow">Temps écoulé · <b id="walkTv">32 min</b></span><input type="range" id="walkT" min="0" max="240" step="2" value="32"></label>
-      <p class="lab-src mono">39 959 blocs de 15 s · 150 sorties · validé sur la cadence réelle : 86 % d'accord.</p>
-    </div>
-    <div class="lab-chart" id="walkChart"></div>
-  </div>
-
-  <div class="lab-panel" role="tabpanel" id="p-fat" aria-labelledby="tab-fat" hidden>
-    <div class="lab-text">
-      <h3>La chute du seuil</h3>
-      <p class="sub">La même pente ne se court pas pareil à la première heure et à la quatrième. C'est ce qui dit où placer la marche sur un parcours long.</p>
-      <p class="lab-big" id="fatBig">—</p>
-      <p class="lab-read mono" id="fatRead" aria-live="polite"></p>
-      <label class="lab-ctl"><span class="eyebrow">Temps écoulé · <b id="fatTv">120 min</b></span><input type="range" id="fatT" min="0" max="240" step="2" value="120"></label>
-      <p class="lab-src mono">Intervalle de confiance à 95 %, bootstrap par sortie.</p>
-    </div>
-    <div class="lab-chart" id="fatChart"></div>
-  </div>
-
-  <div class="lab-panel" role="tabpanel" id="p-heat" aria-labelledby="tab-heat" hidden>
-    <div class="lab-text">
-      <h3>Le coût de la chaleur</h3>
-      <p class="sub">À allure égale et sur le plat, on isole l'effet de la température seule. Ça change l'allure de départ un jour de canicule.</p>
-      <p class="lab-big" id="heatBig">—</p>
-      <p class="lab-read mono" id="heatRead" aria-live="polite"></p>
-      <label class="lab-ctl"><span class="eyebrow">Température le jour J · <b id="heatTv">24 °C</b></span><input type="range" id="heatT" min="0" max="35" step="1" value="24"></label>
-    </div>
-    <div class="lab-chart" id="heatChart"></div>
-  </div>
-
-  <div class="lab-panel" role="tabpanel" id="p-dur" aria-labelledby="tab-dur" hidden>
-    <div class="lab-text">
-      <h3>La durabilité</h3>
-      <p class="sub">Le moment où la foulée se dégrade, mesuré sur tes sorties longues : cadence, longueur de foulée, temps de contact au sol.</p>
-      <p class="lab-big" id="durBig">—</p>
-      <p class="lab-read mono" id="durRead" aria-live="polite"></p>
-      <label class="lab-ctl"><span class="eyebrow">Allure visée · <b id="durPv">4:55 /km</b></span><input type="range" id="durP" min="275" max="315" step="1" value="295"></label>
-    </div>
-    <div class="lab-chart" id="durChart"></div>
-  </div>
-
-  <p class="hint lab-note"><b>Seuil de marche</b> et <b>effet de la fatigue</b> : résultats réels, mesurés sur un coureur suivi pendant 150 sorties. Les deux autres sont illustrés avec des données d'exemple. On refait ces calculs sur tes séances, pour ta course.</p>
-</div>
-
-    
-
-    <div class="pont reveal">
-      <p class="pont-t">Ces chiffres ne servent à rien tant qu'ils restent des chiffres.</p>
-      <p class="pont-p">Ton seuil de marche, ta durabilité, ta réponse à la chaleur :
-        c'est avec eux qu'on écrit ta course. On les confronte au parcours, au dénivelé,
-        à l'heure et à la météo annoncée — et on en tire une allure pour chaque portion.</p>
-      <a class="pont-a" href="#livrable">Voir ce que ça donne sur un parcours →</a>
-    </div>
 </section>
 
 
@@ -530,6 +458,71 @@
       <!-- APERCU:FIN -->
   </div>
 
+    <div class="lab" id="lab">
+  <div class="reveal">
+    <p class="eyebrow">Sous le capot</p>
+    <h3 class="loin-t" id="lab-t">Ce qu'on calcule sur tes données.</h3>
+    <p class="loin-sub">Quatre paramètres, tirés de tes fichiers bruts de montre et de
+      Strava — pas d'une table d'allures. C'est la différence entre une allure moyenne
+      et une allure que tu peux vraiment tenir le jour J.</p>
+  </div>
+
+  <div class="lab-tabs" role="tablist" aria-label="Analyses">
+    <button type="button" role="tab" id="tab-walk" data-k="walk" aria-controls="p-walk" aria-selected="true">Seuil de marche</button>
+    <button type="button" role="tab" id="tab-fat" data-k="fat" aria-controls="p-fat" aria-selected="false" tabindex="-1">Effet de la fatigue</button>
+    <button type="button" role="tab" id="tab-heat" data-k="heat" aria-controls="p-heat" aria-selected="false" tabindex="-1">Chaleur</button>
+    <button type="button" role="tab" id="tab-dur" data-k="dur" aria-controls="p-dur" aria-selected="false" tabindex="-1">Durabilité</button>
+  </div>
+
+  <div class="lab-panel" role="tabpanel" id="p-walk" aria-labelledby="tab-walk">
+    <div class="lab-text">
+      <h3>Le seuil de marche</h3>
+      <p class="sub">Chaque bloc de 15 secondes de tes sorties est classé : tu courais, ou tu marchais. On en tire la pente à laquelle tu bascules.</p>
+      <p class="lab-big" id="walkBig">—</p>
+      <p class="lab-read mono" id="walkRead" aria-live="polite"></p>
+      <label class="lab-ctl"><span class="eyebrow">Temps écoulé · <b id="walkTv">32 min</b></span><input type="range" id="walkT" min="0" max="240" step="2" value="32"></label>
+      <p class="lab-src mono">39 959 blocs de 15 s · 150 sorties · validé sur la cadence réelle : 86 % d'accord.</p>
+    </div>
+    <div class="lab-chart" id="walkChart"></div>
+  </div>
+
+  <div class="lab-panel" role="tabpanel" id="p-fat" aria-labelledby="tab-fat" hidden>
+    <div class="lab-text">
+      <h3>La chute du seuil</h3>
+      <p class="sub">La même pente ne se court pas pareil à la première heure et à la quatrième. C'est ce qui dit où placer la marche sur un parcours long.</p>
+      <p class="lab-big" id="fatBig">—</p>
+      <p class="lab-read mono" id="fatRead" aria-live="polite"></p>
+      <label class="lab-ctl"><span class="eyebrow">Temps écoulé · <b id="fatTv">120 min</b></span><input type="range" id="fatT" min="0" max="240" step="2" value="120"></label>
+      <p class="lab-src mono">Intervalle de confiance à 95 %, bootstrap par sortie.</p>
+    </div>
+    <div class="lab-chart" id="fatChart"></div>
+  </div>
+
+  <div class="lab-panel" role="tabpanel" id="p-heat" aria-labelledby="tab-heat" hidden>
+    <div class="lab-text">
+      <h3>Le coût de la chaleur</h3>
+      <p class="sub">À allure égale et sur le plat, on isole l'effet de la température seule. Ça change l'allure de départ un jour de canicule.</p>
+      <p class="lab-big" id="heatBig">—</p>
+      <p class="lab-read mono" id="heatRead" aria-live="polite"></p>
+      <label class="lab-ctl"><span class="eyebrow">Température le jour J · <b id="heatTv">24 °C</b></span><input type="range" id="heatT" min="0" max="35" step="1" value="24"></label>
+    </div>
+    <div class="lab-chart" id="heatChart"></div>
+  </div>
+
+  <div class="lab-panel" role="tabpanel" id="p-dur" aria-labelledby="tab-dur" hidden>
+    <div class="lab-text">
+      <h3>La durabilité</h3>
+      <p class="sub">Le moment où la foulée se dégrade, mesuré sur tes sorties longues : cadence, longueur de foulée, temps de contact au sol.</p>
+      <p class="lab-big" id="durBig">—</p>
+      <p class="lab-read mono" id="durRead" aria-live="polite"></p>
+      <label class="lab-ctl"><span class="eyebrow">Allure visée · <b id="durPv">4:55 /km</b></span><input type="range" id="durP" min="275" max="315" step="1" value="295"></label>
+    </div>
+    <div class="lab-chart" id="durChart"></div>
+  </div>
+
+  <p class="hint lab-note"><b>Seuil de marche</b> et <b>effet de la fatigue</b> : résultats réels, mesurés sur un coureur suivi pendant 150 sorties. Les deux autres sont illustrés avec des données d'exemple. On refait ces calculs sur tes séances, pour ta course.</p>
+</div>
+
   <div class="loin reveal">
     <p class="eyebrow">Pour aller plus loin</p>
     <h3 class="loin-t">Un espace qui t'est dédié.</h3>
@@ -601,7 +594,13 @@
       <dl class="qui-faits">
         <div>
           <dt>Diplômes</dt>
-          <dd>BPJEPS · Licence STAPS · Master Entraînement et optimisation de la performance</dd>
+          <dd class="qui-liste"><span>BPJEPS</span><span>Licence STAPS</span>
+            <span>Master Entraînement et optimisation de la performance</span></dd>
+        </div>
+        <div>
+          <dt>Expérience</dt>
+          <dd>Plus de 100 coureurs accompagnés — du niveau national en demi-fond
+            au coureur loisir, sur piste, sur route et en trail.</dd>
         </div>
         <div>
           <dt>Ses chronos</dt>
