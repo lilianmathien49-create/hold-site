@@ -257,6 +257,14 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
 .nav-espace { pointer-events: auto; }
 .link-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; border: 0; background: none; cursor: pointer; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); transition: color .2s; border-radius: 6px; }
 .link-btn:hover { color: var(--text); background: var(--ghost-hover); }
+/* Neuf entrées dans la barre : entre 1081 et 1240 px elles ne tiennent qu'en
+   se serrant. Un libellé coupé sur deux lignes se lit comme deux rubriques. */
+.nav-links .link-btn, .nav-r .link-btn { white-space: nowrap; }
+@media (min-width: 1081px) and (max-width: 1240px) {
+  .nav-links { gap: 0; }
+  .nav-links .link-btn, .nav-r .link-btn { padding: 0 7px; letter-spacing: .07em; }
+  .nav-r { gap: 8px; }
+}
 .nav-sound { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--ghost-line); border-radius: 50%; background: none; cursor: pointer; transition: border-color .2s, background-color .2s; }
 .nav-sound:hover { background: var(--ghost-hover); }
 .nav-sound[aria-pressed="true"] { background: var(--ghost-hover); border-color: var(--text); }
