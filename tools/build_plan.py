@@ -22,6 +22,17 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 STEP_M = 500.0          # pas d'analyse demandé
+JOURS = ("lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche")
+MOIS = ("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août",
+        "septembre", "octobre", "novembre", "décembre")
+
+
+def jour_fr(d) -> str:
+    return f"{JOURS[d.weekday()]} {d.day} {MOIS[d.month - 1]} {d.year}"
+
+
+def passage_fr(d) -> str:
+    return f"{JOURS[d.weekday()][:3]}. {d:%H:%M}"
 LAPSE = 0.0065          # refroidissement de l'air, °C par mètre d'altitude
 CIVIL_TWILIGHT = -6.0   # au-dessous, il faut la frontale
 
@@ -539,7 +550,7 @@ def main() -> int:
         light = light_at(when, a.lat, a.lon)
         out_aid.append({"km": round(w["km"], 1), "name": w["name"], "alt": round(w["alt"]),
                         "lat": round(w["lat"], 5), "lon": round(w["lon"], 5),
-                        "eta": when.strftime("%a %H:%M"), "cumul": hm(t),
+                        "eta": passage_fr(when), "cumul": hm(t),
                         "temp": round(temp, 1), "light": light, "gear": gear_for(temp, light)})
 
     # Fenêtres de nuit : on regroupe les tronçons consécutifs de même lumière.
@@ -570,7 +581,7 @@ def main() -> int:
 
     plan = {
         "runner": a.runner, "race": a.race,
-        "date": start.strftime("%A %d %B %Y"), "start": start.strftime("%H:%M"),
+        "date": jour_fr(start), "start": start.strftime("%H:%M"),
         "goal": hm(target), "projected": hms(total),
         "distanceKm": round(total_km, 1), "elevationM": round(total_up),
         "revised": datetime.now().strftime("%d/%m/%Y"),

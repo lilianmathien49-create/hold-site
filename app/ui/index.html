@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hold</title>
+<!-- Une application de bureau : rien ne se charge depuis Internet, sauf ce
+     que le serveur local va chercher chez GitHub. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'">
+<meta name="hold-jeton" content="__JETON__">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<aside class="cote">
+  <div class="cote-tete">
+    <p class="logo">Hold<span class="point"></span></p>
+    <button type="button" class="b b-plein" id="nouveau">Nouveau coureur</button>
+    <input type="search" id="filtre" placeholder="Chercher un coureur" autocomplete="off">
+  </div>
+  <ul class="liste" id="liste" aria-label="Coureurs"></ul>
+  <div class="cote-pied">
+    <button type="button" class="b-lien" id="ouvrirImport">Ajouter un espace existant</button>
+    <button type="button" class="b-lien" id="ouvrirReglages">Réglages</button>
+  </div>
+</aside>
+
+<main class="corps">
+
+  <section class="vide" id="vide">
+    <p class="vide-t">Choisis un coureur, ou crée-en un.</p>
+    <p class="vide-s">Chaque coureur a son espace sur holdrunning.fr : sa stratégie de course et ses documents, ouverts avec son code.</p>
+  </section>
+
+  <section class="fiche" id="fiche" hidden>
+    <header class="fiche-tete">
+      <div class="champs-tete">
+        <input id="coureur" class="t-nom" placeholder="Prénom du coureur" autocomplete="off">
+        <input id="titre" class="t-titre" placeholder="Titre de l'espace : UTMB 2027, Marathon de Paris…" autocomplete="off">
+      </div>
+      <div class="acces" id="acces" hidden>
+        <div class="acces-l"><span class="lib">Code</span><code id="code"></code>
+          <button type="button" class="b-lien" data-copie="code">Copier</button></div>
+        <div class="acces-l"><span class="lib">Lien</span><code id="lien"></code>
+          <button type="button" class="b-lien" data-copie="lien">Copier</button>
+          <button type="button" class="b-lien" id="voir">Ouvrir</button></div>
+      </div>
+    </header>
+
+    <!-- LA STRATÉGIE -->
+    <section class="bloc">
+      <div class="bloc-tete">
+        <h2>Stratégie de course</h2>
+        <div class="bloc-actions">
+          <button type="button" class="b" id="fabriquer">Fabriquer</button>
+          <button type="button" class="b-lien" id="importerPlan">Importer un .json</button>
+          <button type="button" class="b-lien danger" id="retirerPlan" hidden>Retirer</button>
+        </div>
+      </div>
+      <div id="resumePlan" class="resume-vide">Aucune stratégie pour l'instant.</div>
+
+      <form class="atelier" id="atelier" hidden>
+        <p class="atelier-t">Fabriquer la stratégie</p>
+        <div class="grille">
+          <div class="champ large"><span>Tracé de la course</span>
+            <div class="choix"><button type="button" class="b" id="choixGpx">Choisir le GPX…</button>
+              <span class="choix-nom" id="nomGpx">Aucun fichier</span></div></div>
+          <div class="champ large"><span>Fichiers de montre du coureur <em>facultatif</em></span>
+            <div class="choix"><button type="button" class="b" id="choixDossier">Choisir le dossier…</button>
+              <span class="choix-nom" id="nomDossier">Aucun : réglages de référence</span>
+              <button type="button" class="b-lien" id="sansDossier" hidden>Retirer</button></div></div>
+          <label class="champ"><span>Nom de la course</span><input id="course" placeholder="UTMB"></label>
+          <label class="champ"><span>Départ</span><input id="depart" type="datetime-local"></label>
+          <label class="champ"><span>Objectif</span><input id="objectif" placeholder="28:00"></label>
+          <label class="champ"><span>Température min · max</span>
+            <span class="duo"><input id="tmin" type="number" step="1" value="6"><input id="tmax" type="number" step="1" value="22"></span></label>
+        </div>
+        <div class="atelier-pied">
+          <button type="submit" class="b b-plein" id="calculer">Calculer</button>
+          <button type="button" class="b-lien" id="fermerAtelier">Annuler</button>
+          <span class="etat" id="etatCalcul" role="status"></span>
+        </div>
+        <details class="journal" id="journalBloc" hidden>
+          <summary>Ce que le calcul a mesuré, et ce qu'il a pris par défaut</summary>
+          <pre id="journal"></pre>
+        </details>
+      </form>
+    </section>
+
+    <!-- LES DOCUMENTS -->
+    <section class="bloc" id="blocDocs">
+      <div class="bloc-tete">
+        <h2>Documents</h2>
+        <div class="bloc-actions"><button type="button" class="b" id="ajouterDocs">Ajouter…</button></div>
+      </div>
+      <ul class="docs" id="docs"></ul>
+      <p class="depose" id="depose">Ou glisse des fichiers ici. Dix mégaoctets au plus par espace.</p>
+    </section>
+
+    <!-- LA SUPPRESSION -->
+    <section class="bloc bloc-danger" id="blocSuppr" hidden>
+      <div class="bloc-tete"><h2>Supprimer l'espace</h2></div>
+      <p class="aide">Le coureur n'y aura plus accès. Tape <b>SUPPRIMER</b> pour confirmer.</p>
+      <div class="ligne"><input id="confSuppr" autocomplete="off">
+        <button type="button" class="b danger-b" id="supprimer">Supprimer définitivement</button></div>
+    </section>
+  </section>
+
+  <footer class="barre" id="barre" hidden>
+    <span class="etat" id="etat" role="status" aria-live="polite"></span>
+    <button type="button" class="b b-plein" id="publier">Publier</button>
+  </footer>
+</main>
+
+<!-- RÉGLAGES -->
+<dialog id="reglages">
+  <form method="dialog" class="dlg">
+    <h2>Clé GitHub</h2>
+    <p class="aide" id="etatCle"></p>
+    <ol class="etapes">
+      <li><button type="button" class="b-lien" id="pageGithub">Ouvrir la page de création de clé sur GitHub</button></li>
+      <li>Accès : <b>Only select repositories</b> → hold-site.</li>
+      <li>Permissions : <b>Contents</b> → Read and write. Rien d'autre.</li>
+    </ol>
+    <input id="cle" type="password" placeholder="github_pat_…" autocomplete="off">
+    <p class="aide" id="msgCle" role="status"></p>
+    <div class="dlg-pied">
+      <button type="button" class="b-lien danger" id="oublierCle">Oublier la clé</button>
+      <span class="espace"></span>
+      <button value="annuler" class="b">Fermer</button>
+      <button type="button" class="b b-plein" id="garderCle">Vérifier et garder</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- IMPORT -->
+<dialog id="import">
+  <form method="dialog" class="dlg">
+    <h2>Ajouter un espace existant</h2>
+    <p class="aide">Pour un coureur créé ailleurs, depuis la page admin du site par exemple. Colle son code.</p>
+    <input id="codeImport" placeholder="a3f9c2e1b7-col-ravito-seuil-482" autocomplete="off" spellcheck="false">
+    <p class="aide" id="msgImport" role="status"></p>
+    <div class="dlg-pied">
+      <span class="espace"></span>
+      <button value="annuler" class="b">Annuler</button>
+      <button type="button" class="b b-plein" id="importer">Ajouter</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- QUITTER SANS PUBLIER -->
+<dialog id="quitter">
+  <form method="dialog" class="dlg">
+    <h2>Modifications non publiées</h2>
+    <p class="aide">Ce que tu viens de changer n'est pas encore sur le site. L'abandonner ?</p>
+    <div class="dlg-pied">
+      <span class="espace"></span>
+      <button value="rester" class="b">Rester</button>
+      <button value="abandonner" class="b danger-b">Abandonner</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>

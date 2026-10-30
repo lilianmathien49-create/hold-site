@@ -1,0 +1,170 @@
+/* Hold, application de bureau. Une allure d'outil Mac : la police du système
+   pour tout ce qui se manipule, l'empattement du système (New York) pour les
+   noms, et le rouge de Hold pour la seule chose qui compte, publier. Rien ne
+   vient d'Internet : l'application doit s'ouvrir hors ligne. */
+:root {
+  color-scheme: light;
+  --fond: #F2F3F4;
+  --cote: #E9EAEC;
+  --surface: #FFFFFF;
+  --texte: #15171A;
+  --doux: #41454B;
+  --pale: #6B7078;
+  --trait: rgba(21, 23, 26, .12);
+  --trait-fort: rgba(21, 23, 26, .22);
+  --survol: rgba(21, 23, 26, .05);
+  --actif: rgba(224, 64, 56, .10);
+  --marque: #E04038;
+  --rouge-texte: #C5342C;
+  --bouton: #15171A;
+  --bouton-texte: #F7F8F8;
+  --ok: #2F7A57;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  --serif: ui-serif, "New York", Georgia, serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --fond: #161718;
+    --cote: #1E1F21;
+    --surface: #222326;
+    --texte: #F2F2F2;
+    --doux: #C4C6CA;
+    --pale: #8D9096;
+    --trait: rgba(255, 255, 255, .10);
+    --trait-fort: rgba(255, 255, 255, .20);
+    --survol: rgba(255, 255, 255, .06);
+    --actif: rgba(240, 68, 62, .16);
+    --marque: #F0443E;
+    --rouge-texte: #F26B66;
+    --bouton: #F2F2F2;
+    --bouton-texte: #15171A;
+    --ok: #5BC08F;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; display: grid; grid-template-columns: 270px minmax(0, 1fr); background: var(--fond);
+  color: var(--texte); font: 14px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+[hidden] { display: none !important; }
+button, input { font: inherit; color: inherit; }
+code { font-family: var(--mono); font-size: 13px; }
+
+/* ---------- Boutons ---------- */
+.b { min-height: 32px; padding: 0 14px; border: 1px solid var(--trait-fort); border-radius: 7px;
+  background: var(--surface); cursor: pointer; white-space: nowrap; }
+.b:hover { background: var(--survol); }
+.b-plein { background: var(--bouton); color: var(--bouton-texte); border-color: var(--bouton); }
+.b-plein:hover { background: var(--bouton); opacity: .88; }
+.b:disabled { opacity: .45; cursor: default; }
+.b-lien { border: 0; background: none; padding: 4px 6px; border-radius: 5px; cursor: pointer;
+  color: var(--pale); font-size: 13px; }
+.b-lien:hover { color: var(--texte); background: var(--survol); }
+.danger { color: var(--rouge-texte); }
+.danger-b { color: var(--rouge-texte); border-color: currentColor; }
+
+/* ---------- Barre latérale ---------- */
+.cote { background: var(--cote); border-right: 1px solid var(--trait); display: flex;
+  flex-direction: column; min-height: 0; }
+.cote-tete { padding: 18px 14px 10px; display: grid; gap: 10px; }
+.logo { margin: 0 0 4px 4px; font-family: var(--serif); font-size: 24px; letter-spacing: -.01em; }
+.point { display: inline-block; width: 6px; height: 6px; margin-left: 2px; border-radius: 50%; background: var(--marque); }
+.cote-tete input { min-height: 30px; padding: 0 10px; border: 1px solid var(--trait); border-radius: 7px;
+  background: var(--surface); }
+.liste { list-style: none; margin: 0; padding: 4px 8px; overflow-y: auto; flex: 1; }
+.item { width: 100%; display: grid; gap: 1px; text-align: left; padding: 8px 10px; border: 0;
+  border-radius: 8px; background: none; cursor: pointer; }
+.item:hover { background: var(--survol); }
+.item.actif { background: var(--actif); }
+.item-n { font-weight: 600; }
+.item-t, .item-m { font-size: 12.5px; color: var(--pale); }
+.item-m:empty { display: none; }
+.liste-vide { padding: 10px; color: var(--pale); font-size: 13px; }
+.cote-pied { padding: 10px 10px 14px; border-top: 1px solid var(--trait); display: grid; justify-items: start; gap: 2px; }
+
+/* ---------- Corps ---------- */
+.corps { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.vide { margin: auto; max-width: 420px; text-align: center; padding: 24px; }
+.vide-t { font-family: var(--serif); font-size: 24px; margin: 0 0 8px; }
+.vide-s { color: var(--pale); margin: 0; }
+.fiche { flex: 1; overflow-y: auto; padding: 28px 36px 40px; display: grid; gap: 22px; align-content: start; }
+
+.fiche-tete { display: grid; gap: 16px; }
+.champs-tete { display: grid; gap: 4px; }
+.t-nom, .t-titre { border: 0; background: none; padding: 2px 0; outline: none; width: 100%; }
+.t-nom { font-family: var(--serif); font-size: 32px; letter-spacing: -.01em; }
+.t-titre { font-size: 16px; color: var(--doux); }
+.t-nom::placeholder, .t-titre::placeholder { color: var(--pale); opacity: .7; }
+.acces { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--trait); border-radius: 10px;
+  background: var(--surface); }
+.acces-l { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; }
+.acces-l code { overflow-wrap: anywhere; }
+.lib { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--pale); }
+
+.bloc { padding: 18px 20px; border: 1px solid var(--trait); border-radius: 12px; background: var(--surface);
+  display: grid; gap: 14px; }
+.bloc-tete { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bloc-tete h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.bloc-actions { display: flex; align-items: center; gap: 6px; }
+
+.resume-vide { color: var(--pale); }
+.resume { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 12px 18px; }
+.resume div { display: grid; gap: 2px; }
+.val { font-size: 15px; font-variant-numeric: tabular-nums; }
+
+.atelier { border-top: 1px solid var(--trait); padding-top: 16px; display: grid; gap: 14px; }
+.atelier-t { margin: 0; font-weight: 600; }
+.grille { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 16px; }
+.champ { display: grid; gap: 5px; align-content: start; }
+.champ.large { grid-column: span 2; }
+.champ > span:first-child { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--pale); }
+.champ em { font-style: normal; text-transform: none; letter-spacing: 0; opacity: .8; }
+.champ input { min-height: 32px; padding: 0 10px; border: 1px solid var(--trait-fort); border-radius: 7px;
+  background: var(--fond); width: 100%; min-width: 0; }
+.duo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.choix { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.choix-nom { color: var(--doux); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.atelier-pied { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.etat { color: var(--pale); font-size: 13px; }
+.journal summary { cursor: pointer; color: var(--doux); font-size: 13px; }
+.journal pre { margin: 10px 0 0; padding: 12px 14px; max-height: 260px; overflow: auto; border-radius: 8px;
+  background: var(--fond); font: 12px/1.55 var(--mono); white-space: pre-wrap; }
+
+.docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.docs:empty { display: none; }
+.docs li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px;
+  padding: 8px 12px; border: 1px solid var(--trait); border-radius: 8px; }
+.doc-n { overflow-wrap: anywhere; }
+.doc-t { font-family: var(--mono); font-size: 12px; color: var(--pale); }
+.depose { margin: 0; padding: 14px; border: 1.5px dashed var(--trait-fort); border-radius: 9px;
+  color: var(--pale); text-align: center; font-size: 13px; }
+#blocDocs.survol .depose { border-color: var(--marque); color: var(--texte); background: var(--actif); }
+
+.bloc-danger { border-color: var(--trait); }
+.aide { margin: 0; color: var(--pale); font-size: 13px; }
+.ligne { display: flex; gap: 8px; }
+.ligne input { min-height: 32px; padding: 0 10px; border: 1px solid var(--trait-fort); border-radius: 7px; background: var(--fond); }
+
+/* ---------- Barre du bas ---------- */
+.barre { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 12px 36px;
+  border-top: 1px solid var(--trait); background: var(--cote); }
+.barre .etat { margin-right: auto; }
+.barre .b-plein { min-height: 34px; padding: 0 18px; background: var(--marque); border-color: var(--marque); color: #fff; }
+
+/* ---------- Boîtes ---------- */
+dialog { border: 1px solid var(--trait); border-radius: 14px; padding: 0; background: var(--surface);
+  color: var(--texte); width: min(520px, 92vw); box-shadow: 0 24px 60px rgba(0, 0, 0, .25); }
+dialog::backdrop { background: rgba(0, 0, 0, .35); }
+.dlg { padding: 22px 24px; display: grid; gap: 12px; }
+.dlg h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 22px; }
+.dlg input { min-height: 34px; padding: 0 10px; border: 1px solid var(--trait-fort); border-radius: 7px; background: var(--fond); }
+.etapes { margin: 0; padding-left: 18px; color: var(--doux); display: grid; gap: 4px; font-size: 13.5px; }
+.etapes .b-lien { padding: 0; color: var(--rouge-texte); text-decoration: underline; }
+.dlg-pied { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.espace { flex: 1; }
+
+@media (max-width: 1100px) {
+  .grille { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
