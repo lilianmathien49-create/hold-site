@@ -807,7 +807,7 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
    plus à gauche. Les chiffres sont du texte de la page et non du texte SVG —
    ils gardent leur taille quand l'axe, lui, se rétrécit avec l'écran. */
 .pg-f { margin: 40px 0 0; }
-.pg-d { position: relative; padding-top: 96px; }
+.pg-d { position: relative; padding-top: 96px; padding-bottom: 66px; }
 .pg-rail { position: relative; height: 54px; border-bottom: 1px solid var(--line); }
 .pg-band { position: absolute; top: 0; bottom: 0; left: var(--a);
   width: calc(var(--b) - var(--a)); background: var(--mark); opacity: .07; }
@@ -833,8 +833,29 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 .pg-gain { position: absolute; left: var(--m); top: 50%; margin: 0;
   transform: translate(-50%, -50%); white-space: nowrap;
   font-size: 12px; letter-spacing: .05em; color: var(--sub-text); }
-.pg-f figcaption { font-size: 13.5px; line-height: 1.62; color: var(--dim);
-  margin-top: 26px; max-width: 60ch; }
+/* D'où sort 3 h 32 : une flèche qui désigne le chiffre plutôt qu'une phrase
+   qui le réexplique sous le schéma. */
+.pg-note { position: absolute; top: calc(100% + 10px); left: calc(var(--b) + 16px);
+  right: 0; margin: 0; display: flex; gap: 6px; align-items: flex-start;
+  font-size: 10.5px; line-height: 1.55; letter-spacing: .04em; color: var(--dim); }
+.pg-fl { flex: none; width: 34px; height: 29px; margin-top: -2px;
+  fill: none; stroke: var(--dim); stroke-width: 1.2;
+  stroke-linecap: round; stroke-linejoin: round; }
+
+/* Trois gestes centrés sous le schéma. Les pictogrammes sont dessinés au même
+   trait que le reste du site — une oreille qui écoute serait un cliché ; trois
+   ondes qui arrivent sur un point disent la même chose sans l'illustrer. */
+.recette { max-width: 940px; margin: 56px auto 0; text-align: center; }
+.rc { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px 32px; list-style: none; margin: 30px 0 0; padding: 0; }
+.rc-i { width: 32px; height: 32px; fill: none; stroke: var(--mark);
+  stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.rc-plein { fill: var(--mark); stroke: none; }
+.rc-pt { stroke: var(--dim); stroke-dasharray: 2 3.2; }
+.rc h3 { font-family: var(--serif); font-weight: 400; font-size: 21px;
+  line-height: 1.15; margin: 16px 0 9px; }
+.rc p { font-size: 13.5px; line-height: 1.58; color: var(--muted);
+  margin: 0 auto; max-width: 30ch; }
 
 /* Les captures sont la pièce justificative : on les montre telles qu'elles ont
    été publiées. Le cadre reste clair dans les deux thèmes — une capture n'a pas
@@ -856,6 +877,14 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .pg-d { padding-top: 112px; }
   .pg-m em { white-space: normal; max-width: 13ch; }
   .pg-gain { font-size: 10.5px; letter-spacing: .02em; }
+  /* Sous le schéma il n'y a plus de place à droite du chiffre : l'annotation
+     prend toute la largeur et la flèche, qui ne désignerait plus rien, part.
+     Elle reste en absolu : rendue statique, elle retomberait dans la bande. */
+  .pg-note { left: 0; top: calc(100% + 14px); }
+  .pg-fl { display: none; }
+  .pg-d { padding-bottom: 46px; }
+  .recette { margin-top: 52px; }
+  .rc { grid-template-columns: minmax(0, 1fr); gap: 34px; }
   .proof-shots { grid-template-columns: minmax(0, 1fr); gap: 14px; }
 }
 

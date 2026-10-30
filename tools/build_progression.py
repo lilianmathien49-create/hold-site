@@ -97,6 +97,13 @@ def main() -> int:
             <p class="pg-m pg-m-a"><b>{MAR["chrono"]}</b><em class="mono">ce qu'il a couru</em></p>
             <p class="pg-m pg-m-b"><b>{hhmm(prevu)}</b><em class="mono">ce que la table prévoyait</em></p>
             <p class="pg-gain mono">{round(gain)} minutes de moins</p>
+            <p class="pg-note">
+              <svg class="pg-fl" viewBox="0 0 40 34" aria-hidden="true">
+                <path d="M34 30C26 30 12 26 9 9"/>
+                <path d="M9 9l-2.4 6.5M9 9l4.5 5.3"/>
+              </svg>
+              <span class="mono">{hhmm(prevu)}, calculé d'après la table de Riegel</span>
+            </p>
           </div>
         </div>'''
 
@@ -104,9 +111,6 @@ def main() -> int:
       {tableau}
       <figure class="pg-f">
         {schema}
-        <figcaption>{hhmm(prevu)} : ce que la formule de Riegel — celle de tous les
-          calculateurs d'allure — déduit de son 10 km, et ce qu'un plan générique
-          lui aurait fait viser.</figcaption>
       </figure>
       {FIN}"""
 
