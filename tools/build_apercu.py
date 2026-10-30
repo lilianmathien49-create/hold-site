@@ -225,7 +225,7 @@ def consignes(seg, fin, dplus, dmoins, km, part_marche) -> list[str]:
     if dplus >= 350:
         out.append(
             f"{milliers(dplus)} m de montée en {fr(km)} km. {round(part_marche * 100)} % "
-            "de la portion se marche — c'est le seuil de pente mesuré sur tes sorties "
+            "de la portion se marche, et c'est le seuil de pente mesuré sur tes sorties "
             "qui le décide, pas une règle générale. Les replats d'une montée pareille "
             "coûtent plus qu'ils ne rapportent.")
     if dmoins >= 300:

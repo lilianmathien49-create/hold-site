@@ -456,23 +456,32 @@ select.field option { background: var(--surface); color: var(--text); }
 .how-steps p { color: var(--sub-text); font-size: 15px; }
 .how-steps .when { margin-top: auto; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--text); }
 
-/* D'où vient la stratégie : deux sources, deux pictogrammes. */
+/* D'où vient la stratégie : deux sources, deux pictogrammes. Tout est centré
+   dans sa colonne — sauf les listes, qui restent des blocs centrés dont les
+   lignes se lisent à gauche. Une puce centrée ne se lit pas. */
 .src { margin-top: 56px; }
 .src-l { list-style: none; margin: 26px 0 0; padding: 0; display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px 56px; }
-.src-i { width: 42px; height: 42px; fill: none; stroke: var(--mark);
+  grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 44px 56px; }
+.src-l > li { text-align: center; }
+.src-i { width: 44px; height: 44px; fill: none; stroke: var(--mark);
   stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .src-pt { stroke: var(--dim); stroke-dasharray: 2.5 3.5; }
-.src-l h3 { margin: 18px 0 10px; font-family: var(--serif); font-weight: 400;
+.src-l h3 { margin: 18px 0 11px; font-family: var(--serif); font-weight: 400;
   font-size: clamp(21px, 2vw, 26px); line-height: 1.15; }
-.src-l p { margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--sub-text);
-  max-width: 42ch; }
-.src-n { margin: 32px 0 0; padding-top: 20px; border-top: 1px solid var(--line);
-  font-size: 14px; color: var(--dim); }
+.src-l > li > p { margin: 0 auto; font-size: 15.5px; line-height: 1.6;
+  color: var(--sub-text); max-width: 40ch; }
+.src-p { display: inline-block; text-align: left; list-style: none;
+  margin: 18px 0 0; padding: 0; }
+.src-p li { position: relative; padding-left: 17px; font-size: 14.5px;
+  line-height: 1.5; color: var(--muted); }
+.src-p li + li { margin-top: 7px; }
+.src-p li::before { content: ""; position: absolute; left: 0; top: .66em;
+  width: 7px; height: 1px; background: var(--mark); }
 
 .demo-tete { margin-bottom: 36px; }
 
-/* Sous le capot — sous-bloc de Pacing, au même rang que « Pour aller plus loin » */
+/* Les exemples de statistiques : sous-bloc de Pacing, au même rang que
+   « Pour aller plus loin ». */
 .lab { margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--line); }
 .lab-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 36px 0; }
 .lab-tabs button { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--ghost-line); background: transparent; color: var(--muted); font-family: var(--mono); font-size: 13px; cursor: pointer; transition: background-color .2s, color .2s, border-color .2s; }
