@@ -15,7 +15,16 @@
   const BRANCHE = 'main';
   const SITE = 'https://holdrunning.fr';
   const ITER = 310000;
-  const MOTS = 'cime arete col ravito foulee cadence seuil tempo bitume sentier aurore crete denivele allure'.split(' ');
+  // Les mots des codes : la même liste que tools/make-plan.py, lue au besoin.
+  let MOTS = null;
+  async function mots() {
+    if (!MOTS) {
+      const r = await fetch('../tools/mots.txt', { cache: 'no-store' });
+      MOTS = (await r.text()).split(/\s+/).filter((m) => m && !m.startsWith('#'));
+    }
+    return MOTS;
+  }
+  const SEL_FICHIER = 'hold-espace-v2';
   // Le coureur télécharge tout l'espace à l'ouverture, et GitHub refuse les
   // envois trop lourds : dix mégaoctets de documents, c'est déjà beaucoup de PDF.
   const LIMITE = 10 * 1024 * 1024;
@@ -59,12 +68,25 @@
     do { crypto.getRandomValues(a); } while (a[0] >= plafond);
     return a[0] % n;
   }
-  function identifiant() {
-    const o = crypto.getRandomValues(new Uint8Array(5));
-    return Array.from(o, (b) => b.toString(16).padStart(2, '0')).join('');
+  // Exactement la normalisation de tools/make-plan.py et de plan/plan.js.
+  const normalise = (c) => String(c || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+  // Prénom-nom, deux mots, un nombre : clement-dupont-chamois-aurore-482.
+  async function nouveauCode(coureur) {
+    const m = await mots();
+    const fin = `${m[hasard(m.length)]}-${m[hasard(m.length)]}-${100 + hasard(900)}`;
+    const tete = normalise(coureur);
+    return tete ? `${tete}-${fin}` : fin;
   }
-  // Trois mots et un nombre : dictable au téléphone, comme l'outil en ligne de commande.
-  const motDePasse = () => [0, 1, 2].map(() => MOTS[hasard(MOTS.length)]).join('-') + '-' + (100 + hasard(900));
+
+  // Le nom du fichier publié : une empreinte lente du code, jamais le code.
+  async function fichierDe(code) {
+    const base = await crypto.subtle.importKey('raw', utf8.encode(code), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: utf8.encode(SEL_FICHIER), iterations: ITER, hash: 'SHA-256' }, base, 80);
+    return Array.from(new Uint8Array(bits), (b) => b.toString(16).padStart(2, '0')).join('');
+  }
 
   function decoupe(code) {
     const t = String(code || '').trim();
@@ -160,7 +182,7 @@
 
   /* ---------- L'espace en cours ---------- */
   let etat = null;
-  const neuf = () => ({ mode: 'nouveau', slug: '', mdp: '', sha: null, plan: null, planNom: '', fichiers: [] });
+  const neuf = () => ({ mode: 'nouveau', slug: '', mdp: '', code: '', sha: null, plan: null, planNom: '', fichiers: [] });
 
   function poidsTotal() { return etat.fichiers.reduce((t, f) => t + (f.taille || 0), 0); }
 
@@ -246,22 +268,34 @@
     // Le formulaire d'édition reste masqué tant que l'espace n'est pas ouvert :
     // les messages d'ouverture s'écrivent donc sous la case du code.
     const msg = (t) => { $('msgOuvrir').textContent = t; };
-    const c = decoupe($('codeOuvrir').value);
-    if (!c) { msg('Le code ressemble à « a3f9c2e1b7-col-ravito-seuil-482 ».'); return; }
+    const brut = $('codeOuvrir').value.trim();
+    if (!normalise(brut)) { msg('Colle le code du coureur.'); return; }
     $('formEspace').hidden = true;
     $('resultat').hidden = true;
     msg('Ouverture…');
     try {
-      const meta = await github(cheminDe(c.slug));
-      if (meta.status === 404) throw new Error('Aucun espace ne correspond à ce code. Vérifie la partie avant le premier tiret.');
+      // Nouvelle forme de code d'abord ; l'ancienne portait le nom du fichier
+      // avant le premier tiret.
+      let slug = await fichierDe(normalise(brut));
+      let mdp = normalise(brut);
+      let code = normalise(brut);
+      let meta = await github(cheminDe(slug));
+      if (meta.status === 404) {
+        const v1 = decoupe(brut);
+        if (v1) {
+          slug = v1.slug; mdp = v1.mdp; code = brut;
+          meta = await github(cheminDe(slug));
+        }
+      }
+      if (meta.status === 404) throw new Error('Aucun espace ne correspond à ce code.');
       if (!meta.ok) throw new Error(raison(meta));
       const { sha } = await meta.json();
-      const brut = await github(cheminDe(c.slug), { brut: true });
-      if (!brut.ok) throw new Error(raison(brut));
+      const r = await github(cheminDe(slug), { brut: true });
+      if (!r.ok) throw new Error(raison(r));
       let contenu;
-      try { contenu = await dechiffre(await brut.json(), c.mdp); } catch { throw new Error('Code incorrect.'); }
+      try { contenu = await dechiffre(await r.json(), mdp); } catch { throw new Error('Code incorrect.'); }
       const es = espaceDe(contenu);
-      etat = { mode: 'modifier', slug: c.slug, mdp: c.mdp, sha, plan: es.plan, planNom: '', fichiers: es.fichiers };
+      etat = { mode: 'modifier', slug, mdp, code, sha, plan: es.plan, planNom: '', fichiers: es.fichiers };
       $('coureur').value = es.coureur;
       $('titre').value = es.titre;
       $('msgEspace').textContent = '';
@@ -269,7 +303,7 @@
       $('formEspace').hidden = false;
       dessine();
     } catch (err) {
-      msg(err.message || "Impossible de joindre GitHub.");
+      msg(err.message || 'Impossible de joindre GitHub.');
     }
   });
 
@@ -287,15 +321,14 @@
     msg('Chiffrement…');
     try {
       if (etat.mode === 'nouveau') {
-        // Un identifiant de dix caractères hexadécimaux ne collisionne pas en
-        // pratique, mais une vérification coûte une requête.
         for (let essai = 0; essai < 5; essai++) {
-          etat.slug = identifiant();
+          etat.code = await nouveauCode(coureur);
+          etat.slug = await fichierDe(etat.code);
           const r = await github(cheminDe(etat.slug));
           if (r.status === 404) break;
           if (!r.ok) throw new Error(raison(r));
         }
-        etat.mdp = motDePasse();
+        etat.mdp = etat.code;
       }
       const contenu = {
         hold: 2, coureur, titre: $('titre').value.trim(), plan: etat.plan, fichiers: etat.fichiers,
@@ -313,7 +346,7 @@
       const r = await github(cheminDe(etat.slug), { methode: 'PUT', corps });
       if (!r.ok) throw new Error(raison(r));
       etat.sha = (await r.json()).content.sha;
-      const code = `${etat.slug}-${etat.mdp}`;
+      const code = etat.code;
       $('resCode').textContent = code;
       $('resLien').textContent = `${SITE}/plan/#${code}`;
       $('resultat').hidden = false;

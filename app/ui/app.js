@@ -96,9 +96,10 @@
     $('barre').hidden = false;
     $('coureur').value = brouillon.coureur;
     $('titre').value = brouillon.titre;
-    $('acces').hidden = !brouillon.code;
-    $('code').textContent = brouillon.code;
-    $('lien').textContent = brouillon.lien;
+    codeTouche = false;
+    modeCode = brouillon.slug ? 'affiche' : 'nouveau';
+    afficheCode();
+    if (!brouillon.slug && brouillon.coureur) propose();
     $('blocSuppr').hidden = !brouillon.slug;
     $('confSuppr').value = '';
     $('atelier').hidden = true;
@@ -133,7 +134,84 @@
     }
   }
 
-  $('coureur').addEventListener('input', (e) => { brouillon.coureur = e.target.value; marque(); });
+  $('coureur').addEventListener('input', (e) => {
+    brouillon.coureur = e.target.value;
+    marque();
+    // Tant que Lilian n'a pas touché au code, il suit le nom.
+    if (!brouillon.slug && !codeTouche) { clearTimeout(minuterieNom); minuterieNom = setTimeout(propose, 350); }
+  });
+
+  /* ---------- Le code ----------
+     Avant la première publication, le code se choisit : il est proposé à
+     partir du nom, et peut être réécrit. Après, il se change par « Changer »,
+     qui déplace l'espace sous le nouveau code : l'ancien cesse de marcher. */
+  let modeCode = 'nouveau';
+  let codeTouche = false;
+  let minuterieNom = null;
+  let minuterieCode = null;
+
+  function afficheCode() {
+    const saisie = modeCode !== 'affiche';
+    $('code').hidden = saisie;
+    $('codeSaisie').hidden = !saisie;
+    $('copierCode').hidden = saisie;
+    $('changerCode').hidden = modeCode !== 'affiche';
+    $('proposer').hidden = !saisie;
+    $('validerCode').hidden = modeCode !== 'edition';
+    $('annulerCode').hidden = modeCode !== 'edition';
+    $('ligneLien').hidden = !brouillon.slug;
+    $('code').textContent = brouillon.code || '';
+    $('lien').textContent = brouillon.lien || '';
+    if (modeCode === 'affiche') { $('msgCode').textContent = ''; $('msgCode').classList.remove('refus'); }
+    if (modeCode === 'nouveau' && !$('codeSaisie').value) {
+      $('msgCode').textContent = 'Le code sera proposé dès que tu auras écrit le nom.';
+    }
+  }
+
+  async function propose() {
+    try {
+      const { code } = await api('/api/proposer', { coureur: brouillon.coureur });
+      $('codeSaisie').value = code;
+      verifie();
+    } catch (err) { $('msgCode').textContent = err.message; }
+  }
+
+  async function verifie() {
+    const t = $('codeSaisie').value;
+    if (!t.trim()) { $('msgCode').textContent = ''; return; }
+    try {
+      const r = await api('/api/verifier', { code: t, coureur: brouillon.coureur });
+      $('msgCode').classList.toggle('refus', !!r.refus);
+      $('msgCode').textContent = r.refus || (r.code !== t.trim()
+        ? `Il s'écrira « ${r.code} ». Majuscules, accents et espaces n'y changent rien.`
+        : modeCode === 'edition' ? 'Code valable. L’ancien cessera de marcher.' : 'Code valable.');
+    } catch (err) { $('msgCode').textContent = err.message; }
+  }
+
+  $('codeSaisie').addEventListener('input', () => {
+    codeTouche = true;
+    if (!brouillon.slug) marque();
+    clearTimeout(minuterieCode);
+    minuterieCode = setTimeout(verifie, 300);
+  });
+  $('proposer').addEventListener('click', () => { codeTouche = true; propose(); });
+  $('changerCode').addEventListener('click', () => { modeCode = 'edition'; afficheCode(); propose(); $('codeSaisie').focus(); });
+  $('annulerCode').addEventListener('click', () => { modeCode = 'affiche'; afficheCode(); });
+  $('validerCode').addEventListener('click', async () => {
+    $('msgCode').textContent = 'Changement du code…';
+    try {
+      const r = await api('/api/renommer', { slug: brouillon.slug, code: $('codeSaisie').value });
+      Object.assign(brouillon, r);
+      modeCode = 'affiche';
+      afficheCode();
+      await charge();
+      $('msgCode').classList.remove('refus');
+      $('msgCode').textContent = `Code changé. L’ancien ne marche plus : envoie celui-ci à ${brouillon.coureur || 'ton coureur'}.`;
+    } catch (err) {
+      $('msgCode').classList.add('refus');
+      $('msgCode').textContent = err.message;
+    }
+  });
   $('titre').addEventListener('input', (e) => { brouillon.titre = e.target.value; marque(); });
 
   /* ---------- Stratégie ---------- */
@@ -305,6 +383,7 @@
       const r = await api('/api/publier', {
         slug: brouillon.slug, coureur: brouillon.coureur, titre: brouillon.titre,
         plan: brouillon.plan, fichiers: brouillon.fichiers,
+        code: brouillon.slug ? undefined : $('codeSaisie').value,
       });
       const premier = !brouillon.slug;
       Object.assign(brouillon, r);

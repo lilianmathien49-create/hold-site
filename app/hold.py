@@ -179,8 +179,44 @@ def espace_de(c: dict) -> dict:
             "plan": c, "fichiers": []}
 
 
-def mot_de_passe() -> str:
-    return make_plan.make_password()
+def entree(reg: dict, ident: str) -> dict:
+    """Une ligne du registre, quelle que soit sa forme.
+
+    Les premières versions ne gardaient que le mot de passe ; le code d'un
+    espace ancien est alors « identifiant-mot de passe »."""
+    e = dict(reg[ident])
+    e.setdefault("code", f"{ident}-{e['mdp']}")
+    return e
+
+
+def lien_de(code: str) -> str:
+    return f"{SITE}/plan/#{code}"
+
+
+def existe(ident: str) -> bool:
+    statut, _ = github(chemin_de(ident))
+    if statut in (200, 404):
+        return statut == 200
+    raise Erreur(raison(statut))
+
+
+def lis_espace(ident: str, mdp: str) -> dict:
+    statut, corps = github(chemin_de(ident), brut=True)
+    if statut == 404:
+        raise Erreur("Cet espace n'existe plus sur le site.")
+    if statut != 200:
+        raise Erreur(raison(statut))
+    return espace_de(dechiffre(json.loads(corps), mdp))
+
+
+def valide(code: str, coureur: str) -> str:
+    code = make_plan.normalise(code)
+    if not code:
+        raise Erreur("Le code est vide.")
+    _, refus = make_plan.force(code, coureur)
+    if refus:
+        raise Erreur(refus)
+    return code
 
 
 # ---------- Stratégie de course ----------
@@ -298,92 +334,134 @@ def ouvrir(slug: str) -> dict:
     reg = registre_lire()
     if slug not in reg:
         raise Erreur("Ce coureur n'est pas dans ta liste.")
-    statut, corps = github(chemin_de(slug), brut=True)
-    if statut == 404:
-        raise Erreur("Cet espace n'existe plus sur le site.")
-    if statut != 200:
-        raise Erreur(raison(statut))
-    es = espace_de(dechiffre(json.loads(corps), reg[slug]["mdp"]))
-    code = f"{slug}-{reg[slug]['mdp']}"
-    return {**es, "slug": slug, "code": code, "lien": f"{SITE}/plan/#{code}",
+    e = entree(reg, slug)
+    es = lis_espace(slug, e["mdp"])
+    return {**es, "slug": slug, "code": e["code"], "lien": lien_de(e["code"]),
             "resume": resume_plan(es["plan"])}
 
 
 def importer(code: str) -> dict:
-    code = (code or "").strip()
-    i = code.find("-")
-    if i < 1:
-        raise Erreur("Le code ressemble à « a3f9c2e1b7-col-ravito-seuil-482 ».")
-    slug, mdp = code[:i].lower(), code[i + 1:]
-    statut, corps = github(chemin_de(slug), brut=True)
-    if statut == 404:
-        raise Erreur("Aucun espace ne correspond à ce code.")
-    if statut != 200:
-        raise Erreur(raison(statut))
+    """Ajoute à la liste un espace créé ailleurs. Nouvelle forme de code
+    d'abord, ancienne ensuite."""
+    brut = (code or "").strip()
+    if not make_plan.normalise(brut):
+        raise Erreur("Colle le code du coureur.")
+    norme = make_plan.normalise(brut)
+    ident, mdp, garde = make_plan.fichier_de(norme), norme, norme
+    if not existe(ident):
+        i = brut.find("-")
+        if i < 1 or not existe(brut[:i].lower()):
+            raise Erreur("Aucun espace ne correspond à ce code.")
+        ident, mdp, garde = brut[:i].lower(), brut[i + 1:], brut
     try:
-        es = espace_de(dechiffre(json.loads(corps), mdp))
+        es = lis_espace(ident, mdp)
+    except Erreur:
+        raise
     except Exception:
         raise Erreur("Code incorrect.")
     with _verrou:
         reg = registre_lire()
-        reg[slug] = {"mdp": mdp, "coureur": es["coureur"], "titre": es["titre"],
-                     "plan": bool(es["plan"]), "docs": len(es["fichiers"]),
-                     "modifie_iso": datetime.now().isoformat(timespec="seconds")}
+        reg[ident] = {"code": garde, "mdp": mdp, "coureur": es["coureur"], "titre": es["titre"],
+                      "plan": bool(es["plan"]), "docs": len(es["fichiers"]),
+                      "modifie_iso": datetime.now().isoformat(timespec="seconds")}
         registre_ecrire(reg)
-    return {"slug": slug}
+    return {"slug": ident}
 
 
 def publier(p: dict) -> dict:
     coureur = (p.get("coureur") or "").strip()
     if not coureur:
-        raise Erreur("Il faut au moins le prénom du coureur.")
+        raise Erreur("Il faut au moins le prénom et le nom du coureur.")
     fichiers = p.get("fichiers") or []
     if not p.get("plan") and not fichiers:
         raise Erreur("Ajoute une stratégie ou au moins un document.")
     if sum(f.get("taille", 0) for f in fichiers) > LIMITE:
         raise Erreur("Les documents dépassent 10 Mo : le coureur télécharge tout à l'ouverture.")
-    with _verrou:
-        reg = registre_lire()
-    slug = p.get("slug")
+    reg = registre_lire()
+    ident = p.get("slug")
     sha = None
-    if slug:
-        if slug not in reg:
+    if ident:
+        if ident not in reg:
             raise Erreur("Ce coureur n'est pas dans ta liste.")
-        mdp = reg[slug]["mdp"]
-        statut, corps = github(chemin_de(slug))
+        e = entree(reg, ident)
+        code, mdp = e["code"], e["mdp"]
+        statut, corps = github(chemin_de(ident))
         if statut == 200:
             sha = json.loads(corps)["sha"]
         elif statut != 404:
             raise Erreur(raison(statut))
     else:
-        for _ in range(5):
-            slug = secrets.token_hex(5)
-            statut, _ = github(chemin_de(slug))
-            if statut == 404:
-                break
-            if statut != 200:
-                raise Erreur(raison(statut))
-        mdp = mot_de_passe()
+        # Le code se choisit avant la première publication ; à défaut, il est
+        # tiré au sort à partir du nom.
+        code = valide(p.get("code") or make_plan.make_password(coureur), coureur)
+        ident, mdp = make_plan.fichier_de(code), code
+        if existe(ident):
+            raise Erreur("Ce code est déjà pris. Propose-en un autre.")
+    contenu = contenu_de(p, coureur)
+    envoie(ident, mdp, contenu, sha)
+    note(ident, code, mdp, contenu)
+    return {"slug": ident, "code": code, "lien": lien_de(code)}
+
+
+def contenu_de(p: dict, coureur: str) -> dict:
     jour = date.today()
-    contenu = {"hold": 2, "coureur": coureur, "titre": (p.get("titre") or "").strip(),
-               "plan": p.get("plan"), "fichiers": fichiers,
-               "modifie": f"{jour.day} {MOIS[jour.month - 1]} {jour.year}"}
+    return {"hold": 2, "coureur": coureur, "titre": (p.get("titre") or "").strip(),
+            "plan": p.get("plan"), "fichiers": p.get("fichiers") or [],
+            "modifie": f"{jour.day} {MOIS[jour.month - 1]} {jour.year}"}
+
+
+def envoie(ident: str, mdp: str, contenu: dict, sha: str | None) -> None:
     pack = make_plan.encrypt(contenu, mdp)
-    corps = {"message": f"Espace {slug} : {'mise à jour' if sha else 'création'}",
+    # Le message de commit est public : il ne porte que l'empreinte.
+    corps = {"message": f"Espace {ident} : {'mise à jour' if sha else 'création'}",
              "content": base64.b64encode(json.dumps(pack).encode()).decode(), "branch": BRANCHE}
     if sha:
         corps["sha"] = sha
-    statut, rep = github(chemin_de(slug), "PUT", corps)
+    statut, _ = github(chemin_de(ident), "PUT", corps)
     if statut not in (200, 201):
         raise Erreur(raison(statut))
+
+
+def note(ident: str, code: str, mdp: str, contenu: dict) -> None:
     with _verrou:
         reg = registre_lire()
-        reg[slug] = {"mdp": mdp, "coureur": coureur, "titre": contenu["titre"],
-                     "plan": bool(p.get("plan")), "docs": len(fichiers),
-                     "modifie_iso": datetime.now().isoformat(timespec="seconds")}
+        reg[ident] = {"code": code, "mdp": mdp, "coureur": contenu["coureur"], "titre": contenu["titre"],
+                      "plan": bool(contenu["plan"]), "docs": len(contenu["fichiers"]),
+                      "modifie_iso": datetime.now().isoformat(timespec="seconds")}
         registre_ecrire(reg)
-    code = f"{slug}-{mdp}"
-    return {"slug": slug, "code": code, "lien": f"{SITE}/plan/#{code}"}
+
+
+def renommer(p: dict) -> dict:
+    """Change le code d'un espace : nouveau fichier sous la nouvelle empreinte,
+    puis suppression de l'ancien. L'ancien code cesse de marcher."""
+    ident = p.get("slug")
+    reg = registre_lire()
+    if ident not in reg:
+        raise Erreur("Ce coureur n'est pas dans ta liste.")
+    e = entree(reg, ident)
+    es = lis_espace(ident, e["mdp"])
+    code = valide(p.get("code"), es["coureur"])
+    if code == e["code"]:
+        raise Erreur("C'est déjà son code.")
+    neuf = make_plan.fichier_de(code)
+    if existe(neuf):
+        raise Erreur("Ce code est déjà pris. Propose-en un autre.")
+    contenu = contenu_de(es, es["coureur"])
+    envoie(neuf, code, contenu, None)
+    # Le nouveau code est noté avant que l'ancien fichier ne disparaisse : si
+    # la suppression échoue, on garde au moins l'accès au nouveau.
+    note(neuf, code, code, contenu)
+    supprimer(ident)
+    return {"slug": neuf, "code": code, "lien": lien_de(code)}
+
+
+def proposer(p: dict) -> dict:
+    return {"code": make_plan.make_password(p.get("coureur") or "")}
+
+
+def verifier(p: dict) -> dict:
+    bits, refus = make_plan.force(p.get("code") or "", p.get("coureur") or "")
+    return {"code": make_plan.normalise(p.get("code") or ""), "refus": refus, "bits": round(bits, 1)}
 
 
 def supprimer(slug: str) -> dict:
@@ -447,6 +525,9 @@ ROUTES = {
     ("POST", "/api/importer"): lambda p: importer(p.get("code")),
     ("POST", "/api/publier"): publier,
     ("POST", "/api/supprimer"): lambda p: supprimer(p.get("slug")),
+    ("POST", "/api/renommer"): renommer,
+    ("POST", "/api/proposer"): proposer,
+    ("POST", "/api/verifier"): verifier,
     ("POST", "/api/strategie"): strategie,
     ("POST", "/api/choisir"): lambda p: {"chemins": choisir(p.get("genre"))},
     ("POST", "/api/documents"): lambda p: {"fichiers": [lis_document(c) for c in choisir("documents")]},

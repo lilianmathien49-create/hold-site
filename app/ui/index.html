@@ -35,15 +35,24 @@
   <section class="fiche" id="fiche" hidden>
     <header class="fiche-tete">
       <div class="champs-tete">
-        <input id="coureur" class="t-nom" placeholder="Prénom du coureur" autocomplete="off">
+        <input id="coureur" class="t-nom" placeholder="Prénom et nom du coureur" autocomplete="off">
         <input id="titre" class="t-titre" placeholder="Titre de l'espace : UTMB 2027, Marathon de Paris…" autocomplete="off">
       </div>
-      <div class="acces" id="acces" hidden>
-        <div class="acces-l"><span class="lib">Code</span><code id="code"></code>
-          <button type="button" class="b-lien" data-copie="code">Copier</button></div>
-        <div class="acces-l"><span class="lib">Lien</span><code id="lien"></code>
-          <button type="button" class="b-lien" data-copie="lien">Copier</button>
-          <button type="button" class="b-lien" id="voir">Ouvrir</button></div>
+      <div class="acces" id="acces">
+        <div class="acces-l"><span class="lib">Code</span>
+          <code id="code"></code>
+          <input id="codeSaisie" class="code-saisie" autocomplete="off" spellcheck="false" autocapitalize="off" hidden>
+          <span class="acces-b">
+            <button type="button" class="b-lien" data-copie="code" id="copierCode">Copier</button>
+            <button type="button" class="b-lien" id="proposer" hidden>Proposer un autre</button>
+            <button type="button" class="b-lien" id="changerCode">Changer</button>
+            <button type="button" class="b-lien" id="validerCode" hidden>Renommer</button>
+            <button type="button" class="b-lien" id="annulerCode" hidden>Annuler</button>
+          </span></div>
+        <p class="aide aide-code" id="msgCode"></p>
+        <div class="acces-l" id="ligneLien"><span class="lib">Lien</span><code id="lien"></code>
+          <span class="acces-b"><button type="button" class="b-lien" data-copie="lien">Copier</button>
+          <button type="button" class="b-lien" id="voir">Ouvrir</button></span></div>
       </div>
     </header>
 

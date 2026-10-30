@@ -1623,10 +1623,30 @@ function afficher(espace) {
 }
 
 /* ---------- La porte ----------
-   Deux chemins d'entrée. Par le lien direct, l'identifiant est dans l'adresse
-   et seul le mot de passe manque. Sans lien, le coureur tape un code unique
-   qui porte les deux, séparés par le premier tiret — un seul chose à retenir. */
+   Deux formes de code. La nouvelle commence par le prénom et le nom du
+   coureur : « clement-dupont-chamois-aurore-482 ». Le fichier à ouvrir n'y
+   figure pas : son nom est une empreinte lente du code, calculée ici, si bien
+   que le dépôt public ne laisse voir ni nom ni code. L'ancienne,
+   « a7f3c921-arete-allure-105 », portait le nom du fichier avant le premier
+   tiret ; elle s'ouvre toujours, en second recours. */
 const STORE = 'hold.plan';
+const SEL_FICHIER = 'hold-espace-v2';
+const ITER_FICHIER = 310000;
+
+// Exactement la normalisation de tools/make-plan.py : minuscules, accents
+// retirés, tout le reste en tirets. tools/test/codes.js le vérifie.
+function normalise(code) {
+  return String(code || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+async function fichierDe(code) {
+  const enc = new TextEncoder();
+  const base = await crypto.subtle.importKey('raw', enc.encode(code), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: enc.encode(SEL_FICHIER), iterations: ITER_FICHIER, hash: 'SHA-256' }, base, 80);
+  return Array.from(new Uint8Array(bits), (b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 function splitCode(raw) {
   const t = String(raw || '').trim();
@@ -1649,74 +1669,91 @@ const store = {
   },
 };
 
-let pack = null, slug = null;
+let slugAncien = null;          // ancien lien qui ne portait que l'identifiant
 const msg = (t) => { $('gateMsg').textContent = t; };
 
 async function load(s) {
   const res = await fetch(`data/${encodeURIComponent(s)}.json`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(String(res.status));
+  if (!res.ok) throw new Error(res.status === 404 ? 'introuvable' : String(res.status));
   return res.json();
 }
 
-async function unlock(s, pw, remember) {
-  const data = pack && slug === s ? pack : await load(s);
-  let plan;
-  try {
-    plan = await decrypt(data, pw);
-  } catch {
-    // AES-GCM refuse aussi bien un mauvais mot de passe qu'un fichier modifié.
-    throw new Error('mot de passe');
-  }
-  pack = data; slug = s;
-  if (remember) store.write({ slug: s, pw });
-  else store.clear();
+function montre(contenu) {
   // Le déchiffrement a réussi : une erreur d'affichage ne doit pas se faire
   // passer pour un mauvais code, sinon le coureur cherche au mauvais endroit.
   try {
-    afficher(espaceDe(plan));
+    afficher(espaceDe(contenu));
   } catch (e) {
     console.error('Hold : affichage du plan', e);
     msg("Le plan s'est ouvert mais n'a pas pu s'afficher. Préviens ton coach.");
   }
 }
 
+// Ouvre un code, nouvelle forme d'abord. Lève « introuvable » si aucun
+// fichier ne correspond, « mot de passe » si le fichier existe mais refuse.
+async function ouvre(brut, souvenir) {
+  const code = normalise(brut);
+  if (!code) throw new Error('introuvable');
+  let pack = null;
+  try { pack = await load(await fichierDe(code)); } catch (e) { if (e.message !== 'introuvable') throw e; }
+  if (pack) {
+    let contenu;
+    try { contenu = await decrypt(pack, code); } catch { throw new Error('mot de passe'); }
+    if (souvenir) store.write({ code }); else store.clear();
+    montre(contenu);
+    return;
+  }
+  const v1 = splitCode(brut);
+  if (!v1) throw new Error('introuvable');
+  await ouvreAncien(v1.slug, v1.pw, souvenir);
+}
+
+async function ouvreAncien(s, pw, souvenir) {
+  const pack = await load(s);
+  let contenu;
+  try { contenu = await decrypt(pack, pw); } catch { throw new Error('mot de passe'); }
+  if (souvenir) store.write({ slug: s, pw }); else store.clear();
+  montre(contenu);
+}
+
+const dire = (e) => msg(e.message === 'mot de passe' ? 'Code incorrect.'
+  : e.message === 'introuvable' ? "Aucun espace ne correspond à ce code. Vérifie l'orthographe."
+    : 'Connexion impossible pour le moment. Réessaie dans un instant.');
+
 window.addEventListener('hashchange', () => { location.reload(); });
 
 (async function boot() {
-  const hash = (location.hash || '').replace(/^#/, '').trim();
+  const hash = decodeURIComponent((location.hash || '').replace(/^#/, '')).trim();
   const saved = store.read();
 
-  // Un lien direct peut porter le code entier : on accepte les deux formes.
-  const fromHash = hash ? (splitCode(hash) || { slug: hash, pw: null }) : null;
-
-  if (fromHash) {
-    slug = fromHash.slug;
-    $('codeWrap').hidden = true;
-    $('pwWrap').hidden = false;
-    try {
-      pack = await load(slug);
-    } catch {
-      $('codeWrap').hidden = false;
-      $('pwWrap').hidden = true;
-      msg("Aucun plan à cette adresse. Vérifie le lien, ou entre ton code complet.");
-      return;
-    }
-    if (fromHash.pw) {       // code complet dans l'adresse : on ouvre directement
-      try { await unlock(slug, fromHash.pw, false); } catch { msg('Code incorrect.'); }
+  if (hash) {
+    msg('Ouverture…');
+    try { await ouvre(hash, false); msg(''); return; } catch (e) {
+      // Un ancien lien qui ne portait que l'identifiant : on demande le mot de passe.
+      if (e.message === 'introuvable' && /^[a-z0-9]+$/i.test(hash)) {
+        try {
+          await load(hash.toLowerCase());
+          slugAncien = hash.toLowerCase();
+          $('codeWrap').hidden = true;
+          $('pwWrap').hidden = false;
+          msg('');
+          return;
+        } catch { /* rien à cette adresse : message ci-dessous */ }
+      }
+      dire(e);
       return;
     }
   }
 
-  if (saved && saved.slug && saved.pw) {
+  if (saved && (saved.code || (saved.slug && saved.pw))) {
     $('remember').checked = true;
     try {
-      await unlock(saved.slug, saved.pw, true);
+      if (saved.code) await ouvre(saved.code, true);
+      else await ouvreAncien(saved.slug, saved.pw, true);
       return;
     } catch {
-      store.clear();          // le plan a changé de mot de passe, ou n'existe plus
+      store.clear();          // le code a changé, ou l'espace n'existe plus
       msg('Ton accès enregistré ne fonctionne plus. Entre ton code à nouveau.');
-      $('codeWrap').hidden = false;
-      $('pwWrap').hidden = true;
     }
   }
 })();
@@ -1725,34 +1762,21 @@ $('gateForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const remember = $('remember').checked;
   const btn = $('gateBtn');
-  let s, pw;
-
-  if (!$('pwWrap').hidden) {
-    s = slug; pw = $('pw').value;
-    if (!pw) { msg('Entre ton mot de passe.'); return; }
-  } else {
-    const parsed = splitCode($('code').value);
-    if (!parsed) {
-      msg("Le code ressemble à « a7f3c921-arete-allure-105 », avec un tiret après l'identifiant.");
-      return;
-    }
-    s = parsed.slug; pw = parsed.pw;
-  }
-
   btn.disabled = true;
   msg('Ouverture…');
   try {
-    if (!pack || slug !== s) pack = await load(s);
-    slug = s;
-  } catch {
-    msg("Aucun plan ne correspond à ce code. Vérifie la première partie, avant le tiret.");
-    btn.disabled = false;
-    return;
-  }
-  try {
-    await unlock(s, pw, remember);
-  } catch {
-    msg('Code incorrect.');
+    if (!$('pwWrap').hidden && slugAncien) {
+      const pw = $('pw').value;
+      if (!pw) { msg('Entre ton mot de passe.'); return; }
+      await ouvreAncien(slugAncien, pw, remember);
+    } else {
+      const brut = $('code').value;
+      if (!normalise(brut)) { msg('Entre le code que ton coach t’a transmis.'); return; }
+      await ouvre(brut, remember);
+    }
+    msg('');
+  } catch (err) {
+    dire(err);
     ($('pwWrap').hidden ? $('code') : $('pw')).select();
   } finally {
     btn.disabled = false;

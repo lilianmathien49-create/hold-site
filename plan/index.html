@@ -30,16 +30,16 @@
       <h1 class="title">Ton plan<br><span class="soft">de course.</span></h1>
       <p class="sub" id="gateFor">Entre le code que ton coach t'a transmis.</p>
 
-      <!-- Un seul champ quand on arrive sans lien : le code contient l'identifiant
-           du plan et le mot de passe, séparés par le premier tiret. -->
+      <!-- Un seul champ : le code commence par le prénom et le nom du coureur.
+           Majuscules, accents et espaces n'y changent rien. -->
       <label class="f" id="codeWrap">
         <span>Ton code</span>
         <input id="code" type="text" autocapitalize="off" autocorrect="off" spellcheck="false"
-               autocomplete="off" placeholder="a7f3c921-arete-allure-105">
+               autocomplete="off" placeholder="clement-dupont-chamois-aurore-482">
       </label>
 
-      <!-- Quand on arrive par le lien direct, l'identifiant est déjà connu :
-           on ne demande plus que le mot de passe. -->
+      <!-- Anciens liens seulement : ils ne portaient que l'identifiant du plan,
+           il manque alors le mot de passe. -->
       <label class="f" id="pwWrap" hidden>
         <span>Mot de passe</span>
         <input id="pw" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false">

@@ -52,6 +52,13 @@ def main(argv):
     code |= lancer([module.replace("export function", "function"),
                     (HERE / "avis.js").read_text(encoding="utf-8")])
 
+    # La normalisation des codes, à l'identique de Python : extraite de
+    # plan/plan.js seule, pour ne pas lancer la page entière.
+    js = (ROOT / "plan" / "plan.js").read_text(encoding="utf-8")
+    i = js.index("function normalise(code)")
+    j = js.index("\n}\n", i) + 3
+    code |= lancer([js[i:j], (HERE / "codes.js").read_text(encoding="utf-8")])
+
     seuil = ROOT / "tools" / "seuil_marche.py"
     if seuil.is_file():
         s = subprocess.run([sys.executable, "-I", str(seuil), "--essai"],

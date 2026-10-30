@@ -8,7 +8,7 @@
 <meta name="referrer" content="no-referrer">
 <!-- Cette page tient la clé qui écrit sur le site : aucun script tiers n'y
      entre, et elle ne parle qu'à GitHub. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://api.github.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://api.github.com; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400..700&family=Fraunces:opsz,wght@9..144,400..700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -62,14 +62,14 @@
     <form class="adm-ligne" id="formOuvrir" hidden>
       <label class="f adm-grand"><span>Code du coureur</span>
         <input id="codeOuvrir" type="text" autocomplete="off" spellcheck="false" autocapitalize="off"
-               placeholder="a3f9c2e1b7-col-ravito-seuil-482"></label>
+               placeholder="clement-dupont-chamois-aurore-482"></label>
       <button type="submit" class="btn">Ouvrir</button>
     </form>
     <p class="hint" id="msgOuvrir" role="status" aria-live="polite"></p>
 
     <form id="formEspace">
       <div class="adm-deux">
-        <label class="f"><span>Prénom du coureur</span><input id="coureur" type="text" autocomplete="off"></label>
+        <label class="f"><span>Prénom et nom du coureur</span><input id="coureur" type="text" autocomplete="off"></label>
         <label class="f"><span>Titre de l'espace</span><input id="titre" type="text" autocomplete="off"
                placeholder="UTMB 2026, Marathon de Paris…"></label>
       </div>

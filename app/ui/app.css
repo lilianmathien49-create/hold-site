@@ -99,7 +99,13 @@ code { font-family: var(--mono); font-size: 13px; }
 .t-nom::placeholder, .t-titre::placeholder { color: var(--pale); opacity: .7; }
 .acces { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--trait); border-radius: 10px;
   background: var(--surface); }
-.acces-l { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; }
+.acces-l { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.acces-b { display: flex; gap: 2px; }
+.code-saisie { min-height: 32px; padding: 0 10px; border: 1px solid var(--trait-fort); border-radius: 7px;
+  background: var(--fond); font-family: var(--mono); font-size: 13px; width: 100%; min-width: 0; }
+.aide-code { margin-left: 52px; }
+.aide-code:empty { display: none; }
+.aide-code.refus { color: var(--rouge-texte); }
 .acces-l code { overflow-wrap: anywhere; }
 .lib { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--pale); }
 
