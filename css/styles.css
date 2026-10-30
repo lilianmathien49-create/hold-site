@@ -233,6 +233,7 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 400;
   font-size: clamp(19px, 1.9vw, 25px); line-height: 1.24; color: var(--muted);
   margin: 12px 0 0; max-width: 34ch; text-wrap: balance; }
 .sub b { color: var(--text); font-weight: 500; }
+.offres-aide { margin-top: 28px; max-width: 760px; line-height: 1.6; }
 .hint { font-family: var(--mono); font-size: 12px; color: var(--dim); }
 
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; padding: 0 24px; border-radius: 10px; background: var(--btn-bg); color: var(--btn-fg); font-weight: 500; font-size: 15px; border: 1px solid var(--btn-bg); transition: background-color .2s, transform .25s var(--ease); white-space: nowrap; }
@@ -487,17 +488,6 @@ select.field option { background: var(--surface); color: var(--text); }
 
 /* Les exemples de statistiques : sous-bloc de Pacing, au même rang que
    « Pour aller plus loin ». */
-.lab { margin-top: 64px; padding-top: 40px; border-top: 1px solid var(--line); }
-.lab-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 36px 0; }
-.lab-tabs button { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--ghost-line); background: transparent; color: var(--muted); font-family: var(--mono); font-size: 13px; cursor: pointer; transition: background-color .2s, color .2s, border-color .2s; }
-.lab-tabs button:hover { color: var(--text); background: var(--ghost-hover); }
-.lab-tabs button[aria-selected="true"] { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
-.lab-panel { display: grid; grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr); gap: 44px; align-items: center; animation: rise .5s var(--ease) both; }
-.lab-panel[hidden] { display: none; }
-.lab-text { display: flex; flex-direction: column; gap: 16px; }
-.lab-text h4 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: clamp(23px, 2.3vw, 32px); line-height: 1.14; }
-.lab-big { font-family: var(--serif); font-size: clamp(40px, 4vw, 54px); line-height: 1; margin-top: 10px; }
-.lab-sens { font-size: 15px; line-height: 1.6; color: var(--sub-text); max-width: 44ch; }
 
 /* Les trois graphiques sont figés : plus de curseur à déplacer, donc plus
    rien à chercher. Aire pleine sous chaque courbe, trait épais, valeurs
@@ -505,57 +495,9 @@ select.field option { background: var(--surface); color: var(--text); }
    et personne ne remonte à l'axe pour lire un chiffre.
    Leur texte est en unités du viewBox, qui vaut 560 : sur un écran étroit il
    rétrécit avec le dessin, et on le remonte. */
-.lb { display: block; width: 100%; height: auto; overflow: visible; }
-.lb-gr { stroke: var(--grid); stroke-width: 1; }
-.lb-base { stroke: var(--line); stroke-width: 1.5; }
-.lb-zero { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
-.lb-bande { fill: var(--muted); opacity: .09; }
-.lb-ax { font-family: var(--mono); font-size: 12px; fill: var(--dim); }
-.lb-t { font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
-  text-transform: uppercase; fill: var(--dim); }
-.lb-val { font-family: var(--serif); font-size: 21px;
-  font-variant-numeric: tabular-nums; }
-.lb-fit-t { font-family: var(--mono); font-size: 12px; letter-spacing: .04em;
-  fill: var(--sub-text); }
-.lb-l { fill: none !important; stroke-width: 2.6;
-  stroke-linecap: round; stroke-linejoin: round; }
-.lb-a { stroke: none; }
-.lb-fit { stroke: var(--mark); stroke-width: 1.8; stroke-dasharray: 6 5; }
-.lb-fit.lb-plein { stroke-dasharray: none; stroke-width: 2.4; }
-.lb-cone { fill: var(--mark); opacity: .1; stroke: none; }
-.lb-nuage { fill: var(--mark); opacity: .55; stroke: none; }
-/* Au-dessous du seuil, on ne court plus : la zone le dit sans légende. */
-.lb-marche { fill: var(--p-mur); opacity: .08; }
-.lb-seuil { stroke: var(--text); stroke-width: 1.4; stroke-dasharray: 7 5; }
-.lb-croise { stroke: var(--mark); stroke-width: 1.2; stroke-dasharray: 3 4; }
-.lb-pivot { fill: var(--mark); stroke: var(--bg); stroke-width: 2.5; }
-.lb-cle { font-family: var(--serif); font-size: 23px; fill: var(--mark);
-  font-variant-numeric: tabular-nums; }
-.lb-td { fill: var(--pt-mur); }
-.lb-ic { fill: var(--mark); opacity: .08; }
-.lb-obs { fill: var(--mark); opacity: .5; stroke: none; }
-.lb-barre { stroke: var(--mark); stroke-width: 1.2; opacity: .45; }
-.lb-pt-hors { stroke-dasharray: 5 5; opacity: .55; }
-.lb-hach { stroke: var(--line); stroke-width: 1.2; }
-.lb-hors-t { fill: var(--dim); }
-.lb-v { stroke: var(--mark); }
-.lb-v.lb-a { fill: var(--mark); opacity: .13; }
-text.lb-v { fill: var(--mark); stroke: none; }
-circle.lb-v { fill: var(--mark); stroke: none; }
-.lb-c { stroke: var(--muted); }
-.lb-c.lb-a { fill: var(--muted); opacity: .1; }
-text.lb-c { fill: var(--muted); stroke: none; }
-circle.lb-c { fill: var(--muted); stroke: none; }
-.lab-big.red { color: var(--red); }
-.lab-chart { height: 420px; }
-.lab-chart svg { width: 100%; height: 100%; overflow: visible; }
-.lab-pills { display: flex; flex-wrap: wrap; gap: 8px; }
 .pill { font-family: var(--mono); font-size: 13px; min-height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--ghost-line); background: transparent; color: var(--muted); cursor: pointer; transition: background-color .2s, color .2s, border-color .2s; }
 .pill:hover { color: var(--text); background: var(--ghost-hover); }
 .pill[aria-pressed="true"] { background: var(--btn-bg); color: var(--btn-fg); border-color: var(--btn-bg); }
-.lab-src { font-size: 11px; line-height: 1.5; color: var(--dim); margin-top: 4px; max-width: 420px; }
-.lab-note { margin-top: 28px; max-width: 760px; line-height: 1.6; }
-.lab-note b { color: var(--text); font-weight: 400; }
 input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 44px; background: transparent; cursor: pointer; }
 input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: var(--ghost-line); }
 input[type="range"]::-moz-range-track { height: 2px; background: var(--ghost-line); }
@@ -570,9 +512,6 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .how-steps.in::after { width: 1px; height: 100%; }
   .how-steps li { padding-top: 0; }
   .how-steps li::before { left: -28px; }
-  .lab { padding: 90px 20px 40px; }
-  .lab-panel { grid-template-columns: 1fr; gap: 24px; }
-  .lab-chart { height: 300px; order: -1; }
   .contact-in { grid-template-columns: 1fr; gap: 36px; padding: 80px 20px; }
   .contact-head { position: static; }
 }
@@ -640,24 +579,17 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .display { font-size: 52px; }
   .title { font-size: 29px; }
   .mega { font-size: 68px; }
-  .lab-text h4, .how-steps h3, .solo-l h3 { font-size: 26px; }
-  .lb-ax { font-size: 18px; }
-  .lb-t { font-size: 16px; }
-  .lb-val { font-size: 30px; }
-  .lb-cle { font-size: 32px; }
-  .lb-fit-t { font-size: 17px; }
-  .lab-big { font-size: 44px; }
+  .how-steps h3, .solo-l h3 { font-size: 26px; }
   .price { font-size: 38px; }
   .logo { font-size: 24px; }
   .logo-dot { width: 5px; height: 5px; margin-bottom: 8px; }
-  .lab-chart { height: 260px; }
   .live { font-size: 11px; gap: 10px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cap, .js .reveal, .how-steps::after, .how-steps li::before { transition: none; }
   .js .reveal { opacity: 1; transform: none; }
-  .cue span, .try-out, .lab-panel { animation: none; }
+  .cue span, .try-out { animation: none; }
 }
 
 /* Ce que tu reçois : le livrable montré, pas décrit */

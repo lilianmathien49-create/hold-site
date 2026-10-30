@@ -411,80 +411,6 @@
     </ul>
   </div>
 
-    <div class="lab" id="lab">
-  <div class="reveal">
-    <p class="eyebrow">Exemples</p>
-    <h3 class="loin-t" id="lab-t">Trois statistiques tirées de l'analyse des séances.</h3>
-    <p class="loin-sub">Un coureur que nous suivons, 159 séances, 74 heures de fichiers
-      bruts. Chaque résultat porte son intervalle : un chiffre sans sa marge
-      d'erreur ne dit pas ce qu'il vaut.</p>
-  </div>
-
-  <div class="lab-tabs" role="tablist" aria-label="Analyses">
-    <button type="button" role="tab" id="tab-trans" data-k="trans" aria-controls="p-trans" aria-selected="true">La transition</button>
-    <button type="button" role="tab" id="tab-duree" data-k="duree" aria-controls="p-duree" aria-selected="false" tabindex="-1">La durée</button>
-    <button type="button" role="tab" id="tab-coeur" data-k="coeur" aria-controls="p-coeur" aria-selected="false" tabindex="-1">La dérive cardiaque</button>
-  </div>
-
-  <!-- LABO:DEBUT (écrit par tools/build_labo.py) -->
-  <div class="lab-panel" role="tabpanel" id="p-trans" aria-labelledby="tab-trans">
-    <div class="lab-text">
-      <h4>La transition course-marche</h4>
-      <p class="lab-big">7,2 %</p>
-      <p class="lab-sens">Sous 140 pas par minute, un bloc de 15 secondes compte comme marché. Rangée par point de pente, la part marchée suit une courbe en S, et une régression logistique la place à 7,2 % : au-dessus, il marche plus souvent qu'il ne court. L'intervalle va de 6,4 à 8,0 %.</p>
-      <p class="lab-src mono">8 139 blocs sur 30 séances · la montée vient de 2 sorties de trail : avec davantage de terrain, l'intervalle se resserrera · logistique à quatre paramètres, écart au plus de 8 points aux tranches garnies · intervalle à 95 % par rééchantillonnage de blocs de cinq minutes</p>
-    </div>
-    <div class="lab-chart"><svg viewBox="0 0 560 244" class="lb" role="img" aria-label="Part des blocs marchés selon la pente. La courbe franchit 50 % à 7,2 % de pente, intervalle de 6,4 à 8,0.">
-  <rect class="lb-ic" x="233.1" y="24" width="44.1" height="186"/><text class="lb-ax" x="44" y="214.0" text-anchor="end">0 %</text><line class="lb-gr" x1="52" x2="502" y1="210.0" y2="210.0"/><text class="lb-ax" x="44" y="167.5" text-anchor="end">25 %</text><line class="lb-gr" x1="52" x2="502" y1="163.5" y2="163.5"/><text class="lb-ax" x="44" y="121.0" text-anchor="end">50 %</text><line class="lb-gr" x1="52" x2="502" y1="117.0" y2="117.0"/><text class="lb-ax" x="44" y="74.5" text-anchor="end">75 %</text><line class="lb-gr" x1="52" x2="502" y1="70.5" y2="70.5"/><text class="lb-ax" x="44" y="28.0" text-anchor="end">100 %</text><line class="lb-gr" x1="52" x2="502" y1="24.0" y2="24.0"/>
-  <line class="lb-seuil" x1="52" x2="502" y1="117.0" y2="117.0"/>
-  <line class="lb-barre" x1="66.1" x2="66.1" y1="204.8" y2="202.0"/><circle class="lb-obs" cx="66.1" cy="203.5" r="9.0"/><line class="lb-barre" x1="94.2" x2="94.2" y1="202.9" y2="198.1"/><circle class="lb-obs" cx="94.2" cy="200.8" r="8.1"/><line class="lb-barre" x1="122.3" x2="122.3" y1="201.1" y2="192.9"/><circle class="lb-obs" cx="122.3" cy="197.6" r="6.3"/><line class="lb-barre" x1="150.4" x2="150.4" y1="186.1" y2="165.8"/><circle class="lb-obs" cx="150.4" cy="177.2" r="4.9"/><line class="lb-barre" x1="178.6" x2="178.6" y1="183.9" y2="157.8"/><circle class="lb-obs" cx="178.6" cy="172.5" r="4.5"/><line class="lb-barre" x1="206.7" x2="206.7" y1="177.5" y2="141.7"/><circle class="lb-obs" cx="206.7" cy="161.7" r="4.1"/><line class="lb-barre" x1="234.8" x2="234.8" y1="154.4" y2="106.2"/><circle class="lb-obs" cx="234.8" cy="131.3" r="3.8"/><line class="lb-barre" x1="262.9" x2="262.9" y1="128.7" y2="69.9"/><circle class="lb-obs" cx="262.9" cy="97.3" r="3.6"/><line class="lb-barre" x1="291.1" x2="291.1" y1="143.4" y2="78.9"/><circle class="lb-obs" cx="291.1" cy="110.4" r="3.5"/><line class="lb-barre" x1="319.2" x2="319.2" y1="112.5" y2="38.1"/><circle class="lb-obs" cx="319.2" cy="63.9" r="3.2"/><line class="lb-barre" x1="347.3" x2="347.3" y1="120.0" y2="56.0"/><circle class="lb-obs" cx="347.3" cy="83.5" r="3.4"/><line class="lb-barre" x1="375.4" x2="375.4" y1="194.7" y2="90.8"/><circle class="lb-obs" cx="375.4" cy="156.9" r="3.0"/><line class="lb-barre" x1="403.6" x2="403.6" y1="89.8" y2="26.8"/><circle class="lb-obs" cx="403.6" cy="39.5" r="3.2"/><line class="lb-barre" x1="431.7" x2="431.7" y1="144.2" y2="52.2"/><circle class="lb-obs" cx="431.7" cy="91.6" r="3.2"/><line class="lb-barre" x1="459.8" x2="459.8" y1="111.6" y2="28.2"/><circle class="lb-obs" cx="459.8" cy="47.2" r="3.1"/>
-  <path class="lb-l lb-v" d="M52.0 204.6 L57.6 204.3 L63.2 203.9 L68.9 203.4 L74.5 202.9 L80.1 202.4 L85.8 201.7 L91.4 201.0 L97.0 200.2 L102.6 199.3 L108.2 198.3 L113.9 197.2 L119.5 195.9 L125.1 194.5 L130.8 192.9 L136.4 191.2 L142.0 189.3 L147.6 187.2 L153.2 184.9 L158.9 182.4 L164.5 179.6 L170.1 176.7 L175.8 173.5 L181.4 170.2 L187.0 166.6 L192.6 162.8 L198.2 158.9 L203.9 154.8 L209.5 150.6 L215.1 146.4 L220.8 142.0 L226.4 137.7 L232.0 133.4 L237.6 129.1 L243.2 124.9 L248.9 120.9 L254.5 117.0 L260.1 113.2 L265.8 109.7 L271.4 106.3 L277.0 103.2 L282.6 100.3 L288.2 97.6 L293.9 95.1 L299.5 92.8 L305.1 90.7 L310.8 88.8 L316.4 87.1 L322.0 85.5 L327.6 84.1 L333.2 82.9 L338.9 81.8 L344.5 80.8 L350.1 79.9 L355.8 79.1 L361.4 78.4 L367.0 77.7 L372.6 77.2 L378.2 76.7 L383.9 76.3 L389.5 75.9 L395.1 75.5 L400.8 75.2 L406.4 75.0 L412.0 74.7 L417.6 74.5 L423.2 74.4 L428.9 74.2 L434.5 74.1 L440.1 73.9 L445.8 73.8 L451.4 73.7 L457.0 73.6 L462.6 73.6 L468.2 73.5 L473.9 73.4 L479.5 73.4 L485.1 73.3 L490.8 73.3 L496.4 73.3 L502.0 73.2"/>
-  <circle class="lb-pivot" cx="254.5" cy="117.0" r="6.5"/>
-  <text class="lb-val lb-cle" x="268.5" y="147.0" text-anchor="start">7,2 %</text>
-  <text class="lb-t" x="52" y="16">part des blocs sous 140 pas/min</text>
-  <text class="lb-ax" x="52.0" y="234" text-anchor="middle">0 %</text><text class="lb-ax" x="164.5" y="234" text-anchor="middle">4 %</text><text class="lb-ax" x="277.0" y="234" text-anchor="middle">8 %</text><text class="lb-ax" x="389.5" y="234" text-anchor="middle">12 %</text><text class="lb-ax" x="502.0" y="234" text-anchor="middle">16 %</text>
-</svg></div>
-  </div>
-  <div class="lab-panel" role="tabpanel" id="p-duree" aria-labelledby="tab-duree" hidden>
-    <div class="lab-text">
-      <h4>Ce que la durée fait à la transition</h4>
-      <p class="lab-big">7,2 → 7,1 %</p>
-      <p class="lab-sens">Sa cadence perd 1,4 pas par minute chaque heure, à pente égale. Reportée sur la courbe, cette perte déplace la transition de moins d'un dixième de point en 1 h 25 : c'est sous la précision de la mesure. Les séances courues à allure tenue s'arrêtent là, et au-delà on ne donne pas de chiffre.</p>
-      <p class="lab-src mono">dérive de cadence −1,41 pas/min par heure [−2,17 ; −0,65] sur 21 séances à allure tenue, la plus longue de 1 h 25 · la bande est l'intervalle de la transition</p>
-    </div>
-    <div class="lab-chart"><svg viewBox="0 0 560 244" class="lb" role="img" aria-label="La transition reste entre 7,1 et 7,2 % de pente sur la durée mesurée.">
-  <defs><pattern id="lbHach" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" class="lb-hach"/></pattern></defs>
-  <rect x="265.5" y="24" width="236.5" height="186" fill="url(#lbHach)"/>
-  <text class="lb-ax" x="44" y="214.0" text-anchor="end">5 %</text><line class="lb-gr" x1="52" x2="502" y1="210.0" y2="210.0"/><text class="lb-ax" x="44" y="167.5" text-anchor="end">6 %</text><line class="lb-gr" x1="52" x2="502" y1="163.5" y2="163.5"/><text class="lb-ax" x="44" y="121.0" text-anchor="end">7 %</text><line class="lb-gr" x1="52" x2="502" y1="117.0" y2="117.0"/><text class="lb-ax" x="44" y="74.5" text-anchor="end">8 %</text><line class="lb-gr" x1="52" x2="502" y1="70.5" y2="70.5"/><text class="lb-ax" x="44" y="28.0" text-anchor="end">9 %</text><line class="lb-gr" x1="52" x2="502" y1="24.0" y2="24.0"/>
-  <path class="lb-cone" d="M52.0 70.1 L89.5 73.6 L127.0 74.2 L164.5 73.1 L202.0 73.9 L239.5 73.3 L277.0 72.2 L314.5 76.9 L352.0 76.9 L389.5 83.1 L427.0 83.7 L464.5 86.4 L502.0 88.3 L502.0 161.3 L464.5 159.3 L427.0 156.7 L389.5 156.1 L352.0 149.8 L314.5 149.8 L277.0 145.1 L239.5 146.2 L202.0 146.8 L164.5 146.0 L127.0 147.2 L89.5 146.6 L52.0 143.0 Z"/>
-  <path class="lb-l lb-v" d="M52.0 107.8 L89.5 111.3 L127.0 111.9 L164.5 110.7 L202.0 111.6 L239.5 110.9"/>
-  <path class="lb-l lb-v lb-pt-hors" d="M239.5 110.9 L277.0 109.8 L314.5 114.6 L352.0 114.6 L389.5 120.8 L427.0 121.4 L464.5 124.0 L502.0 126.0"/>
-  <circle class="lb-pivot" cx="52.0" cy="107.8" r="6.5"/>
-  <text class="lb-val lb-cle" x="66.0" y="93.8" text-anchor="start">7,2 %</text>
-  <text class="lb-t lb-hors-t" x="275.5" y="40">au-delà, pas de mesure</text>
-  <text class="lb-t" x="52" y="16">pente de la transition · %</text>
-  <text class="lb-ax" x="52.0" y="234" text-anchor="middle">0 h</text><text class="lb-ax" x="202.0" y="234" text-anchor="middle">1 h</text><text class="lb-ax" x="352.0" y="234" text-anchor="middle">2 h</text><text class="lb-ax" x="502.0" y="234" text-anchor="middle">3 h</text>
-</svg></div>
-  </div>
-  <div class="lab-panel" role="tabpanel" id="p-coeur" aria-labelledby="tab-coeur" hidden>
-    <div class="lab-text">
-      <h4>La dérive cardiaque</h4>
-      <p class="lab-big">+4,9 bpm/h</p>
-      <p class="lab-sens">À vitesse et pente égales, son cœur monte de 4,9 battements par heure, entre 3,1 et 6,8. Mesurée à l'intérieur de chaque séance, elle ne dépend pas de la montre : deux appareils qui ne s'accordent pas sur la fréquence s'accordent sur sa variation.</p>
-      <p class="lab-src mono">5 348 blocs sur 42 séances courues à allure tenue, pente entre −3 et 3 %, échauffement écarté · intervalle à 95 % par rééchantillonnage des séances</p>
-    </div>
-    <div class="lab-chart"><svg viewBox="0 0 560 216" class="lb" role="img" aria-label="Écart de fréquence cardiaque à vitesse égale selon le temps écoulé : la dérive vaut 4,9 battement par heure.">
-  <text class="lb-ax" x="44" y="186.0" text-anchor="end">−10</text><line class="lb-gr" x1="52" x2="502" y1="182.0" y2="182.0"/><text class="lb-ax" x="44" y="133.3" text-anchor="end">−5</text><line class="lb-gr" x1="52" x2="502" y1="129.3" y2="129.3"/><text class="lb-ax" x="44" y="80.7" text-anchor="end">0</text><line class="lb-gr" x1="52" x2="502" y1="76.7" y2="76.7"/><text class="lb-ax" x="44" y="28.0" text-anchor="end">5</text><line class="lb-gr" x1="52" x2="502" y1="24.0" y2="24.0"/>
-  <line class="lb-base" x1="52" x2="502" y1="76.7" y2="76.7"/>
-  <path class="lb-a lb-v" d="M93.0 76.7 93.0 125.3 L120.4 81.5 L147.7 59.2 L181.9 54.2 L223.0 66.1 L270.8 86.9 L339.2 62.1 L469.2 46.6 L469.2 76.7 Z"/><path class="lb-l lb-v" d="M93.0 125.3 L120.4 81.5 L147.7 59.2 L181.9 54.2 L223.0 66.1 L270.8 86.9 L339.2 62.1 L469.2 46.6"/><circle class="lb-pt lb-v" cx="93.0" cy="125.3" r="4"/><circle class="lb-pt lb-v" cx="120.4" cy="81.5" r="4"/><circle class="lb-pt lb-v" cx="147.7" cy="59.2" r="4"/><circle class="lb-pt lb-v" cx="181.9" cy="54.2" r="4"/><circle class="lb-pt lb-v" cx="223.0" cy="66.1" r="4"/><circle class="lb-pt lb-v" cx="270.8" cy="86.9" r="4"/><circle class="lb-pt lb-v" cx="339.2" cy="62.1" r="4"/><circle class="lb-pt lb-v" cx="469.2" cy="46.6" r="4"/>
-  <line class="lb-fit" x1="52.0" y1="111.8" x2="223.0" y2="58.6"/><text class="lb-val lb-fit-t" x="215.0" y="48.6" text-anchor="end">+4,9 bpm/h</text>
-  <text class="lb-t" x="52" y="18">écart de FC · battements</text>
-  <text class="lb-ax" x="52.0" y="206" text-anchor="middle">0′</text><text class="lb-ax" x="134.1" y="206" text-anchor="middle">30′</text><text class="lb-ax" x="216.1" y="206" text-anchor="middle">60′</text><text class="lb-ax" x="298.2" y="206" text-anchor="middle">90′</text><text class="lb-ax" x="380.3" y="206" text-anchor="middle">120′</text><text class="lb-ax" x="462.3" y="206" text-anchor="middle">150′</text>
-</svg></div>
-  </div>
-  <!-- LABO:FIN -->
-</div>
-
   <div class="deliv-demo reveal">
     <div class="demo-tete">
       <p class="eyebrow">Ce que tu reçois</p>
@@ -858,7 +784,7 @@
       <a href="#contact" class="btn" data-offer="Pro · 134,99 €/mois" data-offre-valeur="Pro">Choisir Pro</a>
     </div>
   </div>
-  <p class="hint lab-note">Pas sûr de ton choix&nbsp;? Remplis quand même le formulaire, on en parle à l'appel.</p>
+  <p class="hint offres-aide">Pas sûr de ton choix&nbsp;? Réserve quand même l'appel, on choisit ensemble.</p>
 
     <details class="compare">
       <summary>Comparer les formules</summary>

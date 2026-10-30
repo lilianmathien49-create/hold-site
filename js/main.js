@@ -376,38 +376,12 @@ function initPortions() {
   });
 }
 
-// Les onglets du laboratoire. Les trois graphiques sont des SVG écrits par
-// tools/build_labo.py : il n'y a plus rien à dessiner ici, seulement à montrer
-// le bon panneau. Sans ce script les trois restent empilés, donc lisibles.
-function initOnglets() {
-  const tabs = [...document.querySelectorAll('.lab-tabs [role="tab"]')];
-  if (!tabs.length) return;
-  const montre = (t) => tabs.forEach((o) => {
-    const on = o === t;
-    o.setAttribute('aria-selected', String(on));
-    o.tabIndex = on ? 0 : -1;
-    $(o.getAttribute('aria-controls')).hidden = !on;
-  });
-  tabs.forEach((t, i) => {
-    t.addEventListener('click', () => montre(t));
-    t.addEventListener('keydown', (e) => {
-      const j = e.key === 'ArrowRight' ? (i + 1) % tabs.length
-        : e.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : -1;
-      if (j < 0) return;
-      e.preventDefault();
-      tabs[j].focus();
-      montre(tabs[j]);
-    });
-  });
-}
-
 const run = (fn) => { try { fn(); } catch (e) { console.error(e); } };
 ACTS.forEach((a) => run(() => setupAct(a)));
 measure();
 window.addEventListener('scroll', measure, { passive: true });
 window.addEventListener('resize', measure);
 requestAnimationFrame(loop);
-run(initOnglets);
 run(initTry);
 run(initFilm);
 run(initApercu);
