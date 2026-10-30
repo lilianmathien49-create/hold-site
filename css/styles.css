@@ -795,7 +795,14 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   text-transform: uppercase; color: var(--dim); margin-bottom: 12px; }
 .pf-from { font-size: clamp(28px, 3.6vw, 40px); color: var(--muted); }
 .pf-to { font-size: clamp(38px, 5.6vw, 64px); color: var(--mark); }
-.pf-arrow { color: var(--dim); padding-bottom: clamp(14px, 2.6vw, 26px); flex: none; }
+/* L'allure sous chaque chrono est la moitié qui se compare : 46:06 et 2h59 ne
+   sont pas sur la même distance, 4:35 et 4:13 oui. La flèche porte la durée,
+   et les trois colonnes s'alignent par le bas sur cette ligne de légende. */
+.pf-arrow { display: flex; flex-direction: column; align-items: center;
+  gap: clamp(10px, 2vw, 18px); color: var(--dim); flex: none; }
+.pf-d { font-size: 11px; font-style: normal; letter-spacing: .04em;
+  color: var(--dim); margin-top: 14px; white-space: nowrap; }
+.pf-arrow .pf-d { margin-top: 0; }
 .proof-note { font-size: 15.5px; line-height: 1.62; color: var(--muted);
   margin: 32px 0 0; max-width: 56ch; padding-top: 24px; border-top: 1px solid var(--line); }
 .proof-note b { color: var(--text); font-weight: 500; }
