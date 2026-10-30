@@ -917,6 +917,8 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 .av-g { position: absolute; top: 10px; right: 22px; font-family: var(--serif);
   font-size: 56px; line-height: 1; color: var(--mark); opacity: .18; }
 .av-q { margin: 0 0 22px; flex: 1; }
+.av-q p + p { margin-top: .7em; }
+.av-chr { white-space: nowrap; }
 .av-q p { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 1.45;
   color: var(--text); }
 .av-vide { font-style: italic; color: var(--dim) !important; font-size: 16px !important;
