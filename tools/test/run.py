@@ -51,6 +51,14 @@ def main(argv):
     module = (ROOT / "js" / "avis.js").read_text(encoding="utf-8")
     code |= lancer([module.replace("export function", "function"),
                     (HERE / "avis.js").read_text(encoding="utf-8")])
+
+    seuil = ROOT / "tools" / "seuil_marche.py"
+    if seuil.is_file():
+        s = subprocess.run([sys.executable, "-I", str(seuil), "--essai"],
+                           capture_output=True, text=True)
+        for ligne in s.stdout.rstrip().split("\n"):
+            print(ligne.replace("    oui ", "  OK  ").replace("    NON ", "  KO  "))
+        code |= 1 if s.returncode else 0
     return code
 
 
