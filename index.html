@@ -234,32 +234,42 @@
   <div class="proof-in reveal">
     <h2 class="title" id="proof-t">Entraînement</h2>
     <p class="amorce">Ils nous ont fait confiance.</p>
-    <p class="proof-sub">Le 14 août 2025, Clément courait son premier 10 km officiel
-      en 46:06. Huit mois plus tard, il passait la ligne du Marathon de Paris
-      en 2 h 59.</p>
-    <div class="proof-arc">
-      <span class="pf-from"><small>14 août 2025 · 10 km</small>46:06<em class="pf-d mono">4:35/km · La Marinade</em></span>
-      <span class="pf-arrow">
-        <svg width="58" height="12" viewBox="0 0 58 12" fill="none" aria-hidden="true">
-          <path d="M0 6h50M44 1l6 5-6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <em class="pf-d mono">huit mois</em>
-      </span>
-      <span class="pf-to"><small>12 avril 2026 · marathon</small>2h59<em class="pf-d mono">4:13/km · Paris</em></span>
-    </div>
-    <figure class="proof-shots">
-      <img src="media/clement-10km.png" width="708" height="178" loading="lazy" decoding="async"
-           alt="Capture Strava du 14 août 2025 : « Premier 10km officiel — 46'06 », 10 km de La Marinade, 10,05 km en 46 min 6 s à 4:35 par kilomètre.">
-      <img src="media/clement-marathon.png" width="723" height="306" loading="lazy" decoding="async"
-           alt="Capture Strava du 12 avril 2026 : Marathon de Paris 2026, 42,55 km en 2 h 59 min à 4:13 par kilomètre, meilleur effort estimé 2:58:10, record personnel sur marathon.">
-      <figcaption class="mono">Ses deux publications Strava. Nom de famille retiré, rien d'autre touché.</figcaption>
-    </figure>
-    <p class="proof-note">À partir de ce 10 km, la formule classique — celle de tous
-      les calculateurs — situait son marathon à <b>3 h 32</b>. Il a couru trente-trois
-      minutes plus vite, en tenant vingt-deux secondes de mieux au kilomètre sur quatre
-      fois la distance. C'est l'écart entre une table générique et un plan construit
-      sur ses données.</p>
+    <!-- PROGRESSION:DEBUT (écrit par tools/build_progression.py) -->
+      <table class="pg-t">
+        <caption>Ses deux seules courses officielles, à huit mois d'intervalle.</caption>
+        <thead>
+          <tr><th scope="col"><em class="mono">14 août 2025</em>10 km de La Marinade</th>
+            <th scope="col"><em class="mono">12 avril 2026</em>Marathon de Paris</th></tr>
+        </thead>
+        <tbody><tr><td><span class="pg-c">46:06</span><span class="pg-a mono">4:35 /km · 10,05 km</span></td><td><span class="pg-c">2 h 59</span><span class="pg-a mono">4:13 /km · 42,55 km</span></td></tr></tbody>
+      </table>
+      <figure class="pg-f">
+        <div class="pg-d" style="--a:21.73%;--b:72.17%;--m:46.95%">
+          <div class="pg-rail">
+            <span class="pg-band" aria-hidden="true"></span>
+            <i class="pg-stem pg-stem-a" aria-hidden="true"></i>
+            <i class="pg-stem pg-stem-b" aria-hidden="true"></i>
+            <i class="pg-dot pg-dot-a" aria-hidden="true"></i>
+            <i class="pg-dot pg-dot-b" aria-hidden="true"></i>
+            <p class="pg-m pg-m-a"><b>2 h 59</b><em class="mono">ce qu'il a couru</em></p>
+            <p class="pg-m pg-m-b"><b>3 h 32</b><em class="mono">ce que la table prévoyait</em></p>
+            <p class="pg-gain mono">33 minutes de moins</p>
+          </div>
+        </div>
+        <figcaption>3 h 32 : ce que la formule de Riegel — celle de tous les
+          calculateurs d'allure — déduit de son 10 km, et ce qu'un plan générique
+          lui aurait fait viser.</figcaption>
+      </figure>
+      <!-- PROGRESSION:FIN -->
   </div>
+
+  <figure class="proof-shots reveal">
+    <img src="media/clement-10km.png" width="708" height="178" loading="lazy" decoding="async"
+         alt="Capture Strava du 14 août 2025 : « Premier 10km officiel — 46'06 », 10 km de La Marinade, 10,05 km en 46 min 6 s à 4:35 par kilomètre.">
+    <img src="media/clement-marathon.png" width="723" height="306" loading="lazy" decoding="async"
+         alt="Capture Strava du 12 avril 2026 : Marathon de Paris 2026, 42,55 km en 2 h 59 min à 4:13 par kilomètre, meilleur effort estimé 2:58:10, record personnel sur marathon.">
+    <figcaption class="mono">Ses deux publications Strava. Nom de famille retiré, rien d'autre touché.</figcaption>
+  </figure>
 
     <div class="lab" id="lab">
   <div class="reveal">

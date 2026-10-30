@@ -785,40 +785,77 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
    il tient toute la place et il l'assume. */
 .proof { max-width: 1200px; margin: 0 auto; padding: 100px 28px 30px; }
 .proof-in { max-width: 760px; }
-.proof-sub { font-size: 17px; line-height: 1.6; color: var(--sub-text);
-  margin: 20px 0 0; max-width: 56ch; }
-.proof-arc { display: flex; align-items: flex-end; gap: clamp(18px, 4vw, 44px);
-  flex-wrap: wrap; margin-top: 44px; padding-top: 36px; border-top: 1px solid var(--line); }
-.pf-from, .pf-to { display: flex; flex-direction: column; font-family: var(--serif);
-  line-height: .92; font-variant-numeric: tabular-nums; }
-.pf-from small, .pf-to small { font-family: var(--mono); font-size: 10px; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--dim); margin-bottom: 12px; }
-.pf-from { font-size: clamp(28px, 3.6vw, 40px); color: var(--muted); }
-.pf-to { font-size: clamp(38px, 5.6vw, 64px); color: var(--mark); }
-/* L'allure sous chaque chrono est la moitié qui se compare : 46:06 et 2h59 ne
-   sont pas sur la même distance, 4:35 et 4:13 oui. La flèche porte la durée,
-   et les trois colonnes s'alignent par le bas sur cette ligne de légende. */
-.pf-arrow { display: flex; flex-direction: column; align-items: center;
-  gap: clamp(10px, 2vw, 18px); color: var(--dim); flex: none; }
-.pf-d { font-size: 11px; font-style: normal; letter-spacing: .04em;
-  color: var(--dim); margin-top: 14px; white-space: nowrap; }
-.pf-arrow .pf-d { margin-top: 0; }
+/* Un tableau pour les faits, un schéma pour l'argument, les captures pour la
+   preuve. Pas de paragraphe : la section se lit en diagonale ou pas du tout. */
+.pg-t { width: 100%; border-collapse: collapse; table-layout: fixed;
+  margin: 44px 0 0; text-align: left; }
+.pg-t caption { caption-side: bottom; text-align: left; padding-top: 16px;
+  font-family: var(--mono); font-size: 11px; color: var(--dim); }
+.pg-t th { font-weight: 400; font-size: 15px; color: var(--sub-text);
+  padding: 0 22px 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.pg-t th em { display: block; font-style: normal; font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--dim); margin-bottom: 9px; }
+.pg-t td { padding: 20px 22px 0 0; vertical-align: top; }
+.pg-c { display: block; font-family: var(--serif); line-height: .95;
+  font-size: clamp(30px, 5.4vw, 44px); font-variant-numeric: tabular-nums; }
+.pg-a { display: block; font-size: 11.5px; letter-spacing: .03em;
+  color: var(--dim); margin-top: 12px; }
+.pg-t td:first-child .pg-c { color: var(--muted); }
+.pg-t td:last-child .pg-c { color: var(--mark); }
+
+/* L'écart prédit/couru, posé sur un axe de temps d'arrivée : plus vite est
+   plus à gauche. Les chiffres sont du texte de la page et non du texte SVG —
+   ils gardent leur taille quand l'axe, lui, se rétrécit avec l'écran. */
+.pg-f { margin: 40px 0 0; }
+.pg-d { position: relative; padding-top: 96px; }
+.pg-rail { position: relative; height: 54px; border-bottom: 1px solid var(--line); }
+.pg-band { position: absolute; top: 0; bottom: 0; left: var(--a);
+  width: calc(var(--b) - var(--a)); background: var(--mark); opacity: .07; }
+.pg-stem { position: absolute; top: 0; bottom: 0; width: 1px; }
+.pg-stem-a { left: var(--a); background: var(--mark); }
+.pg-stem-b { left: var(--b);
+  background: repeating-linear-gradient(to bottom, var(--dim) 0 2px, transparent 2px 6px); }
+.pg-dot { position: absolute; border-radius: 50%; transform: translateX(-50%); }
+.pg-dot-a { left: var(--a); bottom: -5px; width: 10px; height: 10px; background: var(--mark); }
+.pg-dot-b { left: var(--b); bottom: -4px; width: 8px; height: 8px; background: var(--dim); }
+.pg-m { position: absolute; bottom: calc(100% + 20px); transform: translateX(-50%);
+  margin: 0; text-align: center; }
+.pg-m-a { left: var(--a); }
+.pg-m-b { left: var(--b); }
+.pg-m b { display: block; font-family: var(--serif); font-weight: 400; line-height: 1;
+  font-size: clamp(27px, 4.4vw, 36px); font-variant-numeric: tabular-nums;
+  white-space: nowrap; }
+.pg-m-a b { color: var(--mark); }
+.pg-m-b b { color: var(--muted); }
+.pg-m em { display: block; font-style: normal; font-size: 10px; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--dim); line-height: 1.5;
+  margin: 11px auto 0; white-space: nowrap; }
+.pg-gain { position: absolute; left: var(--m); top: 50%; margin: 0;
+  transform: translate(-50%, -50%); white-space: nowrap;
+  font-size: 12px; letter-spacing: .05em; color: var(--sub-text); }
+.pg-f figcaption { font-size: 13.5px; line-height: 1.62; color: var(--dim);
+  margin-top: 26px; max-width: 60ch; }
+
 /* Les captures sont la pièce justificative : on les montre telles qu'elles ont
-   été publiées, sans les redessiner. Le cadre reste clair dans les deux
-   thèmes — une capture d'écran n'a pas de mode sombre, et la teinter pour
-   qu'elle s'accorde à la page reviendrait à la retoucher. */
-.proof-shots { margin: 40px 0 0; display: flex; flex-direction: column;
-  gap: 14px; align-items: flex-start; }
-.proof-shots img { width: 100%; max-width: 620px; height: auto; display: block;
-  background: #fff; border: 1px solid rgba(17, 17, 17, .14); border-radius: 5px; }
-.proof-shots figcaption { font-size: 11px; letter-spacing: .04em; color: var(--dim); }
-.proof-note { font-size: 15.5px; line-height: 1.62; color: var(--muted);
-  margin: 32px 0 0; max-width: 56ch; padding-top: 24px; border-top: 1px solid var(--line); }
-.proof-note b { color: var(--text); font-weight: 500; }
+   été publiées. Le cadre reste clair dans les deux thèmes — une capture n'a pas
+   de mode sombre, et la teinter pour qu'elle s'accorde à la page reviendrait à
+   la retoucher. Elles débordent la colonne de texte : à 760 px côte à côte,
+   les chiffres de Strava redeviennent lisibles. */
+.proof-shots { max-width: 1040px; margin: 56px auto 0; display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px;
+  align-items: start; }
+.proof-shots img { width: 100%; height: auto; display: block; background: #fff;
+  border: 1px solid rgba(17, 17, 17, .14); border-radius: 5px; }
+.proof-shots figcaption { grid-column: 1 / -1; font-size: 11px;
+  letter-spacing: .04em; color: var(--dim); }
 
 @media (max-width: 760px) {
   .proof { padding: 76px 16px 16px; }
-  .proof-arc { gap: 14px; }
-  .pf-arrow svg { width: 38px; }
+  .pg-t th { font-size: 13.5px; padding-right: 14px; }
+  .pg-t td { padding-right: 14px; }
+  .pg-d { padding-top: 112px; }
+  .pg-m em { white-space: normal; max-width: 13ch; }
+  .pg-gain { font-size: 10.5px; letter-spacing: .02em; }
+  .proof-shots { grid-template-columns: minmax(0, 1fr); gap: 14px; }
 }
 
