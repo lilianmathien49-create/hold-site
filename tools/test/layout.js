@@ -24,23 +24,22 @@ function pane(k) {
 const course = pane('course');
 check('le poste de pilotage est dans « Ma course »', course.includes('id="chartWrap"'));
 check('le curseur de temps est dans « Ma course »', course.includes('id="scrub"'));
-check('la bande de parcours est dans « Ma course »', course.includes('class="rs-svg"'));
+check('le pacing tronçon par tronçon est dans « Ma course »', course.includes('Ton pacing, tronçon par tronçon'));
 
 // Ce qui doit rester hors de la première page : le pas de 500 m et la méthode.
 check('le pas de 500 m n’est pas dans « Ma course »', !course.includes('tous les 500 m'));
 check('la méthode n’est pas dans « Ma course »', !course.includes('Comment ce plan est calculé'));
 
-// La bande : un bloc par portion, rien hors du cadre, tout cliquable.
-const strip = raceStrip(plan);
-const bars = [...strip.matchAll(/<rect class="rs-bar[^>]*y="([\d.]+)"[^>]*height="([\d.]+)"/g)];
-check(`un bloc par portion (${bars.length}/${plan.sections.length})`,
-  bars.length === plan.sections.length);
-const vb = strip.match(/viewBox="0 0 \d+ ([\d.]+)"/);
-const dehors = bars.filter(([, y, h]) => +y < 0 || +y + +h > +vb[1]).length;
-check('aucun bloc hors du cadre', dehors === 0, `${dehors} bloc(s)`);
-check('chaque bloc amène le curseur',
-  (strip.match(/clickrow/g) || []).length === bars.length);
-check('chaque bloc dit ce qu’il est', (strip.match(/<title>/g) || []).length === bars.length);
+// Le pacing : une ligne par tronçon, toutes cliquables ; des mètres par heure
+// dans les montées, une allure au kilomètre ailleurs.
+const lignes = (course.match(/<tr class="clickrow"/g) || []).length;
+check(`une ligne par tronçon (${lignes}/${plan.sections.length})`, lignes === plan.sections.length);
+const montees = plan.sections.filter((sg) => (sg.cls === 'raide' || sg.cls === 'montee') && sg.vam).length;
+const mh = (course.match(/<span class="ry-u mono">m\/h<\/span>/g) || []).length;
+check(`chaque montée a sa vitesse ascensionnelle (${mh}/${montees})`, mh === montees);
+check('les autres tronçons ont une allure', (course.match(/<span class="ry-u mono">\/km<\/span>/g) || []).length
+  === plan.sections.length - montees);
+check('aucune date en anglais', !/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b|day \d/.test(html));
 
 // Le tableau des portions : six colonnes, pas onze.
 const thead = course.match(/<thead>(.*?)<\/thead>/s);
