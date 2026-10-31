@@ -926,7 +926,6 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   font-size: 56px; line-height: 1; color: var(--mark); opacity: .18; }
 .av-q { margin: 0 0 22px; flex: 1; }
 .av-q p + p { margin-top: .7em; }
-.av-chr { white-space: nowrap; }
 .av-q p { margin: 0; font-family: var(--serif); font-size: 19px; line-height: 1.45;
   color: var(--text); }
 .av-vide { font-style: italic; color: var(--dim) !important; font-size: 16px !important;
@@ -934,7 +933,14 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 .av-f { display: flex; flex-direction: column; gap: 6px;
   padding-top: 18px; border-top: 1px solid var(--line); }
 .av-n { font-size: 15px; color: var(--sub-text); }
-.av-d { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+/* Les chronos : ce que le coureur a obtenu, en chiffres qu'on lit d'un coup d'œil. */
+.av-perfs { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.av-perf { display: flex; flex-direction: column; gap: 3px; padding: 0 12px; border-left: 2px solid var(--mark); }
+.av-k { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.av-v { font-family: var(--serif); font-size: 25px; line-height: 1.1; color: var(--text);
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+.av-fl { color: var(--mark); }
+.av-perf:has(.av-fl) { flex-basis: 100%; }  /* une progression tient sur toute la ligne */
 
 /* En mode 3D les cartes quittent le flux : la liste porte alors la hauteur de
    la plus haute, mesurée par le script. */
@@ -969,7 +975,11 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .av-scene.av-3d { padding-top: 30px; }
   .av-3d .av-c { width: 84%; padding: 26px 24px 22px; }
   .av-q p { font-size: 17px; }
+  .av-v { font-size: 22px; }
   .av-ctl { margin-top: 26px; }
+  /* L'estimateur sur téléphone : la fenêtre prend l'écran, sans les grandes marges du défilement. */
+  .modale { width: 100vw; max-width: 100vw; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .modale .try { min-height: 0; padding: 64px 16px 32px; }
 }
 
 @media (max-width: 760px) {

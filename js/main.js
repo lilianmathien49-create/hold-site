@@ -112,11 +112,33 @@ const clock = (s) => (s >= 3600
   ? `${Math.floor(s / 3600)}h${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}`
   : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`);
 
+// Le chrono tapé, en secondes. Le clavier numérique d'un téléphone n'a pas de
+// « : » : on accepte aussi 45.30, 45,30, 45 30, 1h35 et les chiffres seuls
+// (4530 pour 45:30, 13500 pour 1:35:00). 0 si on ne sait pas lire.
+function lireChrono(brut) {
+  const v = brut.trim().toLowerCase();
+  if (!v) return 0;
+  let h = 0, m = 0, s = 0;
+  if (/^\d+$/.test(v)) {
+    if (v.length <= 2) m = +v;
+    else if (v.length <= 4) { m = +v.slice(0, -2); s = +v.slice(-2); }
+    else if (v.length <= 6) { h = +v.slice(0, -4); m = +v.slice(-4, -2); s = +v.slice(-2); }
+    else return 0;
+  } else {
+    const p = v.split(/[^0-9]+/).filter(Boolean).map(Number);
+    if (v.includes('h')) [h, m = 0, s = 0] = p;
+    else if (p.length === 2) [m, s] = p;
+    else if (p.length === 3) [h, m, s] = p;
+    else return 0;
+  }
+  if (s >= 60 || (h && m >= 60)) return 0;
+  return h * 3600 + m * 60 + s;
+}
+
 function initTry() {
   const dist = $('t-dist'), time = $('t-time'), out = $('tryOut'), grid = $('tryGrid');
   const update = () => {
-    const m = time.value.trim().match(/^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})$/), d = +dist.value;
-    const t = m ? (m[1] ? +m[1] * 3600 : 0) + +m[2] * 60 + +m[3] : 0;
+    const d = +dist.value, t = lireChrono(time.value);
     if (!t || t < d * 150 || t > d * 720) { out.hidden = true; return; }
     grid.replaceChildren(...DISTANCES.map(([km, name]) => {
       const self = Math.abs(km - d) < 0.01, secs = self ? t : riegel(t, d, km);

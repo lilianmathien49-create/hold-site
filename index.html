@@ -308,7 +308,7 @@
           Lilian m’a accompagné avec un suivi très personnalisé et une adaptation
           quotidienne&nbsp;! Ce suivi m’a permis d’enchaîner les semaines avec régularité
           et de battre plusieurs records personnels sur 10km, semi et marathon&nbsp;!</p></blockquote>
-        <footer class="av-f"><span class="av-n">Corentin</span><span class="av-d mono"><span class="av-chr">Marathon 2 h 54′35</span> · <span class="av-chr">Semi 1 h 20</span> · <span class="av-chr">10 km 34′45</span></span></footer>
+        <footer class="av-f"><span class="av-n">Corentin</span><ul class="av-perfs"><li class="av-perf"><span class="av-k mono">Marathon</span><span class="av-v">2 h 54′35</span></li><li class="av-perf"><span class="av-k mono">Semi</span><span class="av-v">1 h 20</span></li><li class="av-perf"><span class="av-k mono">10 km</span><span class="av-v">34′45</span></li></ul></footer>
       </li>
       <li class="av-c">
         <span class="av-g" aria-hidden="true">&rdquo;</span>
@@ -322,7 +322,7 @@
           et les objectifs pour que je puisse avancer dans les meilleures conditions.
           Merci pour ton accompagnement, ton investissement et ta confiance tout au
           long de cette préparation&nbsp;!</p></blockquote>
-        <footer class="av-f"><span class="av-n">Clément</span><span class="av-d mono"><span class="av-chr">Marathon 2 h 59′41</span> · <span class="av-chr">Semi 1 h 22′03</span> · <span class="av-chr">10 km 36′54</span></span></footer>
+        <footer class="av-f"><span class="av-n">Clément</span><ul class="av-perfs"><li class="av-perf"><span class="av-k mono">Marathon</span><span class="av-v">2 h 59′41</span></li><li class="av-perf"><span class="av-k mono">Semi</span><span class="av-v">1 h 22′03</span></li><li class="av-perf"><span class="av-k mono">10 km</span><span class="av-v">36′54</span></li></ul></footer>
       </li>
       <li class="av-c">
         <span class="av-g" aria-hidden="true">&rdquo;</span>
@@ -331,7 +331,7 @@
           je cours 6 fois par semaine et vise le sub 35 dans les mois à venir. Cela
           n’aurait jamais été possible sans Lilian, un vrai coach à l’écoute, et
           passionné par sa discipline.</p></blockquote>
-        <footer class="av-f"><span class="av-n">Jules</span><span class="av-d mono"><span class="av-chr">Semi 1 h 29</span> · <span class="av-chr">10 km 37′31</span></span></footer>
+        <footer class="av-f"><span class="av-n">Jules</span><ul class="av-perfs"><li class="av-perf"><span class="av-k mono">Semi</span><span class="av-v">1 h 29</span></li><li class="av-perf"><span class="av-k mono">10 km</span><span class="av-v">37′31</span></li></ul></footer>
       </li>
       <li class="av-c">
         <span class="av-g" aria-hidden="true">&rdquo;</span>
@@ -340,7 +340,7 @@
           professionnel qui m’a permis de progresser vers des allures que je n’aurais jamais
           cru pouvoir atteindre. Tout est pensé et réfléchi physiologiquement et mentalement
           pour nous permettre d’évoluer en course à pied.</p></blockquote>
-        <footer class="av-f"><span class="av-n">Mathieu</span><span class="av-d mono"><span class="av-chr">10 km 35′05 → 31′51 en un an et demi</span> · <span class="av-chr">5 km 14′53</span></span></footer>
+        <footer class="av-f"><span class="av-n">Mathieu</span><ul class="av-perfs"><li class="av-perf"><span class="av-k mono">10 km · en un an et demi</span><span class="av-v">35′05 <span class="av-fl" aria-label="puis">→</span> 31′51</span></li><li class="av-perf"><span class="av-k mono">5 km</span><span class="av-v">14′53</span></li></ul></footer>
       </li>
       <li class="av-c">
         <span class="av-g" aria-hidden="true">&rdquo;</span>
@@ -348,7 +348,7 @@
           préparation, j’ai pu aborder différentes distances sur différents terrains
           avec une préparation toujours soignée et flexible. Grâce au suivi et
           l’implication de Lilian j’arrive à constamment améliorer mes temps.</p></blockquote>
-        <footer class="av-f"><span class="av-n">Baptiste</span><span class="av-d mono"><span class="av-chr">10 km 38′06 → 35′21 en 7 mois</span></span></footer>
+        <footer class="av-f"><span class="av-n">Baptiste</span><ul class="av-perfs"><li class="av-perf"><span class="av-k mono">10 km · en 7 mois</span><span class="av-v">38′06 <span class="av-fl" aria-label="puis">→</span> 35′21</span></li></ul></footer>
       </li>
       </ul>
       <div class="av-ctl">
@@ -873,9 +873,9 @@
         <option value="5">5 km</option><option value="10" selected>10 km</option><option value="21.0975">Semi</option><option value="42.195">Marathon</option>
       </select>
       <label class="sr" for="t-time">Chrono</label>
-      <input id="t-time" class="field mono" type="text" inputmode="numeric" placeholder="45:30" autocomplete="off" aria-describedby="t-help">
+      <input id="t-time" class="field mono" type="text" inputmode="decimal" placeholder="45:30" autocomplete="off" enterkeyhint="done" aria-describedby="t-help">
     </form>
-    <p class="hint" id="t-help">Format mm:ss ou h:mm:ss</p>
+    <p class="hint" id="t-help">Par exemple 45:30, 45.30 ou 4530 ; 1:35:00 ou 1h35</p>
     <div class="try-out" id="tryOut" aria-live="polite" hidden>
       <p class="eyebrow">Tes équivalents sur les autres distances</p>
       <div class="try-grid" id="tryGrid"></div>
