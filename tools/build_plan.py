@@ -490,16 +490,26 @@ def main() -> int:
                 t_b += lg
                 cum.append(t_b)
             k = ed[-1] / cum[-1]
-            cale = []
+            # Sur la première moitié, partir plus lentement que ceux qui ont réussi
+            # n'est pas une faute : on n'y impose que de ne pas aller plus vite que
+            # les plus rapides d'entre eux. C'est la seconde moitié qui doit tenir
+            # dans la fenêtre, des deux côtés.
+            moitie = segs[-1]["km1"] / 2 if segs else 0
+            cale, au_dessus = [], 0
             for (km_mark, _), c in zip(anchors, cum):
                 lo_, hi_ = fen.get(km_mark, (None, None))
                 c *= k
-                if lo_ and hi_:
-                    c = min(max(c, lo_), hi_)
+                if lo_:
+                    c = max(c, lo_)
+                if hi_ and km_mark >= moitie:
+                    c = min(c, hi_)
+                elif hi_ and c > hi_:
+                    au_dessus += 1
                 cale.append((km_mark, c))
             ecart = max(abs(c - e) for (_, c), e in zip(cale, ed))
-            print(f"  Séances : {w:.0%} du poids ; passages décalés de {ecart / 60:.0f} min au plus, "
-                  f"toujours dans la fenêtre des finishers")
+            print(f"  Séances : {w:.0%} du poids ; passages décalés de {ecart / 60:.0f} min au plus ; "
+                  f"{au_dessus} passage(s) plus lents que la fenêtre en première moitié, "
+                  f"seconde moitié dans la fenêtre")
             anchors = cale
         if anchors:
             rows = list(rows)

@@ -672,13 +672,13 @@ function editions(plan) {
   if (!E || !(E.points || []).length) return '';
   const P = E.points, D = plan.distanceKm || P[P.length - 1].km;
   const pres = (f) => P.reduce((a, p) => Math.abs(p.km / D - f) < Math.abs(a.km / D - f) ? p : a);
-  const mi = pres(0.5), fin = pres(0.85);
+  const mi = pres(0.6), fin = pres(0.85);  // la seconde moitié : c'est là que la course se joue
   const surDix = (p) => Math.round(p.p * 10);
 
   const graphe = chart({
     title: 'Ta cible dans la fenêtre de ceux qui ont réussi',
     note: `Écart, en minutes, au passage du finisher médian de ${E.target}. Au-dessus, en retard ; en dessous, en avance.`,
-    height: 230, xFmt: (v) => `km ${Math.round(v)}`, yFmt: (v) => `${v > 0 ? '+' : ''}${Math.round(v)} min`,
+    height: 230, x0: 0, xTicks: 8, xFmt: (v) => `km ${Math.round(v)}`, yFmt: (v) => `${v > 0 ? '+' : ''}${Math.round(v)} min`,
     series: [
       { pts: P.map((p) => [p.km, (p.hi - p.med) / 60, (p.lo - p.med) / 60]), kind: 'band', cls: 'c-bandfill',
         label: '8 finishers sur 10', swatch: 'c-bandfill' },
@@ -697,7 +697,9 @@ function editions(plan) {
     <h2 class="pl-h">Pour réussir ${esc(E.target)}</h2>
     <p class="sub pl-wide">${E.runners.toLocaleString('fr-FR')} finishers de l'UTMB, de ${E.years[0]} à ${E.years[1]}.
       ${E.finishers} d'entre eux ont fini dans l'heure avant ${esc(E.target)} : leurs passages donnent la fenêtre.
-      Tes séances placent ta cible à l'intérieur.</p>
+      Tes séances placent ta cible à l'intérieur. Sur la première moitié, elle peut passer après la fenêtre :
+      partir plus prudemment que ceux qui ont réussi n'est pas une faute. La seconde moitié, elle, tient
+      dans la fenêtre.</p>
     <div class="two ed-chiffres">
       <div class="big"><p class="big-l mono">Passage · ${esc(mi.name)}, km ${km1(mi.km)}</p>
         <p class="big-v">${surDix(mi)} sur 10</p>
