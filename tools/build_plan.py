@@ -342,6 +342,10 @@ def main() -> int:
     p.add_argument("--reference", help="JSON des temps de passage historiques, si tu en as")
     p.add_argument("--splits", help="temps de passage appris (learn_splits.py) : le plan s'y cale")
     p.add_argument("--profile", help="profil mesuré du coureur (fit_gam.py) : remplace les réglages par défaut")
+    p.add_argument("--poids-seances", type=float, default=0.35,
+                   help="avec --splits : part laissée aux séances dans chaque inter-ravitaillement "
+                        "(0 = les éditions seules, 1 = les séances seules). Le passage reste dans la "
+                        "fenêtre des finishers.")
     p.add_argument("--night-penalty", type=float, default=0.0,
                    help="surcoût mesuré de la nuit, en %% (ex. 4.6)")
     a = p.parse_args()
@@ -461,6 +465,42 @@ def main() -> int:
         anchors = [(p["km"], p["eta"]) for p in learned["points"]
                    if p.get("matched") and not p.get("start") and p.get("eta")]
         anchors = sorted({km: eta for km, eta in anchors}.items())
+        # Les éditions donnent la trame et la fenêtre ; les séances décalent chaque
+        # passage à l'intérieur. Inter-ravitaillement par inter-ravitaillement, on
+        # mêle le temps des finishers et celui du modèle (moyenne géométrique
+        # pondérée), on ramène le tout à l'objectif, puis on garde chaque passage
+        # dans la fenêtre où passaient ceux qui ont réussi.
+        w = max(0.0, min(1.0, a.poids_seances))
+        fen = {p["km"]: (p.get("etaLo"), p.get("etaHi")) for p in learned["points"]}
+        if anchors and w > 0:
+            cum_m, t_m, j = [], 0.0, 0
+            for i, sg in enumerate(segs):
+                while j < len(anchors) and sg["km0"] >= anchors[j][0]:
+                    cum_m.append(t_m)
+                    j += 1
+                t_m += rows[i][2]
+            while len(cum_m) < len(anchors):
+                cum_m.append(t_m)
+            ed = [eta for _, eta in anchors]
+            legs_e = [b - a_ for a_, b in zip([0.0] + ed[:-1], ed)]
+            legs_m = [b - a_ for a_, b in zip([0.0] + cum_m[:-1], cum_m)]
+            legs = [le ** (1 - w) * lm ** w if le > 0 and lm > 0 else le for le, lm in zip(legs_e, legs_m)]
+            cum, t_b = [], 0.0
+            for lg in legs:
+                t_b += lg
+                cum.append(t_b)
+            k = ed[-1] / cum[-1]
+            cale = []
+            for (km_mark, _), c in zip(anchors, cum):
+                lo_, hi_ = fen.get(km_mark, (None, None))
+                c *= k
+                if lo_ and hi_:
+                    c = min(max(c, lo_), hi_)
+                cale.append((km_mark, c))
+            ecart = max(abs(c - e) for (_, c), e in zip(cale, ed))
+            print(f"  Séances : {w:.0%} du poids ; passages décalés de {ecart / 60:.0f} min au plus, "
+                  f"toujours dans la fenêtre des finishers")
+            anchors = cale
         if anchors:
             rows = list(rows)
             prev_km, prev_t = 0.0, 0.0

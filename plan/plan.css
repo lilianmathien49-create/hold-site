@@ -410,3 +410,15 @@
   .tbl-aid td:last-child .tag { display: inline-block; margin: 0 2px 3px 0; font-size: 9px; padding: 2px 5px; }
   .ry-v { font-size: 16px; }
 }
+
+/* Éditions précédentes et aptitudes */
+.ed-chiffres { margin: 22px 0 8px; }
+.ed-km { font-size: 11px; margin-left: 6px; }
+.tbl-ed { min-width: 0; }
+.apt { margin-top: 22px; }
+.apt .big-h + .big-h { margin-top: 10px; color: var(--dim); }
+.apt .big-h:not(.mono) { font-size: 14px; color: var(--sub-text); }
+@media (max-width: 640px) {
+  .tbl-ed th, .tbl-ed td { padding: 10px 8px; font-size: 13px; }
+  .ed-km { display: block; margin: 2px 0 0; }
+}
