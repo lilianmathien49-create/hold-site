@@ -342,9 +342,11 @@ def main() -> int:
     p.add_argument("--reference", help="JSON des temps de passage historiques, si tu en as")
     p.add_argument("--splits", help="temps de passage appris (learn_splits.py) : le plan s'y cale")
     p.add_argument("--profile", help="profil mesuré du coureur (fit_gam.py) : remplace les réglages par défaut")
-    p.add_argument("--retenue-descente", type=float, default=0.05,
+    p.add_argument("--retenue-descente", type=float, default=None,
                    help="avec --splits : les descentes sont courues ce pourcentage plus lentement que le "
-                        "modèle, et ne servent jamais à rattraper du temps (défaut 0,05)")
+                        "modèle (défaut 0,05, ou 0 avec --rendement, qui mesure ce ralentissement)")
+    p.add_argument("--rendement", help="technicite.py : le rendement réel par pente, mesuré sur les "
+                                       "finishers, corrige le modèle tronçon par tronçon")
     p.add_argument("--poids-seances", type=float, default=0.35,
                    help="avec --splits : part laissée aux séances dans chaque inter-ravitaillement "
                         "(0 = les éditions seules, 1 = les séances seules). Le passage reste dans la "
@@ -454,6 +456,32 @@ def main() -> int:
         if t > target: lo = mid
         else: hi = mid
     rows, total = simulate(segs, (lo + hi) / 2, a)
+    if a.retenue_descente is None:
+        a.retenue_descente = 0.0 if a.rendement else 0.05
+
+    # --- Le rendement réel : le modèle de pente se trompe de façon régulière (il
+    # monte trop lentement, descend trop vite). technicite.py a mesuré de combien
+    # sur les finishers ; on corrige chaque tronçon, puis on ramène le total à
+    # l'objectif. En descente, la correction ne fait jamais aller plus vite que le
+    # modèle : on y préserve les cuisses.
+    if a.rendement:
+        b = json.loads(Path(a.rendement).read_text(encoding="utf-8"))["beta"]
+        rows = list(rows)
+        for i, sg in enumerate(segs):
+            km = sg["dist"] / 1000 or 1e-6
+            m = math.exp(b[1] * sg["up"] / km / 100 + b[2] * sg["down"] / km / 100
+                         + b[3] * (1.0 if sg["slope"] <= -15 else 0.0))
+            if sg["slope"] <= -4.0:
+                m = max(m, 1.0)
+            walking, v, dt, _, thr = rows[i]
+            rows[i] = (walking, v / m, dt * m, 0.0, thr)
+        k = target / sum(r[2] for r in rows)
+        t = 0.0
+        for i, (walking, v, dt, _, thr) in enumerate(rows):
+            t += dt * k
+            rows[i] = (walking, v / k, dt * k, t, thr)
+        total = t
+        print(f"  Rendement mesuré sur les finishers appliqué tronçon par tronçon ({Path(a.rendement).name})")
     print(f"  Calibrage : objectif {hm(target)} · simulé {hms(total)}  (écart {abs(total-target):.0f} s)")
 
     # --- Apprentissage : on recale chaque inter-ravitaillement sur le temps

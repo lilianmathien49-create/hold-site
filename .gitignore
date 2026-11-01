@@ -8,6 +8,7 @@ tools/*.json
 !tools/plan-exemple.json
 tools/test/seance.json
 tools/.cache-utmb/
+tools/.cache-osm/
 tools/*.csv
 __pycache__/
 METHODE.txt

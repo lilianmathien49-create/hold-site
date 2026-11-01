@@ -608,7 +608,7 @@ function exporter(plan) {
    qu'il faut savoir pour la courir : profil, rythme, météo, matériel.
    La nutrition n'y figure pas : on n'a aucune mesure pour la calculer, et on
    ne l'invente pas. */
-const hmin = (x) => `${Math.floor(x / 3600)}h${String(Math.round(x % 3600 / 60)).padStart(2, '0')}`;
+const hmin = (x) => { const m = Math.round(x / 60); return `${Math.floor(m / 60)}h${String(m % 60).padStart(2, '0')}`; };
 const monte = (sg) => (sg.cls === 'raide' || sg.cls === 'montee') && sg.vam;
 const rythme = (sg) => monte(sg) ? `${sg.vam} m/h` : `${sg.pace} /km`;
 
@@ -671,12 +671,15 @@ function portions(plan) {
       secs: T.filter((sg) => sg.km0 < b.km - 0.05 && sg.km1 > a.km + 0.05),
       up: Math.round(segs.reduce((s, sg) => s + (sg.up || 0), 0)),
       down: Math.round(segs.reduce((s, sg) => s + (sg.down || 0), 0)),
-      altMax: Math.max(...segs.map((sg) => sg.alt)), pmax: Math.max(...segs.map((sg) => sg.slope)),
+      altMax: Math.max(...segs.map((sg) => sg.alt)),
+      pmax: segs.reduce((m, sg) => Math.abs(sg.slope) > Math.abs(m) ? sg.slope : m, 0),  // la plus raide, montée ou descente
       marche: segs.filter((sg) => sg.mode === 'marche').reduce((s, sg) => s + sg.km1 - sg.km0, 0),
       batons: segs.some((sg) => sg.poles),
       t0, t1, tmin: Math.min(...temps), tmax: Math.max(...temps),
       nuit: segs.filter((sg) => sg.light === 'nuit').length / segs.length,
       ed, medTroncon: ed && edAv ? ed.med - edAv.med : null,
+      // La technicité n'est affichée que si elle a été mesurée sur cette portion-là, pas sur une fusion.
+      tech: ((plan.technicite || {}).portions || []).find((t) => Math.abs(t.km0 - a.km) < 0.05 && Math.abs(t.km1 - b.km) < 0.05),
     });
   }
   return out;
@@ -710,6 +713,11 @@ function pacing(plan) {
   const cartes = PO.map((po) => {
     const fen = po.ed ? `fenêtre ${hmin(po.ed.lo)} à ${hmin(po.ed.hi)}` : '';
     const sim = po.ed && po.ed.mcLo ? `${hmin(po.ed.mcLo)} à ${hmin(po.ed.mcHi)}` : '';
+    // Ce que les finishers y perdent ou y gagnent au-delà de la pente, de la fatigue et de
+    // la nuit : affiché seulement quand c'est net (au moins une fois l'écart habituel).
+    const t = po.tech && Math.abs(po.tech.z) >= 1 ? po.tech : null;
+    const pc = t ? Math.round((Math.exp(t.reste) - 1) * 100) : 0;
+    const tech = t ? `<span class="po-tech ${pc > 0 ? 'po-tech-lent' : ''}">${pc > 0 ? 'technique' : 'roulant'} ${pc > 0 ? '+' : ''}${pc} %</span>` : '';
     const rythmes = po.secs.map((sg) => `<li><span class="mono">km ${km1(Math.max(sg.km0, po.a.km))} à ${km1(Math.min(sg.km1, po.b.km))}</span>
       <span class="tag tg-${sg.cls}">${CLS_LABEL[sg.cls] || sg.cls}</span>
       <span class="mono muted">${sg.slope > 0 ? '+' : ''}${km1(sg.slope)} %</span>
@@ -721,7 +729,7 @@ function pacing(plan) {
       <summary>
         <span class="po-n mono">${String(po.n).padStart(2, '0')}</span>
         <span class="po-t">${esc(po.a.name)} <span class="po-fl2">→</span> ${esc(po.b.name)}
-          <span class="po-k mono">km ${km1(po.a.km)} à ${km1(po.b.km)} · +${po.up} m · −${po.down} m</span></span>
+          <span class="po-k mono">km ${km1(po.a.km)} à ${km1(po.b.km)} · +${po.up} m · −${po.down} m ${tech}</span></span>
         <span class="po-c"><span class="po-v">${po.t1 ? hmin(po.t1) : ''}</span><span class="po-w mono">${fen}</span></span>
       </summary>
       <div class="po-d">
@@ -735,6 +743,10 @@ function pacing(plan) {
           ${po.medTroncon ? fig('Temps habituel', hmin(po.medTroncon)) : ''}
           ${sim ? fig('Passage simulé', sim) : ''}
         </div>
+        ${t ? `<p class="po-p po-tech-p">${pc > 0
+          ? `Les finishers y mettent ${pc} % de plus que ce que la pente, la fatigue et la nuit expliquent : terrain plus lent qu'il n'en a l'air.`
+          : `Les finishers y vont ${-pc} % plus vite que ce que la pente laisse prévoir : terrain roulant.`}
+          Mesuré sur ${esc((plan.technicite || {}).source || 'les éditions précédentes')}.</p>` : ''}
         <h4 class="po-h">Ton rythme</h4>
         <ul class="po-ry-l">${rythmes}</ul>
         ${po.marche > 0.2 ? `<p class="po-p">${km1(po.marche)} km en marche${po.batons ? ', bâtons sortis' : ''}.</p>` : ''}
@@ -754,8 +766,9 @@ function pacing(plan) {
     <p class="sub pl-wide">${P.length ? `On a repris ${E.runners.toLocaleString('fr-FR')} finishers de l'UTMB, de ${E.years[0]}
       à ${E.years[1]}. Ceux qui ont fini dans l'heure avant ${esc(E.target)} donnent le temps habituel et la fenêtre.
       ` : ''}Tes séances placent ton temps à l'intérieur. Sur la première moitié, il peut être plus lent que la
-      fenêtre : partir prudemment n'est pas une faute. La seconde moitié, elle, tient dans la fenêtre. Dans les
-      descentes, tu restes un peu en dessous de ton rythme : on n'y rattrape pas de temps, on préserve les cuisses.</p>
+      fenêtre : partir prudemment n'est pas une faute. La seconde moitié, elle, tient dans la fenêtre. Le rythme
+      de chaque pente est corrigé de ce que les finishers y font vraiment ; dans les descentes, il ne va jamais
+      plus vite que ce que prévoient tes séances, et on n'y rattrape pas de temps : on préserve les cuisses.</p>
     ${aptitudes(plan)}
     ${graphe}
     ${chances ? `<div class="ch-ps">${chances}</div>` : ''}

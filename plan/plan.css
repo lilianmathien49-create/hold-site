@@ -475,3 +475,7 @@
   .po-d { padding-left: 4px; }
   .po-v { font-size: 21px; }
 }
+.po-tech { display: inline-block; margin-left: 6px; padding: 1px 6px; border: 1px solid var(--line);
+  border-radius: 999px; font-size: 10px; color: var(--sub-text); }
+.po-tech-lent { border-color: var(--mark); color: var(--red); }
+.po-tech-p { color: var(--text); }
