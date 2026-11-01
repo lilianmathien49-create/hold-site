@@ -425,7 +425,7 @@
 }
 
 /* Modélisation et pacing */
-.apt { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 22px 0 26px;
+.apt { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; margin: 22px 0 26px;
   border: 1px solid var(--line); background: var(--surface); }
 .apt-i { padding: 16px 18px; border-right: 1px solid var(--line); }
 .apt-i:last-child { border-right: 0; }

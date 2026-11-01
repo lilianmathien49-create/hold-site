@@ -626,8 +626,24 @@ function aptitudes(plan) {
     item(vam ? `${vam} m/h` : null, 'vitesse ascensionnelle', 'calculée sur ton plan'),
     item(m.fatigue != null ? `−${km1(m.fatigue)} %` : null, 'de vitesse perdue par heure', statut('durabilité')),
     item(sp.runFlat ? `${km1(sp.runFlat)} km/h` : null, 'en course sur le plat', statut('rapport course/marche')),
+    descente(plan),
   ].join('');
   return items ? `<div class="apt">${items}</div>` : '';
+}
+
+// La descente : son rendement frais face au modèle de pente, et ce qu'il perd à mesure
+// que les quadriceps encaissent du D-. Si la fatigue excentrique n'est pas mesurable,
+// on le dit, et on dit comment la mesurer.
+function descente(plan) {
+  const d = plan.descente;
+  if (!d || !d.mesure || d.mesure.raide == null) return '';
+  const m = d.mesure, pc = (q) => `${q < 1 ? '−' : '+'}${Math.round(Math.abs(1 - q) * 100)} %`;
+  const exc = d.excentrique_mesurable && m.excentrique != null
+    ? `et −${km1(m.excentrique)} % par 1000 m de D− encaissés · mesuré sur toi`
+    : 'fatigue excentrique non mesurée : il manque une séance test en descente';
+  return `<div class="apt-i"><p class="apt-v">${pc(m.raide)}</p>
+    <p class="apt-l">en descente raide face au modèle${m.douce != null ? `, ${pc(m.douce)} en douce` : ''}</p>
+    <p class="apt-s mono">${esc(exc)}</p></div>`;
 }
 
 // Le profil d'une portion, en petit : l'altitude, et en rouge ce qui se marche.

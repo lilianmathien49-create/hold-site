@@ -34,7 +34,38 @@ TRUE = {
     "hr_heat": 0.95,      # bpm par °C au-dessus de 15
     "hr_slope": 0.85,     # bpm par point de pente
     "hr_walk": -14.0,     # la marche coûte moins cher au cœur
+    # La descente : ce que le coureur tient par rapport au modèle de pente, frais,
+    # et ce qu'il perd à mesure que les quadriceps encaissent du dénivelé négatif.
+    "desc_douce": 0.93,   # de -4 à -15 % : 93 % de la vitesse que donne le modèle
+    "desc_raide": 0.78,   # au-delà de -15 % : 78 %
+    "excentrique": 4.0,   # % de vitesse perdue en descente par 1000 m de D- déjà encaissés
 }
+
+# Le gain de vitesse en descente est plafonné comme dans build_plan : sur un
+# sentier, ce n'est plus l'énergie qui limite mais le pied et les quadriceps.
+GAIN_RUN, GAIN_WALK = 1.18, 1.10
+
+
+def vitesse(slope, walking, hours, d_moins, effort=1.0):
+    """Vitesse sans aléa : la physique de la pente, puis le coureur."""
+    grade = slope / 100
+    if walking:
+        cost = max(1.2, 280.5*grade**5 - 58.7*grade**4 - 76.8*grade**3 + 51.9*grade**2 + 19.6*grade + 2.5)
+        v = TRUE["walk_flat"] * min(2.5 / cost, GAIN_WALK)
+    else:
+        cost = max(1.5, 155.4*grade**5 - 30.4*grade**4 - 43.3*grade**3 + 46.3*grade**2 + 19.5*grade + 3.6)
+        v = TRUE["run_flat"] * min(3.6 / cost, GAIN_RUN)
+    if slope <= -4:
+        v *= TRUE["desc_douce"] if slope > -15 else TRUE["desc_raide"]
+        v *= max(0.5, 1 - TRUE["excentrique"] / 100 * d_moins / 1000)
+    fade = max(0.6, 1 - TRUE["durability"] / 100 * max(0, hours - 1))
+    return v * effort * fade
+
+
+def marche(slope, hours, rng=None):
+    thr = max(3.5, TRUE["walk_thr0"] - TRUE["walk_decay"] * hours)
+    p = 1 / (1 + math.exp(-TRUE["walk_k"] * (slope - thr)))
+    return (rng.random() < p) if rng else p > 0.5
 
 # type, durée (min), caractère du terrain, part dans la semaine
 SESSIONS = [
@@ -49,6 +80,19 @@ SESSIONS = [
 def terrain(kind: str, blocks: int, rng: random.Random) -> list[float]:
     """Suite de pentes plausible : on alterne des montées et des descentes
     de longueur réaliste plutôt que de tirer chaque bloc indépendamment."""
+    if kind == "test-descente":
+        # La séance test : des allers-retours sur une même côte, 600 m de dénivelé
+        # à 15 % en montée, la moitié des descentes à 15 %, l'autre à 25 %.
+        # Trois allers-retours de 700 m de dénivelé : la montée à 15 % se marche
+        # (environ une heure), la descente alterne 15 % et 25 %. Environ 2100 m de D-.
+        # Quinze minutes de plat au début (la vitesse du jour), dix à la fin (la fatigue).
+        out = [rng.gauss(0, 1.2) for _ in range(60)]
+        for tour in range(3):
+            out += [max(-35, min(35, 15 + rng.gauss(0, 1.5))) for _ in range(250)]
+            pente = -15 if tour % 2 == 0 else -25
+            n = 113 if pente == -15 else 100
+            out += [max(-35, min(35, pente + rng.gauss(0, 1.5))) for _ in range(n)]
+        return out + [rng.gauss(0, 1.2) for _ in range(40)]
     cfg = {"plat": (1.5, 40), "vallonne": (5.5, 60), "raide": (11.0, 25),
            "montagne": (13.0, 90)}[kind]
     amp, run_len = cfg
@@ -78,25 +122,17 @@ def run_session(sid: int, d: date, kind: str, minutes: int, shape: str,
     slopes = terrain(shape, blocks, rng)
     temp = season_temp(d, rng)
     # L'intensité du jour : un tempo se court plus vite qu'un footing.
-    effort = {"footing": 0.88, "tempo": 1.07, "cotes": 0.97, "longue": 0.92, "montagne": 0.86}[kind]
+    effort = {"footing": 0.88, "tempo": 1.07, "cotes": 0.97, "longue": 0.92, "montagne": 0.86,
+              "test": 0.9}[kind]
     freshness = rng.gauss(1.0, 0.035)          # forme du jour
-    written = 0
+    written, d_moins = 0, 0.0
     for i, slope in enumerate(slopes):
         hours = i * BLOCK_S / 3600
-        thr = max(3.5, TRUE["walk_thr0"] - TRUE["walk_decay"] * hours)
-        p_walk = 1 / (1 + math.exp(-TRUE["walk_k"] * (slope - thr)))
-        walking = rng.random() < p_walk
-        grade = slope / 100
-        # Coût énergétique de la pente (Minetti 2002) : la vitesse suit l'inverse du coût.
-        if walking:
-            cost = max(1.2, 280.5*grade**5 - 58.7*grade**4 - 76.8*grade**3 + 51.9*grade**2 + 19.6*grade + 2.5)
-            v = TRUE["walk_flat"] * (2.5 / cost)
-        else:
-            cost = max(1.5, 155.4*grade**5 - 30.4*grade**4 - 43.3*grade**3 + 46.3*grade**2 + 19.5*grade + 3.6)
-            v = TRUE["run_flat"] * (3.6 / cost)
-        fade = max(0.6, 1 - TRUE["durability"] / 100 * max(0, hours - 1))
+        walking = marche(slope, hours, rng)
         heat_cost = 1 - max(0.0, temp - 15) * 0.006
-        v = max(1.2, v * effort * freshness * fade * heat_cost * rng.gauss(1, 0.045))
+        v = max(1.2, vitesse(slope, walking, hours, d_moins, effort * freshness * heat_cost) * rng.gauss(1, 0.045))
+        if slope < 0:
+            d_moins += -slope / 100 * v / 3.6 * BLOCK_S
 
         hr = (TRUE["hr_flat"]
               + TRUE["hr_slope"] * slope
@@ -113,12 +149,50 @@ def run_session(sid: int, d: date, kind: str, minutes: int, shape: str,
     return written
 
 
+# Des courses inventées, tracées sur des morceaux du GPX de l'UTMB : de vraies
+# descentes, longues, enchaînées sous fatigue. (nom, km de départ, km d'arrivée)
+COURSES = [
+    ("Trail des Contamines", 22.6, 67.1),
+    ("Ultra du Val Ferret", 80.3, 142.2),
+    ("Grand Tour du Mont-Blanc", 0.0, 112.5),
+]
+
+
+def run_course(sid, d, nom, km0, km1, profil, rng, w, effort=0.95) -> int:
+    """Une course : on avance le long du profil, bloc de 15 s après bloc."""
+    pente = lambda km: next((p for a, b, p in profil if a <= km < b), 0.0)
+    km, t, written, d_moins = km0, 0, 0, 0.0
+    temp = round(rng.gauss(14, 4), 1)
+    forme = rng.gauss(1.0, 0.03)
+    while km < km1:
+        hours = t / 3600
+        slope = max(-35, min(35, pente(km) + rng.gauss(0, 1.5)))
+        walking = marche(slope, hours, rng)
+        v = max(1.2, vitesse(slope, walking, hours, d_moins, effort * forme) * rng.gauss(1, 0.045))
+        hr = max(80, min(190, TRUE["hr_flat"] + TRUE["hr_slope"] * slope + TRUE["hr_drift"] * hours
+                         + (TRUE["hr_walk"] if walking else 0.0) + rng.gauss(0, 3.2)))
+        w.writerow([sid, d.isoformat(), "course", t, round(slope, 2), "marche" if walking else "course",
+                    round(v, 2), round(hr), temp])
+        if slope < 0:
+            d_moins += -slope / 100 * v / 3.6 * BLOCK_S
+        km += v / 3.6 * BLOCK_S / 1000
+        t += BLOCK_S
+        written += 1
+    print(f"    {nom} : {km1 - km0:.0f} km en {t / 3600:.1f} h · {d_moins:.0f} m de D- encaissés")
+    return written
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", required=True)
     ap.add_argument("--weeks", type=int, default=52)
     ap.add_argument("--seed", type=int, default=20)
     ap.add_argument("--truth", help="écrit les paramètres cachés, pour vérifier l'ajustement")
+    ap.add_argument("--courses", type=int, default=0, help="nombre de courses à ajouter (0 à 3)")
+    ap.add_argument("--sans-montagne", action="store_true",
+                    help="un coureur de plaine : pas de sortie de plus de 4 h, pas de montagne")
+    ap.add_argument("--tests", type=int, default=0, help="séances test en descente (3 h, 2400 m de D-)")
+    ap.add_argument("--gpx", default=str(Path(__file__).resolve().parent.parent / "data" / "utmb.gpx"))
     a = ap.parse_args()
 
     rng = random.Random(a.seed)
@@ -135,12 +209,27 @@ def main() -> int:
             n = 3 if week % 4 == 3 else rng.choice([4, 5, 5, 6])
             for j in range(n):
                 kind = rng.choices(kinds, weights)[0]
+                if a.sans_montagne and kind == "montagne":
+                    kind = "longue"
                 lo, hi = next(d for k, d, _, _ in SESSIONS if k == kind)
                 shape = next(s for k, _, s, _ in SESSIONS if k == kind)
                 minutes = int(rng.uniform(lo, hi))
                 d = start + timedelta(days=week * 7 + j)
                 sessions += 1
                 total_blocks += run_session(sessions, d, kind, minutes, shape, rng, w)
+
+        for n in range(a.tests):
+            sessions += 1
+            total_blocks += run_session(sessions, start + timedelta(days=200 + 14 * n), "test", 295,
+                                        "test-descente", rng, w)
+        if a.courses:
+            from build_plan import read_gpx, to_segments
+            segs = to_segments(read_gpx(Path(a.gpx))[0], step=100)
+            profil = [(s["km0"], s["km1"], s["slope"]) for s in segs]
+            for n, (nom, km0, km1) in enumerate(COURSES[:a.courses]):
+                sessions += 1
+                total_blocks += run_course(sessions, start + timedelta(days=60 + 110 * n), nom, km0, km1,
+                                           profil, rng, w)
 
     print(f"  {sessions} séances · {total_blocks:,} blocs de {BLOCK_S} s"
           f" · {total_blocks*BLOCK_S/3600:.0f} h de course".replace(",", " "))

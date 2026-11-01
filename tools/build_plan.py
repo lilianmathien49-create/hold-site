@@ -347,6 +347,8 @@ def main() -> int:
                         "modèle (défaut 0,05, ou 0 avec --rendement, qui mesure ce ralentissement)")
     p.add_argument("--rendement", help="technicite.py : le rendement réel par pente, mesuré sur les "
                                        "finishers, corrige le modèle tronçon par tronçon")
+    p.add_argument("--descente", help="descente.py : les aptitudes du coureur en descente (rendement "
+                                      "frais, fatigue excentrique), mesurées sur ses séances")
     p.add_argument("--poids-seances", type=float, default=0.35,
                    help="avec --splits : part laissée aux séances dans chaque inter-ravitaillement "
                         "(0 = les éditions seules, 1 = les séances seules). Le passage reste dans la "
@@ -464,15 +466,31 @@ def main() -> int:
     # sur les finishers ; on corrige chaque tronçon, puis on ramène le total à
     # l'objectif. En descente, la correction ne fait jamais aller plus vite que le
     # modèle : on y préserve les cuisses.
-    if a.rendement:
-        b = json.loads(Path(a.rendement).read_text(encoding="utf-8"))["beta"]
+    # Les descentes du coureur lui-même : son rendement frais (douce, raide) et ce
+    # qu'il perd par millier de mètres de D- déjà encaissés. Là où elles sont
+    # mesurées, on prend la plus lente des deux estimations, la sienne ou celle
+    # des finishers : en descente, on préserve plutôt qu'on ne parie.
+    desc = None
+    if a.descente:
+        dj = json.loads(Path(a.descente).read_text(encoding="utf-8"))
+        dm_ = dj["mesure"]
+        desc = {"douce": dm_.get("douce"), "raide": dm_.get("raide"),
+                "exc": dm_.get("excentrique") if dj.get("excentrique_mesurable") else None}
+    if a.rendement or desc:
+        b = json.loads(Path(a.rendement).read_text(encoding="utf-8"))["beta"] if a.rendement else None
         rows = list(rows)
+        d_moins = 0.0
         for i, sg in enumerate(segs):
             km = sg["dist"] / 1000 or 1e-6
             m = math.exp(b[1] * sg["up"] / km / 100 + b[2] * sg["down"] / km / 100
-                         + b[3] * (1.0 if sg["slope"] <= -15 else 0.0))
+                         + b[3] * (1.0 if sg["slope"] <= -15 else 0.0)) if b else 1.0
             if sg["slope"] <= -4.0:
                 m = max(m, 1.0)
+                q = desc and (desc["douce"] if sg["slope"] > -15 else desc["raide"])
+                if q:
+                    usure = max(0.5, 1 - (desc["exc"] or 0.0) / 100 * d_moins / 1000)
+                    m = max(m, 1 / (q * usure))
+            d_moins += sg["down"]
             walking, v, dt, _, thr = rows[i]
             rows[i] = (walking, v / m, dt * m, 0.0, thr)
         k = target / sum(r[2] for r in rows)
@@ -481,7 +499,11 @@ def main() -> int:
             t += dt * k
             rows[i] = (walking, v / k, dt * k, t, thr)
         total = t
-        print(f"  Rendement mesuré sur les finishers appliqué tronçon par tronçon ({Path(a.rendement).name})")
+        if a.rendement:
+            print(f"  Rendement mesuré sur les finishers appliqué tronçon par tronçon ({Path(a.rendement).name})")
+        if desc:
+            print(f"  Descentes du coureur : {desc['douce'] or 0:.2f} en douce, {desc['raide'] or 0:.2f} en raide, "
+                  + (f"{desc['exc']:.1f} % par 1000 m de D-" if desc["exc"] else "fatigue excentrique non mesurée"))
     print(f"  Calibrage : objectif {hm(target)} · simulé {hms(total)}  (écart {abs(total-target):.0f} s)")
 
     # --- Apprentissage : on recale chaque inter-ravitaillement sur le temps
