@@ -12,7 +12,7 @@ function check(label, cond, detail) {
 render(plan);
 const html = document.getElementById('planRoot').innerHTML;
 const onglets = [...html.matchAll(/data-tab="([a-z]+)"/g)].map((m) => m[1]);
-check(`${onglets.length} onglets, quatre au plus`, onglets.length <= 4, onglets.join(' '));
+check(`${onglets.length} onglets, trois au plus`, onglets.length <= 3, onglets.join(' '));
 check('le premier onglet est la course', onglets[0] === 'course');
 
 function pane(k) {
@@ -24,29 +24,23 @@ function pane(k) {
 const course = pane('course');
 check('le poste de pilotage est dans « Ma course »', course.includes('id="chartWrap"'));
 check('le curseur de temps est dans « Ma course »', course.includes('id="scrub"'));
-check('le pacing tronçon par tronçon est dans « Ma course »', course.includes('Ton pacing, tronçon par tronçon'));
 
 // Ce qui doit rester hors de la première page : le pas de 500 m et la méthode.
 check('le pas de 500 m n’est pas dans « Ma course »', !course.includes('tous les 500 m'));
 check('la méthode n’est pas dans « Ma course »', !course.includes('Comment ce plan est calculé'));
 
-// Le pacing : une ligne par tronçon, toutes cliquables ; des mètres par heure
-// dans les montées, une allure au kilomètre ailleurs.
-const lignes = (course.match(/<tr class="clickrow"/g) || []).length;
-check(`une ligne par tronçon (${lignes}/${plan.sections.length})`, lignes === plan.sections.length);
-const montees = plan.sections.filter((sg) => (sg.cls === 'raide' || sg.cls === 'montee') && sg.vam).length;
-const mh = (course.match(/<span class="ry-u mono">m\/h<\/span>/g) || []).length;
-check(`chaque montée a sa vitesse ascensionnelle (${mh}/${montees})`, mh === montees);
-check('les autres tronçons ont une allure', (course.match(/<span class="ry-u mono">\/km<\/span>/g) || []).length
-  === plan.sections.length - montees);
+// Modélisation et pacing : une portion par intervalle entre deux ravitaillements,
+// chacune dépliable sur son profil, son rythme, sa météo et son matériel.
+const pac = pane('pacing');
+check('l’onglet « Modélisation et pacing » existe', pac.includes('Modélisation et pacing'));
+const nPo = (pac.match(/<details class="po">/g) || []).length;
+check(`une portion par intervalle de ravitaillements (${nPo}/${plan.aid.length - 1})`, nPo === plan.aid.length - 1);
+check('chaque portion a son profil', (pac.match(/<svg class="mp"/g) || []).length === nPo);
+check('chaque portion dit son matériel', (pac.match(/>Matériel</g) || []).length === nPo);
+check('chaque portion dit son rythme', (pac.match(/>Ton rythme</g) || []).length === nPo);
+check('pas de nutrition inventée', !/glucides|g\/h/.test(pac));
 check('aucune date en anglais', !/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b|day \d/.test(html));
 
-// Le tableau des portions : six colonnes, pas onze.
-const thead = course.match(/<thead>(.*?)<\/thead>/s);
-if (thead) {
-  const cols = (thead[1].match(/<th/g) || []).length;
-  check(`le tableau des portions tient en ${cols} colonnes`, cols <= 6);
-}
 check('aucun NaN sur la page', !/NaN/.test(html));
 check('aucun undefined sur la page', !/undefined/.test(html));
 print(ko ? `\n${ko} échec(s) sur ${n}` : `\nles ${n} vérifications passent`);

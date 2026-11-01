@@ -303,7 +303,6 @@ function hmsToSec(c) {
   return NaN;
 }
 
-/* ---------- Chaleur : ce que la température du jour va te coûter ---------- */
 /* ---------- Nutrition : ce qu'il faut emporter, portion par portion ---------- */
 // Repères d'ultra-endurance : 60 à 90 g de glucides par heure, et un besoin en
 // liquide qui grimpe avec la chaleur. On les applique aux durées réelles du plan.
@@ -374,9 +373,6 @@ function profile(plan, interactive) {
   </div>`;
 }
 
-/* ---------- Jour et nuit ---------- */
-/* ---------- Les courbes de la course ---------- */
-/* ---------- Température, altitude et nutrition en courbes ---------- */
 /* ---------- La distribution des chronos simulés ---------- */
 function windows(plan) {
   if (!(plan.windows || []).length) return '';
@@ -442,60 +438,6 @@ function aidTable(plan) {
 /* ---------- Le parcours découpé là où il change vraiment ---------- */
 const CLS_LABEL = { raide: 'raide', montee: 'montée', plat: 'plat', descente: 'descente', plongeon: 'plongeon' };
 
-function sections(plan) {
-  const S = plan.sections || [];
-  if (!S.length) return '';
-
-  // Une ligne par tronçon, une seule consigne de rythme : l'allure au kilomètre
-  // là où l'on court, la vitesse ascensionnelle là où l'on monte. Dans une
-  // montée, l'allure au kilomètre ne dit rien d'utile ; les mètres par heure,
-  // si : c'est ce que la montre affiche et ce que le coureur peut tenir.
-  const monte = (sg) => (sg.cls === 'raide' || sg.cls === 'montee') && sg.vam;
-  const rythme = (sg) => monte(sg)
-    ? `<span class="ry-v">${sg.vam}</span><span class="ry-u mono">m/h</span>`
-    : `<span class="ry-v">${esc(sg.pace)}</span><span class="ry-u mono">/km</span>`;
-  const temp = (sg) => sg.tmin == null ? '' : Math.round(sg.tmin) === Math.round(sg.tmax)
-    ? degC(sg.tmin) : `${Math.round(sg.tmin)} à ${degC(sg.tmax)}`;
-  const rows = S.map((sg) => `<tr class="clickrow" data-km="${sg.km0}" tabindex="0" role="button"
-      aria-label="Voir le kilomètre ${km1(sg.km0)} sur le profil">
-    <td class="mono nowrap">${km1(sg.km0)}<span class="muted"> à ${km1(sg.km1)}</span></td>
-    <td class="nowrap"><span class="tag tg-${sg.cls}">${CLS_LABEL[sg.cls] || sg.cls}</span>
-      <span class="mono muted">${sg.slope > 0 ? '+' : ''}${km1(sg.slope)} %</span></td>
-    <td class="mono num">${sg.up ? `+${sg.up} m` : ''}</td>
-    <td class="num ry">${rythme(sg)}${sg.walkShare >= 50 ? `<span class="ry-m mono">${sg.walkShare === 100
-      ? 'en marche' : `${sg.walkShare} % marché`}${sg.poles ? ', bâtons' : ''}</span>` : ''}</td>
-    <td class="mono num">${esc(sg.clock)}</td>
-    <td class="mono num">${temp(sg)}</td>
-  </tr>${sg.aid ? `<tr class="aidrow"><td colspan="6">
-    <span class="mono">km ${km1(sg.km1)}</span> · ravitaillement ${esc(sg.aid)}</td></tr>` : ''}`).join('');
-
-  const climbs = S.filter((sg) => sg.up > 250).sort((a, b) => b.up - a.up).slice(0, 6);
-  const topClimbs = climbs.map((c) => `<div class="cl">
-    <p class="cl-km mono">km ${km1(c.km0)}</p>
-    <p class="cl-up">+${c.up} m</p>
-    <p class="cl-d mono">${km1(c.dist)} km à ${km1(c.slope)} %${c.vam ? `, ${c.vam} m/h` : ''}</p>
-  </div>`).join('');
-
-  return `<section class="pl-block">
-    <h2 class="pl-h">Ton pacing, tronçon par tronçon</h2>
-    <p class="sub">Sur le plat, une allure au kilomètre. Dans les montées, la vitesse ascensionnelle
-      à tenir, en mètres par heure. Touche une ligne pour la voir sur le profil.</p>
-    <div class="tw tw-tall"><table class="tbl tbl-pace">
-      <thead><tr><th>km</th><th>Terrain</th><th class="num">D+</th>
-        <th class="num">Rythme</th><th class="num">Heure</th><th class="num">Temp.</th></tr></thead>
-      <tbody>${rows}</tbody></table></div>
-    ${topClimbs ? `<h3 class="pl-h3">Tes grosses montées</h3>
-      <p class="sub">Les six qui coûtent le plus, avec la vitesse ascensionnelle visée.</p>
-      <div class="climbs">${topClimbs}</div>` : ''}
-  </section>`;
-}
-
-
-/* ---------- Stratégie au pas de 500 m, groupée par portion ---------- */
-/* ---------- Ce qu'on a mesuré sur le coureur ---------- */
-/* ---------- Les réponses de l'athlète, en courbes ---------- */
-/* ---------- Où les autres perdent du temps ---------- */
-/* ---------- Monte-Carlo ---------- */
 /* ---------- Le curseur qui relie tout ---------- */
 let goToKm = null;   // posé par wireCockpit, utilisé par les clics sur le tableau
 let redrawCockpit = () => {};
@@ -652,7 +594,6 @@ function exporter(plan) {
   </section>`;
 }
 
-/* ---------- Ce que vaut une avance prise en course ---------- */
 /* ---------- Assemblage : un onglet à la fois ----------
    Tout afficher d'un bloc noyait l'essentiel. Chaque onglet répond à une
    seule question, et le parcours est celui qui s'ouvre. */
@@ -660,102 +601,172 @@ function exporter(plan) {
 // que je fais, quand est-ce que ça devient dur, qu'est-ce qui peut déraper, et
 // d'où ça sort. Tout ce qui relève de la méthode part au dernier : c'est vrai,
 // c'est vérifiable, mais ça n'aide pas à courir.
-/* ---------- Les éditions précédentes : la fenêtre pour réussir ----------
-   Deux choses seulement. La fenêtre de passage de ceux qui ont réussi
-   l'objectif, avec ta cible dedans ; et ce que dit le Monte-Carlo de ta chance
-   d'aller au bout si tu tiens ces passages. Le calcul est fait par
-   tools/editions.py, la page ne fait que le montrer. */
+/* ---------- Modélisation et pacing ----------
+   Un seul onglet pour une seule question : à quelle heure dois-je passer, et
+   comment. Les éditions précédentes donnent la fenêtre, les séances placent la
+   cible dedans, et chaque portion entre deux ravitaillements s'ouvre sur ce
+   qu'il faut savoir pour la courir : profil, rythme, météo, matériel.
+   La nutrition n'y figure pas : on n'a aucune mesure pour la calculer, et on
+   ne l'invente pas. */
 const hmin = (x) => `${Math.floor(x / 3600)}h${String(Math.round(x % 3600 / 60)).padStart(2, '0')}`;
+const monte = (sg) => (sg.cls === 'raide' || sg.cls === 'montee') && sg.vam;
+const rythme = (sg) => monte(sg) ? `${sg.vam} m/h` : `${sg.pace} /km`;
 
-function editions(plan) {
-  const E = plan.editions;
-  if (!E || !(E.points || []).length) return '';
-  const P = E.points, D = plan.distanceKm || P[P.length - 1].km;
+// Les aptitudes tirées des séances, en une ligne : ce qui cale la cible.
+function aptitudes(plan) {
+  const m = plan.model || {}, g = plan.gam || plan.athlete || {}, sp = g.speed || {};
+  const S = plan.sections || [];
+  const v = S.filter(monte);
+  const vam = v.length ? Math.round(v.reduce((a, sg) => a + sg.vam * sg.up, 0) / v.reduce((a, sg) => a + sg.up, 0)) : null;
+  const statut = (k) => ((m.params || {})[k] || '').startsWith('mesur') ? 'mesuré sur toi' : 'valeur de référence';
+  const item = (v_, l, st) => v_ == null ? '' : `<div class="apt-i"><p class="apt-v">${v_}</p>
+    <p class="apt-l">${esc(l)}</p><p class="apt-s mono">${esc(st)}</p></div>`;
+  const items = [
+    item(m.walkThr != null ? `${km1(m.walkThr)} %` : null, 'pente où tu passes en marche', statut('seuil de marche')),
+    item(vam ? `${vam} m/h` : null, 'vitesse ascensionnelle', 'calculée sur ton plan'),
+    item(m.fatigue != null ? `−${km1(m.fatigue)} %` : null, 'de vitesse perdue par heure', statut('durabilité')),
+    item(sp.runFlat ? `${km1(sp.runFlat)} km/h` : null, 'en course sur le plat', statut('rapport course/marche')),
+  ].join('');
+  return items ? `<div class="apt">${items}</div>` : '';
+}
+
+// Le profil d'une portion, en petit : l'altitude, et en rouge ce qui se marche.
+function miniProfil(segs, debut, fin) {
+  if (segs.length < 2) return '';
+  const W = 640, H = 150, P = { l: 46, r: 10, t: 12, b: 24 };
+  const k0 = debut ?? segs[0].km0, k1 = fin ?? segs[segs.length - 1].km1;
+  const alts = segs.map((sg) => sg.alt);
+  const lo = Math.min(...alts) - 20, hi = Math.max(...alts) + 20;
+  const X = (k) => P.l + (k - k0) / (k1 - k0 || 1) * (W - P.l - P.r);
+  const Y = (a) => P.t + (hi - a) / (hi - lo || 1) * (H - P.t - P.b);
+  const pts = segs.map((sg) => [(sg.km0 + sg.km1) / 2, sg.alt]);
+  const ligne = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)} ${Y(p[1]).toFixed(1)}`).join('');
+  const aire = `${ligne}L${X(pts[pts.length - 1][0]).toFixed(1)} ${H - P.b}L${X(pts[0][0]).toFixed(1)} ${H - P.b}Z`;
+  const marche = segs.map((sg, i) => sg.mode === 'marche' && i
+    ? `<path d="M${X(pts[i - 1][0]).toFixed(1)} ${Y(pts[i - 1][1]).toFixed(1)}L${X(pts[i][0]).toFixed(1)} ${Y(pts[i][1]).toFixed(1)}" class="mp-marche"/>` : '').join('');
+  return `<svg class="mp" viewBox="0 0 ${W} ${H}" role="img" aria-label="Profil de la portion">
+    <path d="${aire}" class="mp-aire"/><path d="${ligne}" class="mp-ligne"/>${marche}
+    <text x="${P.l - 8}" y="${Y(Math.max(...alts)) + 4}" text-anchor="end" class="mp-lab">${Math.max(...alts)} m</text>
+    <text x="${P.l - 8}" y="${Y(Math.min(...alts)) + 4}" text-anchor="end" class="mp-lab">${Math.min(...alts)} m</text>
+    <text x="${P.l}" y="${H - 6}" class="mp-lab">km ${km1(k0)}</text>
+    <text x="${W - P.r}" y="${H - 6}" text-anchor="end" class="mp-lab">km ${km1(k1)}</text>
+  </svg>`;
+}
+
+// Les portions stratégiques : d'un ravitaillement au suivant, là où l'on vérifie son temps.
+function portions(plan) {
+  const A = plan.aid || [], S = plan.segments || [], T = plan.sections || [];
+  const E = plan.editions, P = (E && E.points) || [];
+  const repere = (a) => P.find((p) => p.name === a.name) || P.find((p) => Math.abs(p.km - a.km) < 0.6);
+  const out = [];
+  for (let i = 1; i < A.length; i++) {
+    const a = A[i - 1], b = A[i];
+    const segs = S.filter((sg) => sg.km0 >= a.km - 0.01 && sg.km0 < b.km);
+    if (!segs.length) continue;
+    const t0 = hmsToSec(a.cumul) || 0, t1 = hmsToSec(b.cumul);
+    const temps = segs.map((sg) => sg.temp);
+    const ed = repere(b), edAv = i > 1 ? repere(a) : { med: 0 };
+    out.push({
+      n: out.length + 1, a, b, segs,
+      secs: T.filter((sg) => sg.km0 < b.km - 0.05 && sg.km1 > a.km + 0.05),
+      up: Math.round(segs.reduce((s, sg) => s + (sg.up || 0), 0)),
+      down: Math.round(segs.reduce((s, sg) => s + (sg.down || 0), 0)),
+      altMax: Math.max(...segs.map((sg) => sg.alt)), pmax: Math.max(...segs.map((sg) => sg.slope)),
+      marche: segs.filter((sg) => sg.mode === 'marche').reduce((s, sg) => s + sg.km1 - sg.km0, 0),
+      batons: segs.some((sg) => sg.poles),
+      t0, t1, tmin: Math.min(...temps), tmax: Math.max(...temps),
+      nuit: segs.filter((sg) => sg.light === 'nuit').length / segs.length,
+      ed, medTroncon: ed && edAv ? ed.med - edAv.med : null,
+    });
+  }
+  return out;
+}
+
+function pacing(plan) {
+  const E = plan.editions, P = (E && E.points) || [];
+  const D = plan.distanceKm || (P.length ? P[P.length - 1].km : 0);
   const pres = (f) => P.reduce((a, p) => Math.abs(p.km / D - f) < Math.abs(a.km / D - f) ? p : a);
-  const mi = pres(0.6), fin = pres(0.85);  // la seconde moitié : c'est là que la course se joue
-  const surDix = (p) => Math.round(p.p * 10);
+  const PO = portions(plan);
+  if (!PO.length) return '';
 
-  const graphe = chart({
-    title: 'Ta cible dans la fenêtre de ceux qui ont réussi',
-    note: `Écart, en minutes, au passage du finisher médian de ${E.target}. Au-dessus, en retard ; en dessous, en avance.`,
+  const graphe = P.length ? chart({
+    title: 'Ton temps face au temps habituel',
+    note: `Écart, en minutes, au finisher médian de ${E.target}. Au-dessus tu es plus lent que lui, en dessous plus rapide.`,
     height: 230, x0: 0, xTicks: 8, xFmt: (v) => `km ${Math.round(v)}`, yFmt: (v) => `${v > 0 ? '+' : ''}${Math.round(v)} min`,
     series: [
       { pts: P.map((p) => [p.km, (p.hi - p.med) / 60, (p.lo - p.med) / 60]), kind: 'band', cls: 'c-bandfill',
         label: '8 finishers sur 10', swatch: 'c-bandfill' },
-      { pts: P.map((p) => [p.km, 0]), kind: 'line', cls: 'c-grey', label: 'finisher médian' },
-      { pts: P.map((p) => [p.km, (p.cible - p.med) / 60]), kind: 'line', cls: 'c-red', label: 'ta cible' },
+      { pts: P.map((p) => [p.km, 0]), kind: 'line', cls: 'c-grey', label: 'temps médian habituel' },
+      { pts: P.map((p) => [p.km, (p.cible - p.med) / 60]), kind: 'line', cls: 'c-red', label: 'ton temps' },
     ],
-  });
+  }) : '';
+  const chances = P.length ? [pres(0.6), pres(0.85)].map((p) => `<p class="ch-p"><span class="ch-pv">${Math.round(p.p * 10)} sur 10</span>
+    des coureurs passés à ${esc(p.name)} en ${hmin(p.cible)} ont fini en ${esc(E.target)} ou moins.</p>`).join('') : '';
 
-  const lignes = P.map((p) => `<tr>
-    <td>${esc(p.name)}<span class="mono muted ed-km"> km ${km1(p.km)}</span></td>
-    <td class="mono num">${hmin(p.lo)} à ${hmin(p.hi)}</td>
-    <td class="mono num strong">${hmin(p.cible)}</td>
-  </tr>`).join('');
+  const lumiere = (po) => po.nuit > 0.9 ? 'de nuit' : po.nuit < 0.1 ? 'de jour' : 'en partie de nuit';
+  const cartes = PO.map((po) => {
+    const fen = po.ed ? `fenêtre ${hmin(po.ed.lo)} à ${hmin(po.ed.hi)}` : '';
+    const rythmes = po.secs.map((sg) => `<li><span class="mono">km ${km1(Math.max(sg.km0, po.a.km))} à ${km1(Math.min(sg.km1, po.b.km))}</span>
+      <span class="tag tg-${sg.cls}">${CLS_LABEL[sg.cls] || sg.cls}</span>
+      <span class="mono muted">${sg.slope > 0 ? '+' : ''}${km1(sg.slope)} %</span>
+      <span class="po-ry">${esc(rythme(sg))}</span>${sg.walkShare >= 50 ? `<span class="po-m mono">${sg.walkShare === 100
+        ? 'en marche' : `${sg.walkShare} % marché`}${sg.poles ? ', bâtons' : ''}</span>` : ''}</li>`).join('');
+    const gearA = (po.a.gear || []).length ? po.a.gear.map((g) => `<span class="tag">${esc(g)}</span>`).join(' ') : 'rien de particulier';
+    const fig = (l, v) => `<div><p class="po-fl mono">${l}</p><p class="po-fv">${v}</p></div>`;
+    return `<details class="po">
+      <summary>
+        <span class="po-n mono">${String(po.n).padStart(2, '0')}</span>
+        <span class="po-t">${esc(po.a.name)} <span class="po-fl2">→</span> ${esc(po.b.name)}
+          <span class="po-k mono">km ${km1(po.a.km)} à ${km1(po.b.km)} · +${po.up} m · −${po.down} m</span></span>
+        <span class="po-c"><span class="po-v">${po.t1 ? hmin(po.t1) : ''}</span><span class="po-w mono">${fen}</span></span>
+      </summary>
+      <div class="po-d">
+        ${miniProfil(po.segs, po.a.km, po.b.km)}
+        <div class="po-figs">
+          ${fig('Distance', `${km1(po.b.km - po.a.km)} km`)}
+          ${fig('Dénivelé', `+${po.up} m · −${po.down} m`)}
+          ${fig('Point haut', `${po.altMax} m`)}
+          ${fig('Pente max', `${km1(po.pmax)} %`)}
+          ${fig('Ton temps', po.t1 ? hmin(po.t1 - po.t0) : '')}
+          ${po.medTroncon ? fig('Temps habituel', hmin(po.medTroncon)) : ''}
+        </div>
+        <h4 class="po-h">Ton rythme</h4>
+        <ul class="po-ry-l">${rythmes}</ul>
+        ${po.marche > 0.2 ? `<p class="po-p">${km1(po.marche)} km en marche${po.batons ? ', bâtons sortis' : ''}.</p>` : ''}
+        <h4 class="po-h">Météo</h4>
+        <p class="po-p">De ${esc(fr(po.a.eta))} à ${esc(fr(po.b.eta))}, ${lumiere(po)}.
+          ${Math.round(po.tmin) === Math.round(po.tmax) ? degC(po.tmin) : `Entre ${Math.round(po.tmin)} et ${degC(po.tmax)}`}
+          selon l'altitude.</p>
+        <h4 class="po-h">Matériel</h4>
+        <p class="po-p">Au départ de ${esc(po.a.name)} : ${gearA}</p>
+        <p class="po-p">Ravitaillement à l'arrivée, ${esc(po.b.name)}, vers ${esc(fr(po.b.eta))}.</p>
+      </div>
+    </details>`;
+  }).join('');
 
   return `<section class="pl-block">
-    <h2 class="pl-h">Pour réussir ${esc(E.target)}</h2>
-    <p class="sub pl-wide">${E.runners.toLocaleString('fr-FR')} finishers de l'UTMB, de ${E.years[0]} à ${E.years[1]}.
-      ${E.finishers} d'entre eux ont fini dans l'heure avant ${esc(E.target)} : leurs passages donnent la fenêtre.
-      Tes séances placent ta cible à l'intérieur. Sur la première moitié, elle peut passer après la fenêtre :
-      partir plus prudemment que ceux qui ont réussi n'est pas une faute. La seconde moitié, elle, tient
-      dans la fenêtre.</p>
-    <div class="two ed-chiffres">
-      <div class="big"><p class="big-l mono">Passage · ${esc(mi.name)}, km ${km1(mi.km)}</p>
-        <p class="big-v">${surDix(mi)} sur 10</p>
-        <p class="big-h mono">des coureurs passés à ${hmin(mi.cible)} sont allés au bout en ${esc(E.target)} ou moins</p></div>
-      <div class="big"><p class="big-l mono">Passage · ${esc(fin.name)}, km ${km1(fin.km)}</p>
-        <p class="big-v">${surDix(fin)} sur 10</p>
-        <p class="big-h mono">si tu y passes à ${hmin(fin.cible)}</p></div>
-    </div>
+    <h2 class="pl-h">Modélisation et pacing</h2>
+    <p class="sub pl-wide">${P.length ? `On a repris ${E.runners.toLocaleString('fr-FR')} finishers de l'UTMB, de ${E.years[0]}
+      à ${E.years[1]}. Ceux qui ont fini dans l'heure avant ${esc(E.target)} donnent le temps habituel et la fenêtre.
+      ` : ''}Tes séances placent ton temps à l'intérieur. Sur la première moitié, il peut être plus lent que la
+      fenêtre : partir prudemment n'est pas une faute. La seconde moitié, elle, tient dans la fenêtre.</p>
+    ${aptitudes(plan)}
     ${graphe}
-    <div class="tw tw-tall"><table class="tbl tbl-ed">
-      <thead><tr><th>Ravitaillement</th><th class="num">Fenêtre</th><th class="num">Ta cible</th></tr></thead>
-      <tbody>${lignes}</tbody></table></div>
-    <p class="hint">Monte-Carlo : ${(E.draws || 20000).toLocaleString('fr-FR')} fins de course tirées parmi les coureurs
-      passés au même endroit à la même heure, ramenées à ton allure. Fenêtre : 1 finisher sur 10 passait plus tôt,
-      1 sur 10 plus tard. Source : ${esc(E.source || 'archives LiveTrail')}.</p>
-  </section>`;
-}
-
-/* ---------- Tes aptitudes : ce que tes séances changent au plan ----------
-   Quatre chiffres, une phrase chacun. Le détail des mesures reste dans les
-   outils du coach : le coureur a besoin de savoir ce qu'on a retenu de lui,
-   pas comment on l'a mesuré. */
-function aptitudes(plan) {
-  const m = plan.model || {}, g = plan.gam || plan.athlete || {}, sp = g.speed || {};
-  const S = plan.sections || [];
-  const v = S.filter((sg) => (sg.cls === 'raide' || sg.cls === 'montee') && sg.vam);
-  const vam = v.length ? Math.round(v.reduce((a, sg) => a + sg.vam * sg.up, 0) / v.reduce((a, sg) => a + sg.up, 0)) : null;
-  const statut = (k) => ((m.params || {})[k] || '').startsWith('mesur') ? 'mesuré sur toi' : 'valeur de référence';
-  const tuile = (l, v_, h, note) => v_ == null ? '' : `<div class="big"><p class="big-l mono">${esc(l)}</p>
-    <p class="big-v">${v_}</p><p class="big-h">${h}</p><p class="big-h mono">${esc(note)}</p></div>`;
-  const tuiles = [
-    tuile('Seuil de marche', m.walkThr != null ? `${km1(m.walkThr)} %` : null,
-      `Au-delà de cette pente, marcher te coûte moins que courir.${m.walkDecay ? ` Il baisse de ${km1(m.walkDecay)} point par heure de course.` : ''}`,
-      statut('seuil de marche')),
-    tuile('Vitesse ascensionnelle', vam ? `${vam} m/h` : null,
-      'Ce que tu tiens en montée sur cette course, en moyenne pondérée par le dénivelé.', 'calculé sur ton plan'),
-    tuile('Endurance', m.fatigue != null ? `−${km1(m.fatigue)} %` : null,
-      'La vitesse que tu perds par heure de course, à effort égal. C\'est elle qui décide de la fin.', statut('durabilité')),
-    tuile('Sur le plat', sp.runFlat ? `${km1(sp.runFlat)} km/h` : null,
-      `En course ; ${sp.walkFlat ? `${km1(sp.walkFlat)} km/h en marche.` : ''}`, statut('rapport course/marche')),
-  ].join('');
-  if (!tuiles) return '';
-  const vol = g.sessions ? `${g.sessions} séances` : '';
-  return `<section class="pl-block">
-    <h2 class="pl-h">Ce que tes séances disent de toi</h2>
-    <p class="sub pl-wide">${vol ? `Tirés de ${vol}. ` : ''}Ces quatre aptitudes décalent ta cible à l'intérieur de la
-      fenêtre des éditions précédentes : plus tôt là où tu es fort, plus tard là où tu dois t'économiser.</p>
-    <div class="two apt">${tuiles}</div>
+    ${chances ? `<div class="ch-ps">${chances}</div>` : ''}
+    <h3 class="pl-h3">Les temps à respecter</h3>
+    <p class="sub">D'un ravitaillement au suivant. L'heure est ton temps de course à l'arrivée de la portion.
+      Touche une portion pour en voir le détail.</p>
+    <div class="pos">${cartes}</div>
+    ${P.length ? `<p class="hint">Monte-Carlo : ${(E.draws || 20000).toLocaleString('fr-FR')} fins de course tirées parmi
+      les coureurs passés au même endroit à la même heure. Fenêtre : 1 finisher sur 10 passait plus tôt,
+      1 sur 10 plus tard. Source : ${esc(E.source || 'archives LiveTrail')}.</p>` : ''}
   </section>`;
 }
 
 const TABS = [
   ['course', 'Ma course'],
+  ['pacing', 'Modélisation et pacing'],
   ['heures', 'Météo et nuit'],
-  ['marges', 'Éditions précédentes'],
-  ['methode', 'Mes aptitudes'],
 ];
 
 function render(plan) {
@@ -765,10 +776,9 @@ function render(plan) {
     <p class="hk-v">${esc(v)}</p><p class="hk-h mono">${esc(h || '')}</p></div>` : '';
 
   const body = {
-    course: `${cockpit(plan)}${sections(plan)}${aidTable(plan)}${briefing(plan)}${exporter(plan)}`,
+    course: `${cockpit(plan)}${aidTable(plan)}${briefing(plan)}${exporter(plan)}`,
+    pacing: pacing(plan),
     heures: `${windows(plan)}${hours(plan)}`,
-    marges: editions(plan),
-    methode: aptitudes(plan),
   };
   const tabs = TABS.filter(([k]) => (body[k] || '').trim());
 

@@ -422,3 +422,55 @@
   .tbl-ed th, .tbl-ed td { padding: 10px 8px; font-size: 13px; }
   .ed-km { display: block; margin: 2px 0 0; }
 }
+
+/* Modélisation et pacing */
+.apt { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 22px 0 26px;
+  border: 1px solid var(--line); background: var(--surface); }
+.apt-i { padding: 16px 18px; border-right: 1px solid var(--line); }
+.apt-i:last-child { border-right: 0; }
+.apt-v { font-family: var(--serif); font-size: 28px; line-height: 1.1; }
+.apt-l { font-size: 13px; color: var(--sub-text); margin-top: 4px; }
+.apt-s { font-size: 10px; color: var(--dim); margin-top: 6px; }
+.ch-ps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin: 4px 0 30px; }
+.ch-p { font-size: 14px; line-height: 1.5; color: var(--sub-text); }
+.ch-pv { display: block; font-family: var(--serif); font-size: 30px; line-height: 1.1; color: var(--text); }
+.pos { border-top: 1px solid var(--line); margin-top: 14px; }
+.po { border-bottom: 1px solid var(--line); }
+.po summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 4px 14px; align-items: baseline; padding: 16px 4px; }
+.po summary::-webkit-details-marker { display: none; }
+.po summary:hover { background: var(--ghost-hover); }
+.po[open] summary { background: var(--ghost-hover); }
+.po-n { font-size: 11px; color: var(--mark); }
+.po-t { font-size: 15.5px; color: var(--text); }
+.po-fl2 { color: var(--dim); }
+.po-k { display: block; font-size: 11px; color: var(--dim); margin-top: 3px; }
+.po-c { text-align: right; white-space: nowrap; }
+.po-v { display: block; font-family: var(--serif); font-size: 24px; line-height: 1.1; color: var(--text); }
+.po-w { display: block; font-size: 10.5px; color: var(--dim); margin-top: 3px; }
+.po-d { padding: 6px 4px 26px 48px; }
+.mp { width: 100%; max-width: 640px; height: auto; display: block; margin: 4px 0 14px; }
+.mp-aire { fill: var(--text); fill-opacity: .07; }
+.mp-ligne { fill: none; stroke: var(--text); stroke-width: 1.6; }
+.mp-marche { fill: none; stroke: var(--mark); stroke-width: 3.5; stroke-linecap: round; }
+.mp-lab { font-family: var(--mono); font-size: 11px; fill: var(--dim); }
+.po-figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px 18px; margin-bottom: 18px; }
+.po-fl { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+.po-fv { font-family: var(--serif); font-size: 19px; color: var(--text); margin-top: 2px; }
+.po-h { font-family: var(--mono); font-weight: 400; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--mark); margin: 18px 0 8px; }
+.po-ry-l { list-style: none; margin: 0; padding: 0; }
+.po-ry-l li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 7px 0;
+  border-top: 1px solid var(--line); font-size: 13.5px; }
+.po-ry { font-family: var(--serif); font-size: 17px; color: var(--text); margin-left: auto; }
+.po-m { flex-basis: 100%; text-align: right; font-size: 10.5px; color: var(--red); }
+.po-p { font-size: 14px; line-height: 1.6; color: var(--sub-text); margin: 0 0 6px; }
+@media (max-width: 640px) {
+  .apt { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .apt-i:nth-child(2n) { border-right: 0; }
+  .apt-i:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .ch-ps { grid-template-columns: 1fr; }
+  .po summary { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px 10px; }
+  .po-d { padding-left: 4px; }
+  .po-v { font-size: 21px; }
+}

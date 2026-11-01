@@ -26,7 +26,7 @@ check('rend quelque chose', html.length > 300);
 check('aucun NaN affiché', !has('NaN'));
 check('aucun undefined affiché', !has('undefined'));
 check('aucun null affiché', !/>\s*null\s*</.test(html));
-check('quatre tuiles au plus', (html.match(/class="big"/g) || []).length <= 4);
+check('quatre aptitudes au plus', (html.match(/class="apt-i"/g) || []).length <= 4);
 check('vitesse ascensionnelle pondérée par le dénivelé (547 m/h)', has('547 m/h'));
 check('une valeur de référence est dite comme telle', !plan.model.fatigue || has('valeur de référence'));
 const badText = html.match(/\d+\.\d+\s*(%|km\/h|m\/h)/);
