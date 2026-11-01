@@ -303,7 +303,8 @@
 
 .sw.c-ink { background: var(--text); } .sw.c-red { background: var(--mark); }
 .sw.c-grey { background: var(--muted); } .sw.c-bar { background: var(--mark); opacity: .72; }
-.sw.c-even { background: var(--dim); } .sw.c-fill, .sw.c-bandfill { background: var(--text); opacity: .12; }
+.sw.c-even { background: var(--dim); }
+.c-redband { fill: var(--mark); fill-opacity: .14; stroke: none; } .sw.c-redband { background: var(--mark); opacity: .3; } .sw.c-fill, .sw.c-bandfill { background: var(--text); opacity: .12; }
 .sw-night { background: var(--text); opacity: .07; border: 1px solid var(--line); }
 .sw-mark { background: var(--text); opacity: .16; }
 .sw-target { background: var(--mark); }

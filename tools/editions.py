@@ -21,8 +21,20 @@ Deux calculs, dans cet ordre :
    chance de réussir si tu passes à ton heure cible, et l'heure au-delà de
    laquelle cette chance tombe sous une sur deux.
 
+3. Le Monte-Carlo portion par portion. Vingt mille courses sont déroulées d'un
+   ravitaillement au suivant. À chaque portion, on tire au sort un vrai coureur
+   des éditions passées qui avait, à cet endroit, le même retard ou la même
+   avance que la course simulée sur le temps habituel ; on prend l'écart qu'il a
+   fait sur la portion suivante par rapport au temps habituel, et on l'applique
+   à ton temps prévu. Un retard pris tôt pèse donc sur la suite, comme dans la
+   réalité. On en tire, à chaque ravitaillement, la fourchette où tu passes 8
+   fois sur 10, et la fourchette d'arrivée.
+
 La cible elle-même vient du plan, c'est-à-dire de tes séances : ce script ne la
 change pas, il la situe dans ce qu'ont fait les autres.
+
+Les archives ne contiennent que des finishers : les abandons n'y sont pas, et
+toutes les chances calculées ici sont des chances parmi ceux qui finissent.
 
 Les coureurs sont repérés par la fraction de distance parcourue plutôt que par
 le nom du point : le parcours a un peu bougé d'une édition à l'autre.
@@ -160,6 +172,65 @@ def main() -> int:
         print(f"  {a['name'][:28]:28} fenêtre {lo/3600:5.2f}–{hi/3600:5.2f} h · cible {cible/3600:5.2f} h"
               f" · chance {points[-1]['p']:.0%} · limite {t50/3600:5.2f} h")
 
+    # --- Le Monte-Carlo portion par portion -------------------------------
+    # Les repères : chaque ravitaillement retenu, puis l'arrivée.
+    fracs = [p["km"] / distance for p in points] + [1.0]
+    cibles = [p["cible"] for p in points] + [secondes(plan.get("projected")) or objectif]
+    meds = [p["med"] for p in points] + [quantile([r["fin"] for r in reussi], 0.5)]
+    # Les passages de chaque coureur à chaque repère (None si l'interpolation échoue).
+    pass_r = []
+    for r in tous:
+        ts = [passage(r, f) for f in fracs[:-1]] + [r["fin"]]
+        if all(t is not None for t in ts):
+            pass_r.append(ts)
+    # Le rythme de chacun sur chaque portion, rapporté à sa propre allure jusque-là :
+    # 1, c'est la portion courue comme le finisher médian l'aurait courue à cette
+    # allure ; 1,1, dix pour cent plus lentement. Rapporté à soi plutôt qu'au
+    # temps habituel, un départ prudent ne passe pas pour un manque de niveau.
+    K = len(fracs)
+    jambe_med = [meds[0]] + [meds[k] - meds[k - 1] for k in range(1, K)]
+    jambe_cible = [cibles[0]] + [cibles[k] - cibles[k - 1] for k in range(1, K)]
+    rho = [[0.0] * len(pass_r) for _ in range(K)]
+    for i, ts in enumerate(pass_r):
+        rho[0][i] = ts[0] / (meds[0] * ts[-1] / meds[-1])
+        for k in range(1, K):
+            rho[k][i] = (ts[k] - ts[k - 1]) / (ts[k - 1] * jambe_med[k] / meds[k - 1])
+
+    # Pour chaque portion, les coureurs triés par leur rythme : on y cherche vite
+    # ceux qui venaient de courir la portion précédente au même rythme.
+    from bisect import bisect_left as _bl
+    tri = [sorted(range(len(pass_r)), key=lambda i, k=k: rho[k][i]) for k in range(K)]
+    cles = [[rho[k][i] for i in tri[k]] for k in range(K)]
+
+    def voisin(k, r_):
+        """Un coureur tiré parmi les VOISINS dont le rythme sur la portion k est le plus proche de r_."""
+        j = _bl(cles[k], r_)
+        lo_, hi_ = max(0, j - VOISINS // 2), min(len(cles[k]), j + VOISINS // 2)
+        return tri[k][rng.randrange(lo_, hi_)]
+
+    sims = [[0.0] * K for _ in range(TIRAGES)]
+    for n in range(TIRAGES):
+        i = rng.randrange(len(pass_r))
+        r_ = rho[0][i]
+        t = jambe_cible[0] * r_
+        sims[n][0] = t
+        for k in range(1, K):
+            i = voisin(k - 1, r_)      # quelqu'un qui venait de courir comme toi
+            r_ = rho[k][i]             # ce qu'il a fait sur la portion suivante
+            t += jambe_cible[k] * r_
+            sims[n][k] = t
+    for k, p in enumerate(points):
+        col = sorted(s_[k] for s_ in sims)
+        p["mcLo"], p["mcMed"], p["mcHi"] = (round(quantile(col, q)) for q in (0.1, 0.5, 0.9))
+    arrivees = sorted(s_[-1] for s_ in sims)
+    mc = {
+        "lo": round(quantile(arrivees, 0.1)), "med": round(quantile(arrivees, 0.5)),
+        "hi": round(quantile(arrivees, 0.9)),
+        "chance": round(sum(1 for a_ in arrivees if a_ <= objectif) / TIRAGES, 3),
+    }
+    print(f"  Monte-Carlo portion par portion : arrivée 8 fois sur 10 entre {mc['lo']/3600:.2f} et "
+          f"{mc['hi']/3600:.2f} h (médiane {mc['med']/3600:.2f} h) · {mc['chance']:.0%} sous l'objectif")
+
     # La phrase de tête : au premier tiers, là où la course se décide sans être jouée.
     tete = min(points, key=lambda p: abs(p["km"] / distance - 1 / 3)) if points else None
     plan["editions"] = {
@@ -169,6 +240,7 @@ def main() -> int:
         "source": "Archives publiques LiveTrail (chronométreur officiel UTMB)",
         "points": points,
         "headline": {"name": tete["name"], "p": tete["p"]} if tete else None,
+        "simulation": mc,
     }
     Path(args.out or args.plan).write_text(json.dumps(plan, ensure_ascii=False))
     print(f"  écrit : {args.out or args.plan}")

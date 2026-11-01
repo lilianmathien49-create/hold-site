@@ -342,6 +342,9 @@ def main() -> int:
     p.add_argument("--reference", help="JSON des temps de passage historiques, si tu en as")
     p.add_argument("--splits", help="temps de passage appris (learn_splits.py) : le plan s'y cale")
     p.add_argument("--profile", help="profil mesuré du coureur (fit_gam.py) : remplace les réglages par défaut")
+    p.add_argument("--retenue-descente", type=float, default=0.05,
+                   help="avec --splits : les descentes sont courues ce pourcentage plus lentement que le "
+                        "modèle, et ne servent jamais à rattraper du temps (défaut 0,05)")
     p.add_argument("--poids-seances", type=float, default=0.35,
                    help="avec --splits : part laissée aux séances dans chaque inter-ravitaillement "
                         "(0 = les éditions seules, 1 = les séances seules). Le passage reste dans la "
@@ -519,8 +522,25 @@ def main() -> int:
                 idx = [i for i, s in enumerate(segs) if prev_km <= s["km0"] < km_mark]
                 if not idx:
                     continue
-                raw = sum(rows[i][2] for i in idx)
                 want = eta - prev_t
+                # Les descentes ne rattrapent rien : la phase excentrique use les
+                # cuisses, et ce qu'on y gagne se paie plus loin. On les court un peu
+                # plus lentement que le modèle, à temps fixé, et c'est le reste de
+                # l'inter-ravitaillement qui s'ajuste pour tenir le passage.
+                # Si l'inter-ravitaillement ralentit, la descente ralentit autant, plus
+                # la retenue ; s'il doit accélérer, elle ne va pas plus vite que le modèle.
+                desc = [i for i in idx if segs[i]["slope"] <= -4.0]
+                reste = [i for i in idx if i not in desc]
+                total0 = sum(rows[i][2] for i in idx)
+                facteur = max(1.0, want / total0) if total0 else 1.0
+                fixe = sum(rows[i][2] * facteur * (1 + a.retenue_descente) for i in desc)
+                if desc and reste and want - fixe > sum(rows[i][2] for i in reste) * 0.5:
+                    for i in desc:
+                        walking, _, dt0, _, thr = rows[i]
+                        dt = dt0 * facteur * (1 + a.retenue_descente)
+                        rows[i] = (walking, segs[i]["dist"] / 1000 / (dt / 3600), dt, 0.0, thr)
+                    idx, want = reste, want - fixe
+                raw = sum(rows[i][2] for i in idx)
                 if raw > 0 and want > 0:
                     # Chaque tronçon a un temps plancher, celui de sa vitesse maximale.
                     # On ne comprime que ce qui dépasse ce plancher, sinon accélérer

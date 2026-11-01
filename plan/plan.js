@@ -684,8 +684,6 @@ function portions(plan) {
 
 function pacing(plan) {
   const E = plan.editions, P = (E && E.points) || [];
-  const D = plan.distanceKm || (P.length ? P[P.length - 1].km : 0);
-  const pres = (f) => P.reduce((a, p) => Math.abs(p.km / D - f) < Math.abs(a.km / D - f) ? p : a);
   const PO = portions(plan);
   if (!PO.length) return '';
 
@@ -697,15 +695,21 @@ function pacing(plan) {
       { pts: P.map((p) => [p.km, (p.hi - p.med) / 60, (p.lo - p.med) / 60]), kind: 'band', cls: 'c-bandfill',
         label: '8 finishers sur 10', swatch: 'c-bandfill' },
       { pts: P.map((p) => [p.km, 0]), kind: 'line', cls: 'c-grey', label: 'temps médian habituel' },
+      ...(P[0].mcLo ? [{ pts: P.map((p) => [p.km, (p.mcHi - p.med) / 60, (p.mcLo - p.med) / 60]), kind: 'band',
+        cls: 'c-redband', label: 'ta fourchette simulée', swatch: 'c-redband' }] : []),
       { pts: P.map((p) => [p.km, (p.cible - p.med) / 60]), kind: 'line', cls: 'c-red', label: 'ton temps' },
     ],
   }) : '';
-  const chances = P.length ? [pres(0.6), pres(0.85)].map((p) => `<p class="ch-p"><span class="ch-pv">${Math.round(p.p * 10)} sur 10</span>
-    des coureurs passés à ${esc(p.name)} en ${hmin(p.cible)} ont fini en ${esc(E.target)} ou moins.</p>`).join('') : '';
+  const M = E && E.simulation;
+  const chances = M ? `<p class="ch-p"><span class="ch-pv">${hmin(M.lo)} à ${hmin(M.hi)}</span>
+      ton arrivée, 8 fois sur 10, sur ${(E.draws || 20000).toLocaleString('fr-FR')} courses simulées.</p>
+    <p class="ch-p"><span class="ch-pv">${Math.round(M.chance * 10)} sur 10</span>
+      de ces courses finissent en ${esc(E.target)} ou moins. Médiane : ${hmin(M.med)}.</p>` : '';
 
   const lumiere = (po) => po.nuit > 0.9 ? 'de nuit' : po.nuit < 0.1 ? 'de jour' : 'en partie de nuit';
   const cartes = PO.map((po) => {
     const fen = po.ed ? `fenêtre ${hmin(po.ed.lo)} à ${hmin(po.ed.hi)}` : '';
+    const sim = po.ed && po.ed.mcLo ? `${hmin(po.ed.mcLo)} à ${hmin(po.ed.mcHi)}` : '';
     const rythmes = po.secs.map((sg) => `<li><span class="mono">km ${km1(Math.max(sg.km0, po.a.km))} à ${km1(Math.min(sg.km1, po.b.km))}</span>
       <span class="tag tg-${sg.cls}">${CLS_LABEL[sg.cls] || sg.cls}</span>
       <span class="mono muted">${sg.slope > 0 ? '+' : ''}${km1(sg.slope)} %</span>
@@ -729,6 +733,7 @@ function pacing(plan) {
           ${fig('Pente max', `${km1(po.pmax)} %`)}
           ${fig('Ton temps', po.t1 ? hmin(po.t1 - po.t0) : '')}
           ${po.medTroncon ? fig('Temps habituel', hmin(po.medTroncon)) : ''}
+          ${sim ? fig('Passage simulé', sim) : ''}
         </div>
         <h4 class="po-h">Ton rythme</h4>
         <ul class="po-ry-l">${rythmes}</ul>
@@ -749,7 +754,8 @@ function pacing(plan) {
     <p class="sub pl-wide">${P.length ? `On a repris ${E.runners.toLocaleString('fr-FR')} finishers de l'UTMB, de ${E.years[0]}
       à ${E.years[1]}. Ceux qui ont fini dans l'heure avant ${esc(E.target)} donnent le temps habituel et la fenêtre.
       ` : ''}Tes séances placent ton temps à l'intérieur. Sur la première moitié, il peut être plus lent que la
-      fenêtre : partir prudemment n'est pas une faute. La seconde moitié, elle, tient dans la fenêtre.</p>
+      fenêtre : partir prudemment n'est pas une faute. La seconde moitié, elle, tient dans la fenêtre. Dans les
+      descentes, tu restes un peu en dessous de ton rythme : on n'y rattrape pas de temps, on préserve les cuisses.</p>
     ${aptitudes(plan)}
     ${graphe}
     ${chances ? `<div class="ch-ps">${chances}</div>` : ''}
@@ -757,9 +763,11 @@ function pacing(plan) {
     <p class="sub">D'un ravitaillement au suivant. L'heure est ton temps de course à l'arrivée de la portion.
       Touche une portion pour en voir le détail.</p>
     <div class="pos">${cartes}</div>
-    ${P.length ? `<p class="hint">Monte-Carlo : ${(E.draws || 20000).toLocaleString('fr-FR')} fins de course tirées parmi
-      les coureurs passés au même endroit à la même heure. Fenêtre : 1 finisher sur 10 passait plus tôt,
-      1 sur 10 plus tard. Source : ${esc(E.source || 'archives LiveTrail')}.</p>` : ''}
+    ${P.length ? `<p class="hint">Monte-Carlo portion par portion : ${(E.draws || 20000).toLocaleString('fr-FR')} courses
+      simulées d'un ravitaillement au suivant. À chaque portion, on tire un vrai coureur des éditions passées
+      qui venait de courir la portion précédente au même rythme que la course simulée, et on applique ce qu'il a
+      fait ensuite à ton temps prévu. Les archives ne contiennent que des finishers : les abandons n'y sont pas.
+      Fenêtre : 1 finisher sur 10 passait plus tôt, 1 sur 10 plus tard. Source : ${esc(E.source || 'archives LiveTrail')}.</p>` : ''}
   </section>`;
 }
 
