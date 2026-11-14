@@ -69,20 +69,21 @@ const html = `
     <section class="pr-step" data-step="res" hidden>
       <p class="eyebrow">Ta durée de course estimée</p>
       <div class="pr-res">
+        <div class="pr-kpis">
+          <div><p class="pr-l">Durée estimée</p><p class="pr-v" id="pr-t"></p></div>
+          <div><p class="pr-l">Allure moyenne</p><p class="pr-v s" id="pr-a"></p></div>
+          <div><p class="pr-l">Effet du parcours</p><p class="pr-v s" id="pr-d"></p></div>
+        </div>
         <div class="pr-prof" id="pr-prof"></div>
+        <table class="pr-tab pr-tab-open"><thead><tr><th>Km</th><th>Allure</th><th>Passage</th><th>Terrain</th></tr></thead><tbody id="pr-tab1"></tbody></table>
         <div class="pr-lock">
         <div class="pr-blur" aria-hidden="true">
-          <div class="pr-kpis">
-            <div><p class="pr-l">Durée estimée</p><p class="pr-v" id="pr-t"></p></div>
-            <div><p class="pr-l">Allure</p><p class="pr-v s" id="pr-a"></p></div>
-            <div><p class="pr-l">Effet du parcours</p><p class="pr-v s" id="pr-d"></p></div>
-          </div>
           <table class="pr-tab"><tbody id="pr-tab"></tbody></table>
         </div>
         <div class="pr-veil">
           <div class="pr-box">
-            <h3>Ta durée estimée est prête.</h3>
-            <p>Débloque-la avec ta stratégie complète : le temps à viser, ton allure kilomètre par kilomètre, où te retenir et où relancer. Construite par moi, pour ce parcours.</p>
+            <h3>La suite de ta course.</h3>
+            <p>Ton allure sur chaque kilomètre jusqu'à l'arrivée, où te retenir, où relancer : ta stratégie complète, construite par moi pour ce parcours.</p>
             <a class="btn" id="pr-cta" href="${STRIPE_STRATEGIE}" target="_blank" rel="noopener">Débloquer ma stratégie · 49,99 €</a>
             <a class="pr-alt" href="#contact" data-pr-close>Ou parlons de ta course d'abord</a>
           </div>
@@ -188,7 +189,7 @@ function init() {
   const synth = (D, dplus) => { const L = Math.min(D / 2, dplus / 1000 / 0.08); return (k) => { const ph = (k / D) * 2 % 2; const x = Math.min(1, L / (D / 2)); return ph < 1 ? Math.min(ph / x, 1) * dplus / 2 : Math.max(1 - (ph - 1) / x, 0) * dplus / 2; }; };
 
   function fill(D, Tplat, dplus) {
-    const STEP = 0.1, alt = route ? (k) => eleAvg(k, D, 0.15) : dplus > 0 ? synth(D, dplus) : () => 0;
+    const STEP = 0.1, alt = route ? (k) => eleAvg(k, D, 0.3) : dplus > 0 ? synth(D, dplus) : () => 0;
     const segs = []; let prev = alt(0);
     for (let k = STEP; k <= D + 1e-9; k += STEP) { const e = alt(k); segs.push({ k, e, g: (e - prev) / (STEP * 1000) }); prev = e; }
     const f = segs.map((s) => cost(s.g)), meanF = f.reduce((a, x) => a + x, 0) / f.length;
@@ -197,36 +198,50 @@ function init() {
     const T = T0 * fatigue, unit = Tplat * terrain * fatigue / D, effet = T - Tplat;
     $('pr-t').textContent = fmt(T); $('pr-a').textContent = pace(T / D);
     $('pr-d').textContent = Math.abs(effet) < 5 ? 'Plat' : `${effet >= 0 ? '+' : '−'}${fmt(Math.abs(effet))}`;
-    let rows = '', t = 0;
-    for (let km = 1; km <= Math.min(Math.ceil(D), 8); km++) {
+    let rows = '', open = '', t = 0;
+    for (let km = 1; km <= Math.min(Math.ceil(D), 9); km++) {
       const sl = segs.map((s, i) => [s, f[i]]).filter(([s]) => s.k > km - 1 + 1e-9 && s.k <= km + 1e-9);
       const sec = sl.reduce((a, [, x]) => a + x, 0) / Math.max(1, sl.length) * unit;
       const g = sl.reduce((a, [s]) => a + s.g, 0) / Math.max(1, sl.length);
-      t += sec; rows += `<tr><td>km ${km}</td><td>${pace(sec)}</td><td>${fmt(t)}</td><td>${g > 0.02 ? 'Montée' : g < -0.02 ? 'Descente' : 'Plat'}</td></tr>`;
+      t += sec; const row = `<tr><td>km ${km}</td><td>${pace(sec)}</td><td>${fmt(t)}</td><td>${g > 0.02 ? 'Montée' : g < -0.02 ? 'Descente' : 'Plat'}</td></tr>`;
+      if (km <= 2) open += row; else rows += row;
     }
-    $('pr-tab').innerHTML = rows;
-    drawProfile(D, alt);
+    $('pr-tab1').innerHTML = open; $('pr-tab').innerHTML = rows;
+    drawProfile(D);
   }
 
-  // Profil lissé (fenêtre ≈ 1,5 % de la distance), tracé en courbe continue.
-  function drawProfile(D, alt) {
+  // Profil : altitude légèrement lissée (bruit GPS), coloré selon la pente de chaque tronçon.
+  const PENTES = [
+    { max: -0.03, c: 'var(--p-descente)', l: 'Descente' },
+    { max: 0.03, c: 'var(--p-plat)', l: 'Plat' },
+    { max: 0.08, c: 'var(--p-doux)', l: 'Montée douce' },
+    { max: 0.15, c: 'var(--p-raide)', l: 'Montée raide' },
+    { max: Infinity, c: 'var(--p-mur)', l: 'Mur' },
+  ];
+  function drawProfile(D) {
     const box = $('pr-prof');
     if (!route) { box.hidden = true; return; } // sans GPX, pas de profil inventé
     box.hidden = false;
-    const N = 140, w = Math.max(0.25, D * 0.015);
-    const e = [...Array(N + 1)].map((_, i) => eleAvg(i / N * D, D, w));
+    const N = 260, w = Math.max(0.06, D * 0.004), dk = D / N;
+    const e = [...Array(N + 1)].map((_, i) => eleAvg(i * dk, D, w));
     const lo0 = Math.min(...e), hi = Math.max(...e), span = Math.max(hi - lo0, 120), lo = lo0 - (span - (hi - lo0)) * 0.15;
-    const W = 600, H = 110, top = 6, bot = 1;
-    const P = e.map((v, i) => [i / N * W, top + (1 - (v - lo) / span) * (H - top - bot)]);
-    let d = `M${P[0][0]},${P[0][1]}`;
-    for (let i = 0; i < N; i++) { // Catmull-Rom → Bézier
-      const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(N, i + 2)];
-      d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    const W = 600, H = 130, top = 6, base = H - 1;
+    const X = (i) => (i / N * W), Y = (v) => top + (1 - (v - lo) / span) * (base - top);
+    // Pente pour la couleur : mesurée sur ±h km (≥ 300 m), pour des tronçons lisibles plutôt qu'un clignotement.
+    const h = Math.max(0.3, D * 0.008), g = (i) => { const k = (i + 0.5) * dk; return (eleAvg(Math.min(D, k + h), D, w) - eleAvg(Math.max(0, k - h), D, w)) / ((Math.min(D, k + h) - Math.max(0, k - h)) * 1000); };
+    let bands = '';
+    for (let i = 0; i < N; i++) {
+      const c = PENTES.find((k) => g(i) < k.max).c;
+      bands += `<path d="M${X(i).toFixed(2)},${base} L${X(i).toFixed(2)},${Y(e[i]).toFixed(2)} L${(X(i + 1) + 0.4).toFixed(2)},${Y(e[i + 1]).toFixed(2)} L${(X(i + 1) + 0.4).toFixed(2)},${base}Z" fill="${c}"/>`;
     }
-    const base = H - bot, gain = Math.round(route.gain);
-    box.innerHTML = `<div class="pr-prof-h"><span>Ton parcours</span><span>${Math.round(lo0)} – ${Math.round(hi)} m</span><span>${String(D.toFixed(1)).replace('.', ',')} km · D+ ${gain} m</span></div>
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Profil du parcours"><path d="${d} L${W},${base} L0,${base} Z" fill="var(--p-plat)" opacity=".28"/><path d="${d}" fill="none" stroke="var(--text)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><line x1="0" x2="${W}" y1="${base}" y2="${base}" stroke="var(--line)" vector-effect="non-scaling-stroke"/></svg>
-      <div class="pr-prof-ax"><span>0</span><span>${Math.round(D / 2)}</span><span>${Math.round(D)} km</span></div>`;
+    const line = e.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(2)},${Y(v).toFixed(2)}`).join('');
+    const step = D > 60 ? 20 : D > 25 ? 10 : D > 12 ? 5 : 2;
+    let ax = ''; for (let k = 0; k <= D - Math.max(step * 0.6, D * 0.1); k += step) ax += `<span style="left:${(k / D * 100).toFixed(2)}%">${k}</span>`;
+    ax += `<span style="left:100%">${Math.round(D)} km</span>`;
+    box.innerHTML = `<div class="pr-prof-h"><span>Ton parcours</span><span>${Math.round(lo0)} – ${Math.round(hi)} m</span><span>${String(D.toFixed(1)).replace('.', ',')} km · D+ ${Math.round(route.gain)} m</span></div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Profil du parcours coloré selon la pente"><g opacity=".85" shape-rendering="crispEdges">${bands}</g><path d="${line}" fill="none" stroke="var(--text)" stroke-width="1.4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>
+      <div class="pr-prof-ax">${ax}</div>
+      <div class="pr-leg">${PENTES.map((k, i) => `<span><i style="background:${k.c}"></i>${k.l} <em>${i === 0 ? '< −3 %' : i === 1 ? '±3 %' : i === 2 ? '3–8 %' : i === 3 ? '8–15 %' : '> 15 %'}</em></span>`).join('')}</div>`;
   }
   $('pr-cta').addEventListener('click', () => track('Stratégie : vers la stratégie'));
 }
