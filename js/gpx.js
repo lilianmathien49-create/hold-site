@@ -15,10 +15,15 @@ export function bearing(a, b) {
   return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
-export async function loadGpx(url, { officialKm } = {}) {
+export async function loadGpx(url, opts = {}) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`GPX introuvable : ${url}`);
-  const xml = new DOMParser().parseFromString(await res.text(), 'application/xml');
+  return parseGpx(await res.text(), opts);
+}
+
+// Même lecture à partir du texte d'un fichier (GPX déposé par le coureur, lu dans son navigateur).
+export function parseGpx(text, { officialKm } = {}) {
+  const xml = new DOMParser().parseFromString(text, 'application/xml');
   let nodes = Array.from(xml.getElementsByTagName('trkpt'));
   if (!nodes.length) nodes = Array.from(xml.getElementsByTagName('rtept'));
   if (nodes.length < 2) throw new Error('GPX vide');
