@@ -1,4 +1,4 @@
-/* Hold — Instrument Serif + Hanken Grotesk + IBM Plex Mono.
+/* Hold — Calibri (Carlito en secours).
    Deux surfaces : la page est claire, les actes au scroll et le film restent en nuit.
    Tout se joue sur les mêmes jetons, redéfinis par .dark — aucune couleur en dur
    dans les composants, sinon un bloc sombre poserait du texte clair sur fond clair. */
@@ -39,9 +39,10 @@
   --nav-fade: rgba(242, 243, 244, .88);
   --focus: #15171A;
   --glow: none;
-  --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --sans: 'Archivo', system-ui, -apple-system, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  /* Tout le site en Calibri ; Carlito (équivalent libre, mêmes dimensions) si Calibri n'est pas installé. */
+  --serif: Calibri, Carlito, 'Segoe UI', sans-serif;
+  --sans: Calibri, Carlito, 'Segoe UI', sans-serif;
+  --mono: Calibri, Carlito, 'Segoe UI', sans-serif;
   --ease: cubic-bezier(.2, .8, .2, 1);
 }
 .dark {
@@ -355,7 +356,7 @@ select.field option { background: var(--surface); color: var(--text); }
 .try-p { font-size: 11px; color: var(--muted); }
 .mega { font-family: var(--serif); font-size: clamp(54px, 8.6vw, 110px); line-height: .94; letter-spacing: -.02em; }
 .try .cta-row { justify-content: center; margin-top: 8px; }
-.proof { font-size: 12px; letter-spacing: .1em; color: var(--dim); margin-top: 12px; }
+p.proof { font-size: 12px; letter-spacing: .1em; color: var(--dim); margin-top: 12px; }
 @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 
 /* Le film, visible dans la page et pas seulement dans la nav */
@@ -1085,3 +1086,5 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 .pr .eyebrow, .pr .pr-l, .pr .pr-tab th, .pr .pr-add { letter-spacing: .06em; }
 .pr .pr-h { font-weight: 700; letter-spacing: -.01em; }
 .pr .pr-box h3, .pr .pr-v { font-weight: 700; }
+/* Le logo garde sa police d'origine (identité Hold). */
+.logo { font-family: 'Fraunces', Georgia, serif; }
