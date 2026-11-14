@@ -20,6 +20,32 @@ const MAX_REC = 3;
 const toSec = (v) => { const p = String(v || '').trim().replace(/[hH'’]/g, ':').replace(/::+/g, ':').replace(/:$/, '').split(':').map(Number);
   if (p.some((x) => !Number.isFinite(x) || x < 0)) return NaN; return p.length === 2 ? p[0] * 60 + p[1] : p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : NaN; };
 const num = (v) => parseFloat(String(v || '').replace(',', '.'));
+
+// Lissage Savitzky-Golay (polynôme d'ordre 3) : gomme le bruit GPS, conserve les sommets.
+// Bords traités comme scipy (mode « interp ») : polynôme ajusté sur la première/dernière fenêtre.
+function polyfit(xs, ys, order) {
+  const m = order + 1, A = [...Array(m)].map(() => Array(m + 1).fill(0));
+  xs.forEach((x, i) => { for (let r = 0; r < m; r++) { for (let c = 0; c < m; c++) A[r][c] += x ** (r + c); A[r][m] += ys[i] * x ** r; } });
+  for (let c = 0; c < m; c++) { // Gauss-Jordan
+    let piv = c; for (let r = c + 1; r < m; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+    [A[c], A[piv]] = [A[piv], A[c]];
+    for (let r = 0; r < m; r++) if (r !== c) { const f = A[r][c] / A[c][c]; for (let k = c; k <= m; k++) A[r][k] -= f * A[c][k]; }
+  }
+  return A.map((row, r) => row[m] / row[r]);
+}
+function savgol(y, L, order = 3) {
+  const n = y.length; L = Math.max(order + 2 + ((order + 2) % 2 ? 0 : 1), Math.min(L, n - (n % 2 ? 0 : 1)));
+  if (L % 2 === 0) L -= 1; if (n < L) return y.slice();
+  const h = (L - 1) / 2, xs = [...Array(L)].map((_, i) => (i - h) / h); // abscisses ramenées à [-1, 1]
+  // Coefficients du point central : réponse du filtre à chaque impulsion.
+  const w = xs.map((_, j) => polyfit(xs, xs.map((__, i) => (i === j ? 1 : 0)), order)[0]);
+  const out = new Array(n);
+  for (let i = h; i < n - h; i++) { let v = 0; for (let j = 0; j < L; j++) v += w[j] * y[i - h + j]; out[i] = v; }
+  const ev = (c, x) => c.reduce((a, cc, k) => a + cc * x ** k, 0);
+  const cs = polyfit(xs, y.slice(0, L), order), ce = polyfit(xs, y.slice(n - L), order);
+  for (let i = 0; i < h; i++) { out[i] = ev(cs, (i - h) / h); out[n - 1 - i] = ev(ce, (h - i) / h); }
+  return out;
+}
 // Loi puissance t = a·d^b : b ajusté sur les records (borné), ancré sur le record le plus proche de la distance.
 function predire(recs, D) {
   let b = 1.06;
@@ -119,6 +145,7 @@ function init() {
     rd.onload = () => {
       try {
         route = parseGpx(String(rd.result));
+        lisser(route);
         $('pr-gpx-n').textContent = file.name;
         $('pr-gpx-i').textContent = `${route.totalKm.toFixed(1).replace('.', ',')} km · D+ ${Math.round(route.gain)} m`;
         const near = COURSES.find(([v]) => Math.abs(route.totalKm - v) / v < 0.05);
@@ -180,16 +207,28 @@ function init() {
   // Montée : coût de Minetti tel quel. Descente : le gain théorique est peu récupéré (encore moins en trail, terrain technique).
   let trailMode = false;
   const cost = (g) => { g = Math.max(-0.3, Math.min(0.35, g)); const r = (155.4 * g ** 5 - 30.4 * g ** 4 - 43.3 * g ** 3 + 46.3 * g ** 2 + 19.5 * g + 3.6) / 3.6; return r >= 1 ? r : 1 + (trailMode ? 0.2 : 0.5) * (r - 1); };
-  const eleAt = (k, D) => { let s = 0; for (let j = -3; j <= 3; j++) s += pointAt(route, Math.min(route.totalKm, Math.max(0, (k + j * 0.05) * route.totalKm / D))).ele; return s / 7; };
 
-  // Altitude moyennée sur une fenêtre de ±w km (w en km de course).
-  const eleAvg = (k, D, w) => { const n = 8; let t = 0; for (let j = -n; j <= n; j++) t += pointAt(route, Math.min(route.totalKm, Math.max(0, (k + j * w / n) * route.totalKm / D))).ele; return t / (2 * n + 1); };
+  // Profil lissé : altitude rééchantillonnée tous les ~20 m, puis Savitzky-Golay.
+  // Fenêtre en distance, pour rester précis sur les longues traces : 1,5 % de la trace bornée à 200–500 m en relief,
+  // 3 % bornée à 300 m–1 km sur parcours plat (où le bruit GPS domine le relief).
+  let sm = null;
+  function lisser(r) {
+    const M = Math.max(300, Math.min(4000, Math.round(r.totalKm / 0.02))), dk = r.totalKm / (M - 1);
+    const raw = [...Array(M)].map((_, i) => pointAt(r, i * dk).ele);
+    const plat = r.gain / Math.max(1, r.totalKm) < 10;
+    const fen = plat ? Math.min(1, Math.max(0.3, r.totalKm * 0.03)) : Math.min(0.5, Math.max(0.2, r.totalKm * 0.015));
+    sm = { dk, e: savgol(raw, Math.round(fen / dk) | 1, 3) };
+    let g = 0, ref = sm.e[0]; for (const v of sm.e) { if (v - ref > 2) { g += v - ref; ref = v; } else if (v < ref) ref = v; }
+    sm.gain = g; // D+ mesuré sur le profil lissé
+  }
+  // Altitude lissée au km k de course (k ramené à la longueur du GPX).
+  const eleS = (k, D) => { const x = Math.min(sm.e.length - 1, Math.max(0, (k * route.totalKm / D) / sm.dk)), i = Math.floor(x), f = x - i; return sm.e[i] + ((sm.e[Math.min(sm.e.length - 1, i + 1)] ?? sm.e[i]) - sm.e[i]) * f; };
 
   // Profil sans GPX, pour un trail : le D+ déclaré réparti en montées et descentes à 8 %.
   const synth = (D, dplus) => { const L = Math.min(D / 2, dplus / 1000 / 0.08); return (k) => { const ph = (k / D) * 2 % 2; const x = Math.min(1, L / (D / 2)); return ph < 1 ? Math.min(ph / x, 1) * dplus / 2 : Math.max(1 - (ph - 1) / x, 0) * dplus / 2; }; };
 
   function fill(D, Tplat, dplus) {
-    const STEP = 0.1, alt = route ? (k) => eleAvg(k, D, 0.3) : dplus > 0 ? synth(D, dplus) : () => 0;
+    const STEP = 0.1, alt = route ? (k) => eleS(k, D) : dplus > 0 ? synth(D, dplus) : () => 0;
     const segs = []; let prev = alt(0);
     for (let k = STEP; k <= D + 1e-9; k += STEP) { const e = alt(k); segs.push({ k, e, g: (e - prev) / (STEP * 1000) }); prev = e; }
     const f = segs.map((s) => cost(s.g)), meanF = f.reduce((a, x) => a + x, 0) / f.length;
@@ -222,23 +261,23 @@ function init() {
     const box = $('pr-prof');
     if (!route) { box.hidden = true; return; } // sans GPX, pas de profil inventé
     box.hidden = false;
-    const N = 260, w = Math.max(0.06, D * 0.004), dk = D / N;
-    const e = [...Array(N + 1)].map((_, i) => eleAvg(i * dk, D, w));
-    const lo0 = Math.min(...e), hi = Math.max(...e), span = Math.max(hi - lo0, 120), lo = lo0 - (span - (hi - lo0)) * 0.15;
-    const W = 600, H = 130, top = 6, base = H - 1;
+    const N = Math.round(Math.min(900, Math.max(300, D / 0.05))), dk = D / N;
+    const e = [...Array(N + 1)].map((_, i) => eleS(i * dk, D));
+    const lo0 = Math.min(...e), hi = Math.max(...e), span = Math.max(hi - lo0, 30, D * 4), lo = lo0 - (span - (hi - lo0)) * 0.2; // hauteur mini : 4 m par km de course
+    const W = 900, H = 160, top = 6, base = H - 1;
     const X = (i) => (i / N * W), Y = (v) => top + (1 - (v - lo) / span) * (base - top);
     // Pente pour la couleur : mesurée sur ±h km (≥ 300 m), pour des tronçons lisibles plutôt qu'un clignotement.
-    const h = Math.max(0.3, D * 0.008), g = (i) => { const k = (i + 0.5) * dk; return (eleAvg(Math.min(D, k + h), D, w) - eleAvg(Math.max(0, k - h), D, w)) / ((Math.min(D, k + h) - Math.max(0, k - h)) * 1000); };
+    const h = Math.max(0.06, Math.min(0.25, D * 0.0015)), g = (i) => { const k = (i + 0.5) * dk, a = Math.max(0, k - h), b = Math.min(D, k + h); return (eleS(b, D) - eleS(a, D)) / ((b - a) * 1000); };
     let bands = '';
     for (let i = 0; i < N; i++) {
       const c = PENTES.find((k) => g(i) < k.max).c;
-      bands += `<path d="M${X(i).toFixed(2)},${base} L${X(i).toFixed(2)},${Y(e[i]).toFixed(2)} L${(X(i + 1) + 0.4).toFixed(2)},${Y(e[i + 1]).toFixed(2)} L${(X(i + 1) + 0.4).toFixed(2)},${base}Z" fill="${c}"/>`;
+      bands += `<path d="M${X(i).toFixed(2)},${base} L${X(i).toFixed(2)},${Y(e[i]).toFixed(2)} L${(X(i + 1) + 0.6).toFixed(2)},${Y(e[i + 1]).toFixed(2)} L${(X(i + 1) + 0.6).toFixed(2)},${base}Z" fill="${c}"/>`;
     }
     const line = e.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(2)},${Y(v).toFixed(2)}`).join('');
     const step = D > 60 ? 20 : D > 25 ? 10 : D > 12 ? 5 : 2;
     let ax = ''; for (let k = 0; k <= D - Math.max(step * 0.6, D * 0.1); k += step) ax += `<span style="left:${(k / D * 100).toFixed(2)}%">${k}</span>`;
     ax += `<span style="left:100%">${Math.round(D)} km</span>`;
-    box.innerHTML = `<div class="pr-prof-h"><span>Ton parcours</span><span>${Math.round(lo0)} – ${Math.round(hi)} m</span><span>${String(D.toFixed(1)).replace('.', ',')} km · D+ ${Math.round(route.gain)} m</span></div>
+    box.innerHTML = `<div class="pr-prof-h"><span>Ton parcours</span><span>${Math.round(lo0)} – ${Math.round(hi)} m</span><span>${String(D.toFixed(1)).replace('.', ',')} km · D+ ${Math.round(sm.gain)} m</span></div>
       <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Profil du parcours coloré selon la pente"><g opacity=".85" shape-rendering="crispEdges">${bands}</g><path d="${line}" fill="none" stroke="var(--text)" stroke-width="1.4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>
       <div class="pr-prof-ax">${ax}</div>
       <div class="pr-leg">${PENTES.map((k, i) => `<span><i style="background:${k.c}"></i>${k.l} <em>${i === 0 ? '< −3 %' : i === 1 ? '±3 %' : i === 2 ? '3–8 %' : i === 3 ? '8–15 %' : '> 15 %'}</em></span>`).join('')}</div>`;
