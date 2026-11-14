@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hold — Inscription</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F2F3F4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&family=Fraunces:opsz,wght@9..144,400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/styles.css">
+<style>
+  .ins { max-width: 760px; margin: 0 auto; padding: 120px 24px 90px; }
+  .ins-h { font-family: var(--serif); font-weight: 700; font-size: clamp(34px, 6vw, 52px); line-height: 1.04; margin: 6px 0 14px; }
+  .ins-sub { font-size: 17px; color: var(--sub-text); max-width: 60ch; margin: 0 0 8px; }
+  .ins-note { font-size: 13px; color: var(--dim); margin: 0 0 34px; }
+  .bloc { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 26px 22px; margin-top: 14px; }
+  .bloc h2 { font-family: var(--serif); font-weight: 700; font-size: 24px; margin: 0 0 4px; display: flex; gap: 12px; align-items: baseline; }
+  .bloc h2 span { font-size: 13px; color: var(--mark); font-weight: 700; }
+  .bloc > p.aide { font-size: 14px; color: var(--muted); margin: 0 0 18px; }
+  .g { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 14px; }
+  .g .plein { grid-column: 1 / -1; }
+  label.c { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--sub-text); }
+  label.c b { font-weight: 400; } label.c b i { color: var(--mark); font-style: normal; }
+  .c input, .c select, .c textarea { font: 16px var(--sans); color: var(--text); background: var(--field-bg); border: 1px solid var(--ghost-line); border-radius: 8px; min-height: 46px; padding: 10px 12px; width: 100%; }
+  .c textarea { min-height: 88px; resize: vertical; line-height: 1.45; }
+  .c input:focus, .c select:focus, .c textarea:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .c small { color: var(--dim); font-size: 12.5px; }
+  fieldset { border: 0; padding: 0; margin: 0; }
+  legend { font-size: 14px; color: var(--sub-text); margin-bottom: 8px; padding: 0; }
+  .puces { display: flex; flex-wrap: wrap; gap: 8px; }
+  .puces label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--ghost-line); border-radius: 999px; padding: 8px 14px; font-size: 14px; cursor: pointer; background: var(--field-bg); }
+  .puces input { accent-color: var(--text); margin: 0; }
+  .puces label:has(input:checked) { border-color: var(--text); background: var(--ghost-hover); }
+  .q { display: grid; grid-template-columns: 1fr auto; gap: 10px 18px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .q:last-of-type { border-bottom: 0; }
+  .q .puces label { padding: 6px 14px; }
+  .alerte { display: none; margin-top: 14px; padding: 14px 16px; border-left: 3px solid var(--mark); background: var(--bg); font-size: 14px; color: var(--sub-text); }
+  .alerte.on { display: block; }
+  .coche { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; font-size: 15px; color: var(--sub-text); padding: 10px 0; cursor: pointer; }
+  .coche input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--text); }
+  .coche a { text-decoration: underline; }
+  .fichier { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1.5px dashed var(--ghost-line); border-radius: 10px; cursor: pointer; }
+  .fichier:hover { border-color: var(--text); }
+  .fichier input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .fichier b { font-weight: 700; display: block; font-size: 15px; } .fichier small { color: var(--muted); font-size: 13px; }
+  .fichier .ico { flex: none; width: 40px; height: 40px; border-radius: 8px; background: var(--bg); display: grid; place-items: center; font-size: 18px; }
+  .fichiers { display: grid; gap: 10px; }
+  .envoi { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  .err { color: var(--red); font-size: 15px; margin: 14px 0 0; min-height: 1.2em; }
+  .merci { display: none; text-align: center; padding: 60px 20px; }
+  .merci.on { display: block; }
+  .merci h2 { font-family: var(--serif); font-size: 40px; font-weight: 700; margin: 0 0 12px; }
+  .merci p { font-size: 17px; color: var(--sub-text); max-width: 52ch; margin: 0 auto 8px; }
+  .piege { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  @media (max-width: 640px) {
+    .ins { padding: 92px 16px 60px; }
+    .bloc { padding: 20px 16px 16px; }
+    .g { grid-template-columns: 1fr; }
+    .q { grid-template-columns: 1fr; }
+  }
+</style>
+<script async src="https://plausible.io/js/pa-o1S6dEzqPCDWmIjVCmp5f.js"></script>
+<script>
+  window.plausible = window.plausible || function () { (plausible.q = plausible.q || []).push(arguments) };
+  plausible.init = plausible.init || function (i) { plausible.o = i || {} };
+  plausible.init();
+</script>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a href="../" class="logo" aria-label="Hold, retour au site">Hold<span class="logo-dot" aria-hidden="true"></span></a>
+  <div class="nav-r"><a href="../" class="link-btn">Retour au site</a></div>
+</header>
+
+<main class="ins">
+ <div id="formulaire">
+  <p class="eyebrow">Inscription</p>
+  <h1 class="ins-h">Bienvenue chez Hold.</h1>
+  <p class="ins-sub">Ces informations me servent à construire ton plan et ta stratégie dès le premier jour. Compte une dizaine de minutes. Une fois envoyé, je te transmets le lien de paiement de ta formule.</p>
+  <p class="ins-note">Les champs marqués <span style="color:var(--mark)">*</span> sont obligatoires. Tes réponses restent privées : elles ne servent qu'à ton accompagnement.</p>
+
+  <form id="f" novalidate>
+    <div class="piege" aria-hidden="true"><label>Site web <input name="site_web" tabindex="-1" autocomplete="off"></label></div>
+
+    <section class="bloc">
+      <h2><span>1</span>Toi</h2>
+      <p class="aide">Pour te contacter et adapter les charges à ton profil.</p>
+      <div class="g">
+        <label class="c"><b>Prénom <i>*</i></b><input name="prenom" required autocomplete="given-name"></label>
+        <label class="c"><b>Nom <i>*</i></b><input name="nom" required autocomplete="family-name"></label>
+        <label class="c"><b>Adresse e-mail <i>*</i></b><input name="email" type="email" required autocomplete="email"></label>
+        <label class="c"><b>Téléphone <i>*</i></b><input name="telephone" type="tel" required autocomplete="tel"></label>
+        <label class="c"><b>Date de naissance <i>*</i></b><input name="date_naissance" type="date" required></label>
+        <label class="c"><b>Ville</b><input name="ville" autocomplete="address-level2"></label>
+        <label class="c"><b>Profil Strava</b><input name="strava" placeholder="https://www.strava.com/athletes/…" inputmode="url"></label>
+        <label class="c"><b>Instagram</b><input name="instagram" placeholder="@toncompte"></label>
+      </div>
+    </section>
+
+    <section class="bloc">
+      <h2><span>2</span>Ta course et ta formule</h2>
+      <p class="aide">Celle qu'on a choisie ensemble pendant l'appel.</p>
+      <div class="g">
+        <label class="c plein"><b>Formule <i>*</i></b>
+          <select name="formule" required>
+            <option value="">Choisis…</option>
+            <option>Découverte · 69,99 €/mois</option>
+            <option>Confirmé · 99,99 €/mois</option>
+            <option>Pro · 134,99 €/mois</option>
+            <option>Stratégie seule · 49,99 €</option>
+            <option>Testing physiologique · 90 €</option>
+          </select></label>
+        <label class="c plein"><b>Course visée <i>*</i></b><input name="course" required placeholder="Marathon de Paris, UTMB OCC…"></label>
+        <label class="c"><b>Date de la course <i>*</i></b><input name="date_course" type="date" required></label>
+        <label class="c"><b>Distance</b><input name="distance" placeholder="42,195 km · 55 km / 3 500 m D+"></label>
+        <label class="c"><b>Objectif de temps <i>*</i></b><input name="objectif" required placeholder="Sub 3 h, finir, top 50…"></label>
+        <label class="c"><b>Autre course prévue avant</b><input name="course_intermediaire" placeholder="Semi de préparation le …"></label>
+      </div>
+    </section>
+
+    <section class="bloc">
+      <h2><span>3</span>Ton entraînement</h2>
+      <p class="aide">Là où tu en es aujourd'hui, sans arrondir vers le haut.</p>
+      <div class="g">
+        <label class="c"><b>Depuis combien de temps tu cours ? <i>*</i></b>
+          <select name="anciennete" required><option value="">Choisis…</option><option>Moins d'1 an</option><option>1 à 3 ans</option><option>3 à 5 ans</option><option>Plus de 5 ans</option></select></label>
+        <label class="c"><b>Séances par semaine actuellement <i>*</i></b><input name="seances_semaine" required inputmode="numeric" placeholder="4"></label>
+        <label class="c"><b>Volume hebdomadaire moyen (km) <i>*</i></b><input name="volume_hebdo_km" required inputmode="numeric" placeholder="45"></label>
+        <label class="c"><b>Plus longue sortie récente</b><input name="sortie_longue" placeholder="28 km en 2 h 30"></label>
+        <label class="c plein"><b>Tes records et derniers chronos</b><textarea name="records" placeholder="10 km : 41'30 (mars 2026) · semi : 1 h 32 · …"></textarea></label>
+      </div>
+      <fieldset style="margin-top:16px"><legend>Jours où tu peux t'entraîner <span style="color:var(--mark)">*</span></legend>
+        <div class="puces" id="jours">
+          <label><input type="checkbox" name="jours" value="lundi">Lundi</label><label><input type="checkbox" name="jours" value="mardi">Mardi</label>
+          <label><input type="checkbox" name="jours" value="mercredi">Mercredi</label><label><input type="checkbox" name="jours" value="jeudi">Jeudi</label>
+          <label><input type="checkbox" name="jours" value="vendredi">Vendredi</label><label><input type="checkbox" name="jours" value="samedi">Samedi</label>
+          <label><input type="checkbox" name="jours" value="dimanche">Dimanche</label>
+        </div></fieldset>
+      <div class="g" style="margin-top:16px">
+        <label class="c"><b>Jour préféré pour la sortie longue</b>
+          <select name="jour_long"><option value="">Indifférent</option><option>Samedi</option><option>Dimanche</option><option>En semaine</option></select></label>
+        <label class="c"><b>Montre et plateforme</b><input name="montre" placeholder="Garmin Forerunner 265, Coros…"></label>
+        <label class="c plein"><b>Ceinture cardio, capteur de puissance ?</b><input name="capteurs" placeholder="Ceinture HRM-Pro, Stryd…"></label>
+        <label class="c plein"><b>Blessures des 2 dernières années</b><textarea name="blessures" placeholder="Périostite tibiale en 2025, 6 semaines d'arrêt…"></textarea></label>
+        <label class="c plein"><b>Autres sports pratiqués</b><input name="autres_sports" placeholder="Vélo 1 fois par semaine, muscu…"></label>
+        <label class="c plein"><b>Tes contraintes</b><textarea name="contraintes" placeholder="Horaires de travail, enfants, déplacements, accès à une piste…"></textarea></label>
+        <label class="c plein"><b>Qu'est-ce que tu attends de l'accompagnement ?</b><textarea name="attentes"></textarea></label>
+      </div>
+    </section>
+
+    <section class="bloc">
+      <h2><span>4</span>Ta santé</h2>
+      <p class="aide">Questionnaire de santé avant la reprise ou l'intensification d'une activité physique (inspiré du PAR-Q+). Réponds honnêtement : un « oui » n'empêche pas de commencer, il veut dire qu'on vérifie d'abord avec un médecin.</p>
+      <div id="sante"></div>
+      <label class="c" style="margin-top:12px"><b>Si tu as répondu « oui », précise</b><textarea name="sante_precisions"></textarea></label>
+      <div class="alerte" id="sante-alerte">Au moins une réponse « oui » : avant d'augmenter ton entraînement, demande l'avis de ton médecin. Si tu as un certificat médical de non contre-indication à la course à pied, joins-le à l'étape 5.</div>
+      <label class="coche" style="margin-top:8px"><input type="checkbox" name="attestation_sante" required><span>J'atteste sur l'honneur que mes réponses sont exactes, et je m'engage à signaler à Lilian tout changement de mon état de santé. <span style="color:var(--mark)">*</span></span></label>
+    </section>
+
+    <section class="bloc">
+      <h2><span>5</span>Documents et accords</h2>
+      <p class="aide">Fichiers facultatifs, 10 Mo maximum chacun (PDF, photo, export de montre). Ils sont rangés dans un dossier privé.</p>
+      <div class="fichiers">
+        <label class="fichier"><input type="file" data-cat="certificat" accept=".pdf,image/*"><span class="ico">✚</span><span><b data-n>Certificat médical</b><small>Si tu en as un de moins d'un an</small></span></label>
+        <label class="fichier"><input type="file" data-cat="plan" accept=".pdf,image/*,.csv,.txt,.zip,.fit,.gpx,.tcx"><span class="ico">⇪</span><span><b data-n>Ton plan actuel ou un export de séances</b><small>Facultatif</small></span></label>
+        <label class="fichier"><input type="file" data-cat="autre" accept=".pdf,image/*,.csv,.txt,.zip,.fit,.gpx,.tcx"><span class="ico">＋</span><span><b data-n>Autre document</b><small>Bilan d'effort, résultats de test…</small></span></label>
+      </div>
+      <fieldset style="margin-top:22px"><legend>Je peux partager tes résultats et ta progression (Instagram, site) ? <span style="color:var(--mark)">*</span></legend>
+        <div class="puces">
+          <label><input type="radio" name="partage" value="oui" required>Oui, avec mon prénom</label>
+          <label><input type="radio" name="partage" value="anonyme">Oui, sans mon nom</label>
+          <label><input type="radio" name="partage" value="non">Non</label>
+        </div></fieldset>
+      <div style="margin-top:14px">
+        <label class="coche"><input type="checkbox" name="consentement_sante" required><span>J'accepte que mes données de santé et d'entraînement (fréquence cardiaque, sommeil, blessures, réponses ci-dessus) soient utilisées par Lilian Mathien uniquement pour mon accompagnement. Elles ne sont ni vendues ni partagées, et je peux en demander la suppression à tout moment à bonjour@holdrunning.fr. <span style="color:var(--mark)">*</span></span></label>
+        <label class="coche"><input type="checkbox" name="cgv" required><span>J'ai lu et j'accepte les <a href="../#legal" target="_blank" rel="noopener">conditions générales de vente</a>. <span style="color:var(--mark)">*</span></span></label>
+      </div>
+    </section>
+
+    <p class="err" id="err" role="alert"></p>
+    <div class="envoi"><button class="btn" type="submit" id="go">Envoyer mon inscription</button><span class="ins-note" style="margin:0">Tu recevras ensuite le lien de paiement par mail.</span></div>
+  </form>
+ </div>
+
+  <div class="merci" id="merci" role="status">
+    <h2>C'est reçu, merci !</h2>
+    <p>Je regarde tout ça et je t'envoie le lien de paiement de ta formule par mail, en général dans la journée.</p>
+    <p>Une question d'ici là : <a href="mailto:bonjour@holdrunning.fr" style="text-decoration:underline">bonjour@holdrunning.fr</a></p>
+  </div>
+</main>
+
+<script>
+(() => {
+  // Adresse du script Google qui reçoit les inscriptions (Apps Script, déploiement « Application Web »).
+  const ENDPOINT = 'https://script.google.com/macros/s/AKfycby5Oli5ygXkVvmF6FgSBSCd7c1I7RQekmDZUlOvSPXDbc6BiIDeTAU0sfxkmLoaKT1SRQ/exec';
+  const $ = (s) => document.querySelector(s);
+  const f = $('#f');
+  const track = (ev) => { if (typeof window.plausible === 'function') window.plausible(ev); };
+
+  // Questionnaire de santé (inspiré du PAR-Q+).
+  const SANTE = [
+    ['coeur', "Un médecin t'a-t-il déjà dit que tu avais un problème cardiaque ou une hypertension artérielle ?"],
+    ['poitrine', 'Ressens-tu une douleur dans la poitrine au repos, au quotidien ou pendant un effort ?'],
+    ['malaise', "As-tu perdu l'équilibre à cause d'un vertige, ou perdu connaissance, au cours des 12 derniers mois ?"],
+    ['chronique', "As-tu reçu le diagnostic d'une autre maladie chronique (asthme, diabète, …) ?"],
+    ['traitement', 'Prends-tu actuellement des médicaments pour une maladie chronique ?'],
+    ['os', "As-tu en ce moment, ou depuis moins de 12 mois, un problème d'os, d'articulation, de muscle ou de tendon qui pourrait s'aggraver avec plus d'entraînement ?"],
+    ['supervision', "Un médecin t'a-t-il déjà dit de ne pratiquer une activité physique que sous surveillance médicale ?"],
+  ];
+  $('#sante').innerHTML = SANTE.map(([k, q]) => `<div class="q"><span>${q} <span style="color:var(--mark)">*</span></span><div class="puces">
+    <label><input type="radio" name="sante_${k}" value="non" required>Non</label><label><input type="radio" name="sante_${k}" value="oui">Oui</label></div></div>`).join('');
+  f.addEventListener('change', (e) => {
+    if (e.target.name && e.target.name.startsWith('sante_')) $('#sante-alerte').classList.toggle('on', SANTE.some(([k]) => (f.elements['sante_' + k].value === 'oui')));
+  });
+
+  // Pré-remplissage depuis le lien envoyé par mail : ?f=Confirmé&e=adresse&p=Prénom&n=Nom
+  const q = new URLSearchParams(location.search);
+  if (q.get('e')) f.elements.email.value = q.get('e');
+  if (q.get('p')) f.elements.prenom.value = q.get('p');
+  if (q.get('n')) f.elements.nom.value = q.get('n');
+  if (q.get('f')) { const o = [...f.elements.formule.options].find((x) => x.value.toLowerCase().startsWith(q.get('f').toLowerCase())); if (o) f.elements.formule.value = o.value; }
+
+  // Fichiers : lus en base64, 10 Mo maximum.
+  const fichiers = {};
+  document.querySelectorAll('.fichier input').forEach((inp) => inp.addEventListener('change', () => {
+    const file = inp.files[0], b = inp.closest('.fichier').querySelector('[data-n]');
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { b.textContent = 'Fichier trop lourd (10 Mo maximum)'; delete fichiers[inp.dataset.cat]; return; }
+    const rd = new FileReader();
+    rd.onload = () => { fichiers[inp.dataset.cat] = { categorie: inp.dataset.cat, nom: file.name, type: file.type || 'application/octet-stream', data: String(rd.result).split(',')[1] }; b.textContent = '✓ ' + file.name; };
+    rd.readAsDataURL(file);
+  }));
+
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const err = (m, el) => { $('#err').textContent = m; if (el) { el.focus(); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } };
+    const manque = [...f.querySelectorAll('[required]')].find((el) => (el.type === 'radio' ? !f.elements[el.name].value : el.type === 'checkbox' ? !el.checked : !el.value.trim()));
+    if (manque) return err('Il manque une réponse obligatoire.', manque);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.elements.email.value.trim())) return err("L'adresse e-mail semble incorrecte.", f.elements.email);
+    const jours = [...f.querySelectorAll('input[name=jours]:checked')].map((x) => x.value);
+    if (!jours.length) return err("Coche au moins un jour où tu peux t'entraîner.", $('#jours input'));
+    if (!ENDPOINT) return err("Le formulaire n'est pas encore relié. Écris-moi à bonjour@holdrunning.fr.");
+
+    const d = {};
+    for (const el of f.elements) {
+      if (!el.name || el.name === 'jours' || el.name.startsWith('sante_') && el.type === 'radio') continue;
+      if (el.type === 'checkbox') d[el.name] = el.checked;
+      else if (el.type === 'radio') { if (el.checked) d[el.name] = el.value; }
+      else d[el.name] = el.value.trim();
+    }
+    d.jours = jours;
+    d.sante = Object.fromEntries(SANTE.map(([k]) => [k, f.elements['sante_' + k].value]));
+    d.fichiers = Object.values(fichiers);
+    d.envoye_le = new Date().toISOString();
+
+    const go = $('#go'); go.disabled = true; go.textContent = 'Envoi en cours…'; err('');
+    try {
+      // text/plain : pas de requête préalable, le script Google répond directement.
+      const r = await fetch(ENDPOINT, { method: 'POST', body: JSON.stringify(d), headers: { 'Content-Type': 'text/plain;charset=utf-8' } });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.erreur || 'Envoi refusé.');
+      track('Inscription envoyée');
+      $('#formulaire').hidden = true; $('#merci').classList.add('on'); window.scrollTo({ top: 0 });
+    } catch (x) {
+      err((x && x.message) || "L'envoi a échoué. Vérifie ta connexion et réessaie.");
+      go.disabled = false; go.textContent = 'Envoyer mon inscription';
+    }
+  });
+})();
+</script>
+</body>
+</html>
