@@ -1099,3 +1099,6 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
   .hero-cta { gap: 10px 14px; }
   .hero-scroll { flex-basis: 100%; }
 }
+.offres-strategie { margin-top: 28px; max-width: 760px; line-height: 1.55; font-size: 16px; color: var(--sub-text); }
+.offres-strategie b { color: var(--text); font-weight: 600; }
+.offres-strategie + .offres-aide { margin-top: 6px; }
