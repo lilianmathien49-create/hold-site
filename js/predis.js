@@ -174,6 +174,16 @@ function init() {
     w.innerHTML = `<select aria-label="Distance du record">${RECORDS.map(([v, l]) => `<option value="${v}"${v === d ? ' selected' : ''}>${l}</option>`).join('')}</select>
       <input inputmode="numeric" placeholder="${+d > 20 ? '1:35:00' : '42:30'}" aria-label="Temps" autocomplete="off">
       <button type="button" aria-label="Retirer ce record">&times;</button>`;
+    // Sur mobile, le pavé numérique n'a pas de deux-points : on tape les chiffres, la mise en forme suit.
+    // 4230 → 42:30 · 13500 → 1:35:00. Un temps tapé avec « : » (ordinateur) est gardé tel quel.
+    w.querySelector('input').addEventListener('input', (e) => {
+      const el = e.target;
+      if (e.data && /[:hH'’]/.test(e.data)) { el.dataset.manuel = '1'; return; } // l'utilisateur tape lui-même le séparateur
+      if (el.dataset.manuel && /[:hH'’]/.test(el.value)) return;
+      delete el.dataset.manuel;
+      const d = el.value.replace(/\D/g, '').slice(0, 6);
+      el.value = d.length <= 2 ? d : d.length <= 4 ? `${d.slice(0, -2)}:${d.slice(-2)}` : `${d.slice(0, -4)}:${d.slice(-4, -2)}:${d.slice(-2)}`;
+    });
     w.querySelector('button').onclick = () => { if (box.children.length > 1) { w.remove(); $('pr-add').hidden = false; } else w.querySelector('input').value = ''; };
     box.append(w); $('pr-add').hidden = box.children.length >= MAX_REC;
   };
