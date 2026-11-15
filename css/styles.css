@@ -1088,3 +1088,14 @@ input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border: 0; bo
 .pr .pr-box h3, .pr .pr-v { font-weight: 700; }
 /* Le logo garde sa police d'origine (identité Hold). */
 .logo { font-family: 'Fraunces', Georgia, serif; }
+
+/* Premier écran : la phrase d'offre et le bouton d'appel. Les légendes ignorent la souris
+   (la carte reste manipulable) : seul le bouton du premier écran, une fois affiché, est cliquable. */
+.hero-pitch { max-width: 520px; }
+.hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.cap.on .hero-cta .btn { pointer-events: auto; }
+.hero-scroll { font-size: 13px; color: var(--muted); }
+@media (max-width: 760px) {
+  .hero-cta { gap: 10px 14px; }
+  .hero-scroll { flex-basis: 100%; }
+}
