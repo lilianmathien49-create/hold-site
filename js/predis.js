@@ -110,7 +110,7 @@ const html = `
           <div class="pr-box">
             <h3>La suite de ta course.</h3>
             <p>Ton allure sur chaque kilomètre jusqu'à l'arrivée, où te retenir, où relancer : ta stratégie complète, construite par moi pour ce parcours.</p>
-            <a class="btn" id="pr-cta" href="${STRIPE_STRATEGIE}" target="_blank" rel="noopener">Débloquer ma stratégie · 49,99 €</a>
+            <a class="btn" id="pr-cta" href="${STRIPE_STRATEGIE}" target="_blank" rel="noopener">Obtenir ma stratégie · 49,99 €</a>
             <a class="pr-alt" href="#contact" data-pr-close>Ou parlons de ta course d'abord</a>
           </div>
         </div>
